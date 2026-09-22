@@ -1,6 +1,7 @@
 import argparse
 import sys
 
+from diagnostics import SourceValidationError, print_diagnostic
 from executor import execute_file, validate_file
 from fixture_runtime import FixtureError
 from interpreter import AdvPLRuntimeError
@@ -34,8 +35,15 @@ def main(argv=None):
             )
         else:
             execute_file(args.source, fixture_path=args.fixture, entry=args.entry)
-    except (FixtureError, ParseError, LexError, AdvPLRuntimeError, OSError) as exc:
-        print(f"[ERRO] {exc}", file=sys.stderr)
+    except (
+        FixtureError,
+        SourceValidationError,
+        ParseError,
+        LexError,
+        AdvPLRuntimeError,
+        OSError,
+    ) as exc:
+        print_diagnostic(exc)
         return 1
     return 0
 

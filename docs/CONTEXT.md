@@ -145,6 +145,14 @@ parser + FixtureInterpreter do LivrePL
 - O retorno global legado em `funcoes` permanece aceito como fallback.
 - A entrega inicial de UI headless foi incorporada à suíte atual de trinta e três testes automatizados.
 
+### Diagnosticos de sintaxe
+
+- Diretivas removidas pelo pre-processador preservam sua posicao por meio de linhas vazias.
+- Um `NEWLINE` inesperado apos expressao incompleta aponta a linha da instrucao, nao a linha vazia seguinte.
+- A CLI exibe trecho, marcador, caminho, linha e coluna; em terminal interativo, o erro aparece em vermelho.
+- `NO_COLOR` desativa ANSI e saidas sem TTY permanecem em texto puro.
+- Dois testes dedicados elevam a suite para trinta e cinco casos. Se o corpus externo `TRNSOL02.prw` estiver propositalmente invalido, os nove testes de integracao que dependem dele falham como esperado ate o fonte ser corrigido.
+
 ## Como executar
 
 ```powershell

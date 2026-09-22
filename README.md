@@ -99,7 +99,16 @@ Para validar todas as funções do arquivo sem executar nenhuma delas:
 advpl-testlab -validate TRNSOL02.prw
 ```
 
-O comando falha com erro de lexer ou parser e número da linha quando encontra sintaxe sem suporte.
+O comando falha com erro de lexer ou parser quando encontra sintaxe inválida ou sem suporte. O diagnóstico preserva a numeração do `.prw` original, inclusive quando existem diretivas `#include`, mostra a linha e aponta a coluna aproximada:
+
+```text
+SyntaxError: Token inesperado TokenType.NEWLINE (None)
+  31 |     Local nI :=
+     |                 ^
+  --> C:\projeto\TRNSOL02.prw:31:13
+```
+
+Em um terminal interativo, o erro é exibido em vermelho e o processo termina com código `1`. Defina a variável de ambiente `NO_COLOR` para desativar cores. Saídas redirecionadas e ferramentas sem TTY recebem texto puro automaticamente.
 
 Sem instalar, o mesmo fluxo pode ser executado dentro deste repositorio:
 
@@ -135,6 +144,8 @@ A pergunta `Continuar?` não é impressa; ela apenas seleciona o ramo `false` co
 ```powershell
 python -m unittest discover -s tests -v
 ```
+
+A suíte inclui uma regressão que mantém um `.prw` propositalmente inválido em `tests/fixtures/invalid_assignment.prw` para conferir linha, trecho, marcador e cor do diagnóstico.
 
 ## Formato do fixture
 

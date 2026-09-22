@@ -1,7 +1,10 @@
 import re
 from pathlib import Path
 
+from diagnostics import SourceValidationError
 from fixture_runtime import Fixture, FixtureError, compile_source, run_source
+from lexer import LexError
+from parser import ParseError
 
 
 _USER_FUNCTION = re.compile(
@@ -44,12 +47,15 @@ def execute_file(source_path, fixture_path=None, entry=None):
     with source_path.open(encoding="utf-8", errors="replace") as source_file:
         source = source_file.read()
     fixture = Fixture.from_file(fixture_path)
-    return execute_source(
-        source,
-        fixture=fixture,
-        entry=entry,
-        source_name=source_path,
-    )
+    try:
+        return execute_source(
+            source,
+            fixture=fixture,
+            entry=entry,
+            source_name=source_path,
+        )
+    except (ParseError, LexError) as exc:
+        raise SourceValidationError(source_path, source, exc) from exc
 
 
 def validate_file(source_path):
@@ -58,5 +64,8 @@ def validate_file(source_path):
         raise FixtureError(f"Fonte PRW nao encontrado: '{source_path}'")
     with source_path.open(encoding="utf-8", errors="replace") as source_file:
         source = source_file.read()
-    program = compile_source(source)
+    try:
+        program = compile_source(source)
+    except (ParseError, LexError) as exc:
+        raise SourceValidationError(source_path, source, exc) from exc
     return len(program.functions)

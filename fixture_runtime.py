@@ -847,7 +847,13 @@ def adapt_headless_ui(source):
 
 
 def prepare_source(source):
-    return adapt_headless_ui(preprocess(source))
+    lines_with_placeholders = []
+    for line in source.splitlines():
+        lines_with_placeholders.append(line)
+        if line.lstrip().startswith("#"):
+            lines_with_placeholders.append("")
+    preprocessed = preprocess("\n".join(lines_with_placeholders))
+    return adapt_headless_ui(preprocessed)
 
 
 def compile_source(source):

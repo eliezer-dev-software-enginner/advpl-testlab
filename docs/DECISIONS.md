@@ -118,12 +118,21 @@
 - **Decisao:** Disponibilizar `advpl-testlab -validate arquivo.prw`, usando o mesmo preparo e parser de `-run` sem executar nenhuma funcao.
 - **Consequencias:** Sintaxe sem suporte falha antes da execucao e informa a linha. O `TRNSOL02.prw` valida tres funcoes.
 
+## ADR-015 — Diagnostico usa coordenadas do fonte original
+
+- **Data:** 22/09/2026
+- **Estado:** Aceita
+- **Contexto:** O pre-processador removia diretivas como `#include`, deslocando as linhas entregues ao parser. Alem disso, uma atribuicao incompleta era percebida somente no token `NEWLINE` seguinte.
+- **Decisao:** Preservar uma linha vazia para cada diretiva removida e, quando o token inesperado for a quebra de linha, apontar a instrucao anterior. A CLI mostra tipo, mensagem, trecho, marcador, arquivo, linha e coluna, com ANSI vermelho apenas em terminais interativos.
+- **Consequencias:** Um erro em `Local nI :=` na linha 31 passa a ser informado como `arquivo.prw:31`, mesmo com diretivas no inicio do fonte. `NO_COLOR` e saidas sem TTY continuam produzindo texto puro.
+
 - Teste de aceite da CLI: saida `000007`.
 - Cinco testes automatizados executados e aprovados.
 - Nove testes automatizados executados e aprovados apos incorporar os primeiros casos reais.
 - Treze testes automatizados executados e aprovados apos migrar o schema JSON.
 - Dezesseis testes automatizados executados e aprovados com o executor de `TRNSOL02.prw`.
 - Trinta e tres testes automatizados executados e aprovados com o `TRNSOL02.prw` integral pelo interpretador.
+- Dois testes de regressao adicionados para coordenadas e cor do diagnostico; a suite passa a ter trinta e cinco casos.
 - Regressao do LivrePL aprovada com `exemplos/ola.prw`, `exemplos/todas-etapas.prw` e `interpreter.py`.
 
 ---
