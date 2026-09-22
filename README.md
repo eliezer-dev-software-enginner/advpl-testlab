@@ -16,7 +16,7 @@ O projeto e separado do `livrePL`. Ele usa o interpretador como dependencia loca
 - `parametros` e `tabelas` usam listas de objetos no formato canonico.
 - Cada tabela possui `campos` opcionais e `registros`.
 - CLI instalavel `advpl-testlab -run arquivo.prw` com descoberta automatica da primeira `User Function` e do fixture.
-- Primeiro fonte completo executado em modo headless: `TRNSOL02.prw`, com consulta e `FWBrowse` simulados.
+- Primeiro fonte real integrado em modo headless: `TRNSOL02.prw`. Esse caso usa um adaptador parcial e ainda não executa todo o corpo da função linha por linha.
 
 ## Estrutura
 
@@ -86,7 +86,7 @@ advpl-testlab -run TRNSOL02.prw
 O executor procura `advpl-testlab.json` no diretorio do `.prw` e nos diretorios pais. Tambem e possivel usar `--fixture caminho.json` e `--entry NomeDaFuncao`.
 
 ```text
--run ARQUIVO.PRW       fonte AdvPL executado
+-run ARQUIVO.PRW       fonte AdvPL alvo da execução ou simulação
 --fixture ARQUIVO.JSON fixture específico; opcional com advpl-testlab.json
 --entry FUNCAO         entrada; opcional, usa a primeira User Function
 ```
@@ -176,10 +176,58 @@ O nome da consulta deve coincidir, sem diferenciar maiúsculas e minúsculas, co
 
 ## Cobertura atual
 
-- Fontes dentro da sintaxe suportada são interpretados pelo LivrePL com builtins do TestLab.
-- O fluxo `FWExecStatement` + `FWBrowse` possui adaptador headless: descrição e colunas vêm do `.prw`, e os registros vêm de `consultas` no fixture.
-- A simulação não é um Protheus completo. APIs ainda não cobertas precisam ser adicionadas incrementalmente com fixture e teste.
+### Implementado e interpretado
+
+Estes recursos passam pelo parser e pelo interpretador, portanto sua lógica é executada:
+
+- descoberta automática da primeira `User Function` ou seleção explícita por `--entry`;
+- descoberta de `advpl-testlab.json` no diretório do fonte ou nos diretórios pais;
+- funções `Function`, `User Function` e `Static Function` dentro da cobertura do LivrePL;
+- variáveis `Local`, `Private`, `Public` e `Static`;
+- atribuições simples, `+=` e `-=`;
+- valores texto, numérico, lógico, `Nil` e arrays;
+- operadores aritméticos, relacionais e lógicos suportados pelo LivrePL;
+- estruturas `If/ElseIf/Else`, `For`, `Do While`, `Do Case` e `Begin Sequence`;
+- chamadas de função, funções estáticas, acesso a arrays e retorno de valores;
+- classes, métodos e code blocks dentro do subconjunto implementado pelo LivrePL;
+- builtins básicos do LivrePL, como `Len`, `AllTrim`, `Upper`, `Lower`, `AAdd`, `Empty`, `ValType` e `cValToChar`;
+- builtins Protheus adicionados pelo TestLab: `GetMV`, `StrTran` e `Chr`;
+- leitura e validação das coleções `parametros`, `tabelas`, `funcoes` e `consultas` do fixture;
+- `GetMV(cParam)` em modo estrito e `GetMV(cParam, lHelp, uDefault)` com valor padrão;
+- execução integral dos casos isolados `U_SolMailCfg()` e `TextoHtml()` usados nos testes.
+
+### Parcialmente implementado
+
+O caso `TRNSOL02.prw` usa um adaptador headless especializado para o padrão `FWExecStatement` + `FWBrowse`:
+
+- o arquivo `.prw` é aberto e sua primeira `User Function` é descoberta;
+- a presença de `FWExecStatement():New()` e `FWBrowse():New()` seleciona o adaptador;
+- `SetDescription()` e `AddColumn()` são lidos do texto do fonte;
+- os registros são obtidos de `consultas -> Z04CON -> registros` no fixture;
+- a grade do `FWBrowse` é representada como tabela no terminal;
+- respostas configuradas em `funcoes`, como `FASKFILTROS`, podem controlar o adaptador.
+
+Nesse caminho, o corpo completo de `Z04CON()` **não** é interpretado linha por linha. O teste confirma a integração entre fonte, função de entrada, fixture e saída headless, mas não valida integralmente a regra de negócio da rotina.
+
+### Ainda não implementado para o TRNSOL02.prw
+
+- montagem e execução real da consulta SQL;
+- aplicação dos filtros preenchidos em `fAskFiltros()`;
+- parâmetros por referência, como `@dDe` e `@cNum`;
+- aliases dinâmicos e expressões como `(cAlias)->Z04_CODIGO`;
+- navegação completa com `DbGoTop()`, `DbSkip()`, `Eof()` e `DbCloseArea()`;
+- objetos genéricos de `FWExecStatement` e `FWBrowse` com todos os métodos;
+- macros visuais `Define MSDialog`, `@ ... SAY`, `GET`, `BUTTON` e `ACTIVATE DIALOG`;
+- execução de `MsgAlert`, `MsgInfo` e `MsgYesNo` com semântica de interface Protheus;
+- geração do arquivo Excel por `FCreate`, `FWrite` e `FClose`;
+- pós-incremento, como `nCnt++`, nesse fluxo;
+- execução arbitrária de qualquer `.prw` ou de qualquer API Protheus.
+
+### Garantias do fixture
+
 - O fixture é somente entrada; a execução não altera o JSON no disco.
+- Nomes de parâmetros, tabelas, funções e consultas são normalizados sem diferenciar maiúsculas e minúsculas.
+- APIs ou sintaxes fora da cobertura devem ser implementadas incrementalmente com um caso real e teste automatizado.
 
 ## Documentacao
 
