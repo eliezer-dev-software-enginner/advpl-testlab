@@ -29,6 +29,7 @@ _load_livrepl()
 from interpreter import AdvPLRuntimeError, Interpreter
 from parser import parse_source
 from preprocessor import preprocess
+from semantic import validate_program
 
 
 class Fixture:
@@ -857,7 +858,9 @@ def prepare_source(source):
 
 
 def compile_source(source):
-    return parse_source(prepare_source(source))
+    program = parse_source(prepare_source(source))
+    validate_program(program, source)
+    return program
 
 
 def build_interpreter(

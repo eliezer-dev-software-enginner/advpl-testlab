@@ -5,6 +5,7 @@ from diagnostics import SourceValidationError
 from fixture_runtime import Fixture, FixtureError, compile_source, run_source
 from lexer import LexError
 from parser import ParseError
+from semantic import SemanticError
 
 
 _USER_FUNCTION = re.compile(
@@ -54,7 +55,7 @@ def execute_file(source_path, fixture_path=None, entry=None):
             entry=entry,
             source_name=source_path,
         )
-    except (ParseError, LexError) as exc:
+    except (ParseError, LexError, SemanticError) as exc:
         raise SourceValidationError(source_path, source, exc) from exc
 
 
@@ -66,6 +67,6 @@ def validate_file(source_path):
         source = source_file.read()
     try:
         program = compile_source(source)
-    except (ParseError, LexError) as exc:
+    except (ParseError, LexError, SemanticError) as exc:
         raise SourceValidationError(source_path, source, exc) from exc
     return len(program.functions)

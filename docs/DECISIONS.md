@@ -126,6 +126,14 @@
 - **Decisao:** Preservar uma linha vazia para cada diretiva removida e, quando o token inesperado for a quebra de linha, apontar a instrucao anterior. A CLI mostra tipo, mensagem, trecho, marcador, arquivo, linha e coluna, com ANSI vermelho apenas em terminais interativos.
 - **Consequencias:** Um erro em `Local nI :=` na linha 31 passa a ser informado como `arquivo.prw:31`, mesmo com diretivas no inicio do fonte. `NO_COLOR` e saidas sem TTY continuam produzindo texto puro.
 
+## ADR-016 — Validacao distingue identificador de literal Nil
+
+- **Data:** 22/09/2026
+- **Estado:** Aceita
+- **Contexto:** O parser aceita corretamente qualquer identificador, mas `-validate` encerrava apos a analise sintatica. Assim, `Local oStmt := Nilo` era aceito e somente poderia falhar se a execucao alcancasse essa linha.
+- **Decisao:** Executar uma analise semantica sobre a AST antes de `-validate` e `-run`. Leituras devem corresponder a parametro, declaracao local/estatica/privada/publica, variavel criada por atribuicao ou global simulada conhecida.
+- **Consequencias:** `Nilo` gera `SemanticError` antes de qualquer execucao, com arquivo, linha e coluna. `Nil` continua literal. Atribuicoes sem declaracao continuam podendo criar `PRIVATE` implicitamente, conforme a semantica ja adotada pelo LivrePL.
+
 - Teste de aceite da CLI: saida `000007`.
 - Cinco testes automatizados executados e aprovados.
 - Nove testes automatizados executados e aprovados apos incorporar os primeiros casos reais.
@@ -133,6 +141,7 @@
 - Dezesseis testes automatizados executados e aprovados com o executor de `TRNSOL02.prw`.
 - Trinta e tres testes automatizados executados e aprovados com o `TRNSOL02.prw` integral pelo interpretador.
 - Dois testes de regressao adicionados para coordenadas e cor do diagnostico; a suite passa a ter trinta e cinco casos.
+- Um teste semantico adicional eleva a suite para trinta e seis casos aprovados.
 - Regressao do LivrePL aprovada com `exemplos/ola.prw`, `exemplos/todas-etapas.prw` e `interpreter.py`.
 
 ---

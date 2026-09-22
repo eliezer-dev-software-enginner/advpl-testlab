@@ -15,16 +15,25 @@ class SourceValidationError(Exception):
         self.source_path = Path(source_path)
         self.original = original
         self.original_message = str(original)
+        self.diagnostic_label = getattr(original, "diagnostic_label", "SyntaxError")
+        explicit_line = getattr(original, "line", None)
+        explicit_column = getattr(original, "column", None)
         match = _LINE_NUMBER.search(self.original_message)
-        line = int(match.group(1)) if match else None
-        if line is not None and "TokenType.NEWLINE" in self.original_message:
+        line = explicit_line or (int(match.group(1)) if match else None)
+        if (
+            explicit_line is None
+            and line is not None
+            and "TokenType.NEWLINE" in self.original_message
+        ):
             line = max(1, line - 1)
         self.line = line
         source_lines = source.splitlines()
         self.source_line = (
             source_lines[line - 1] if line and line <= len(source_lines) else ""
         )
-        if "TokenType.NEWLINE" in self.original_message:
+        if explicit_column is not None:
+            self.column = explicit_column
+        elif "TokenType.NEWLINE" in self.original_message:
             self.column = len(self.source_line.rstrip()) + 1
         else:
             self.column = len(self.source_line) - len(self.source_line.lstrip()) + 1
@@ -41,7 +50,7 @@ def supports_color(stream):
 
 def format_diagnostic(error, color=False):
     if isinstance(error, SourceValidationError):
-        label = "SyntaxError"
+        label = error.diagnostic_label
         location = str(error.source_path)
         if error.line is not None:
             location += f":{error.line}:{error.column}"

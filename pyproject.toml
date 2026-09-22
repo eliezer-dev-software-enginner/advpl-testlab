@@ -12,4 +12,4 @@ requires-python = ">=3.10"
 advpl-testlab = "main:main"
 
 [tool.setuptools]
-py-modules = ["diagnostics", "executor", "fixture_runtime", "main"]
+py-modules = ["diagnostics", "executor", "fixture_runtime", "main", "semantic"]

@@ -16,6 +16,7 @@ O projeto e separado do `livrePL`. Ele usa o interpretador como dependencia loca
 - `parametros` e `tabelas` usam listas de objetos no formato canonico.
 - Cada tabela possui `campos` opcionais e `registros`.
 - CLI instalavel `advpl-testlab -run arquivo.prw` com descoberta automatica da primeira `User Function` e do fixture.
+- Validacao semantica rejeita leituras de variaveis nao declaradas antes da execucao.
 - Primeiro fonte real executado pelo parser e interpretador completos: `TRNSOL02.prw`, incluindo diálogo headless, statement, alias, browse e exportação virtual.
 
 ## Estrutura
@@ -23,6 +24,7 @@ O projeto e separado do `livrePL`. Ele usa o interpretador como dependencia loca
 ```text
 advpl-testlab/
 |-- fixture_runtime.py
+|-- semantic.py
 |-- executor.py
 |-- main.py
 |-- pyproject.toml
@@ -99,7 +101,7 @@ Para validar todas as funções do arquivo sem executar nenhuma delas:
 advpl-testlab -validate TRNSOL02.prw
 ```
 
-O comando falha com erro de lexer ou parser quando encontra sintaxe inválida ou sem suporte. O diagnóstico preserva a numeração do `.prw` original, inclusive quando existem diretivas `#include`, mostra a linha e aponta a coluna aproximada:
+O comando falha com erro de lexer, parser ou semântica quando encontra sintaxe inválida, construção sem suporte ou leitura de variável não declarada. O diagnóstico preserva a numeração do `.prw` original, inclusive quando existem diretivas `#include`, mostra a linha e aponta a coluna aproximada:
 
 ```text
 SyntaxError: Token inesperado TokenType.NEWLINE (None)
@@ -109,6 +111,8 @@ SyntaxError: Token inesperado TokenType.NEWLINE (None)
 ```
 
 Em um terminal interativo, o erro é exibido em vermelho e o processo termina com código `1`. Defina a variável de ambiente `NO_COLOR` para desativar cores. Saídas redirecionadas e ferramentas sem TTY recebem texto puro automaticamente.
+
+Por exemplo, `Local oStmt := Nilo` produz `SemanticError: Variável 'Nilo' não declarada`. `Nil` continua sendo reconhecido normalmente como o literal AdvPL. A atribuição direta a um nome ainda segue a semântica Clipper/AdvPL já adotada pelo LivrePL: `x := 1` pode criar uma variável `PRIVATE` implícita.
 
 Sem instalar, o mesmo fluxo pode ser executado dentro deste repositorio:
 
@@ -145,7 +149,7 @@ A pergunta `Continuar?` não é impressa; ela apenas seleciona o ramo `false` co
 python -m unittest discover -s tests -v
 ```
 
-A suíte inclui uma regressão que mantém um `.prw` propositalmente inválido em `tests/fixtures/invalid_assignment.prw` para conferir linha, trecho, marcador e cor do diagnóstico.
+A suíte inclui fontes `.prw` propositalmente inválidos em `tests/fixtures` para conferir sintaxe incompleta, identificador não declarado, linha, trecho, marcador e cor do diagnóstico.
 
 ## Formato do fixture
 
@@ -290,6 +294,7 @@ Estes recursos passam pelo parser e pelo interpretador, portanto sua lógica é 
 - `Define MSDialog ... TITLE ... FROM ...` como saída textual `[MSDIALOG]`;
 - linhas de controles `@ ...` e `Activate Dialog` como operações sem interface;
 - leitura e validação das coleções `parametros`, `tabelas`, `funcoes` e `consultas` do fixture;
+- validação semântica de identificadores contra parâmetros, declarações e globais simuladas;
 - `GetMV(cParam)` em modo estrito e `GetMV(cParam, lHelp, uDefault)` com valor padrão;
 - execução integral dos casos isolados `U_SolMailCfg()` e `TextoHtml()` usados nos testes.
 

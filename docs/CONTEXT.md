@@ -59,6 +59,7 @@ parser + FixtureInterpreter do LivrePL
 | Caminho | Responsabilidade |
 |---|---|
 | `fixture_runtime.py` | Carrega/valida fixtures, integra o LivrePL e registra builtins simulados |
+| `semantic.py` | Valida leituras de identificadores contra os simbolos declarados |
 | `executor.py` | Descobre entrada/fixture, valida e executa pelo interpretador |
 | `main.py` | CLI `advpl-testlab -run` e `-validate` |
 | `pyproject.toml` | Empacotamento e comando instalavel |
@@ -151,7 +152,8 @@ parser + FixtureInterpreter do LivrePL
 - Um `NEWLINE` inesperado apos expressao incompleta aponta a linha da instrucao, nao a linha vazia seguinte.
 - A CLI exibe trecho, marcador, caminho, linha e coluna; em terminal interativo, o erro aparece em vermelho.
 - `NO_COLOR` desativa ANSI e saidas sem TTY permanecem em texto puro.
-- Dois testes dedicados elevam a suite para trinta e cinco casos. Se o corpus externo `TRNSOL02.prw` estiver propositalmente invalido, os nove testes de integracao que dependem dele falham como esperado ate o fonte ser corrigido.
+- Tres testes dedicados cobrem sintaxe, coordenadas, cor e identificadores inexistentes; a suite possui trinta e seis casos. Se o corpus externo `TRNSOL02.prw` estiver propositalmente invalido, os nove testes de integracao que dependem dele falham como esperado ate o fonte ser corrigido.
+- `Local oStmt := Nilo` falha como `SemanticError`, enquanto `Nil` permanece um literal valido.
 
 ## Como executar
 

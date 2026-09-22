@@ -19,6 +19,7 @@
 - [x] Executar `fGerarExcel()` com arquivo virtual.
 - [x] Cobrir cancelamento, consulta vazia, browse e exportacao.
 - [x] Adicionar o comando `-validate`.
+- [x] Rejeitar leituras de identificadores nao declarados em `-validate` e `-run`.
 
 Status: `[x]` — concluido em 22/09/2026.
 
