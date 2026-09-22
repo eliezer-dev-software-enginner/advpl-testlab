@@ -15,6 +15,8 @@
 | `docs/PROMPT.md` | Objetivo mestre e roteiro de bootstrap |
 | `docs/fase-0-levantamento.md` | Levantamento e desenho inicial |
 | `docs/fase-1-getmv.md` | Implementacao e evidencia do `GetMV` |
+| `docs/fase-1b-casos-reais.md` | Casos reais `U_SolMailCfg` e `TextoHtml` |
+| `docs/corpus-desafio1-context-map.md` | Mapa dos fontes funcionais usados como corpus |
 
 ## O que e o projeto
 
@@ -54,8 +56,11 @@ FixtureInterpreter
 | `fixture_runtime.py` | Carrega/valida fixtures, integra o LivrePL e registra builtins simulados |
 | `main.py` | CLI para executar `.prw` com fixture e funcao de entrada |
 | `examples/getmv.prw` | Exemplo de codigo AdvPL real usando `GetMV` |
+| `examples/real-cases/sol_mail_cfg.prw` | Funcoes isoladas de `NOTIFSOL.prw` |
 | `fixtures/getmv.json` | Fixture de exemplo com parametros e tabelas |
+| `fixtures/sol_mail_cfg.json` | Parametros SMTP para o primeiro caso real |
 | `tests/test_getmv.py` | Testes unitarios e ponta a ponta da Fase 1 |
+| `tests/test_real_cases.py` | Testes extraidos do desafio1-solicitacao-compra |
 | `docs/` | Memoria permanente e documentos de fase |
 
 ## Formato atual do fixture
@@ -90,6 +95,15 @@ FixtureInterpreter
 - CLI e exemplo ponta a ponta.
 - Cinco testes automatizados aprovados.
 
+### Fase 1b — Casos reais do desafio1
+
+- `GetMV(cParam, lHelp, uDefault)` com fallback tipado.
+- `StrTran` e `Chr` registrados na camada do TestLab.
+- `U_SolMailCfg()` executado com configuracoes presentes e defaults ausentes.
+- `TextoHtml()` executado com escape HTML e quebra de linha.
+- Corpus real mapeado para orientar as fases seguintes.
+- Suite ampliada para nove testes automatizados.
+
 ## Como executar
 
 ```powershell
@@ -110,7 +124,7 @@ python -m unittest discover -s tests -v
 
 ## Estado atual
 
-- Fases 0 e 1 concluidas.
+- Fases 0, 1 e 1b concluidas.
 - Proxima entrega recomendada: Fase 2, com runtime basico de aliases e leitura do primeiro registro.
 - Nao ha dependencias Python externas.
 - O repositorio Git foi inicializado na branch `main`.

@@ -1,5 +1,7 @@
 # Fase 1 - GetMV lendo fixture JSON
 
+> Registro historico da primeira implementacao. A assinatura foi ampliada de forma compativel na Fase 1b; consulte `fase-1b-casos-reais.md` para o comportamento atual com `lHelp` e `uDefault`.
+
 ## Decisoes
 
 - Chaves de `parametros` sao normalizadas para maiusculas, seguindo o comportamento case-insensitive do AdvPL.

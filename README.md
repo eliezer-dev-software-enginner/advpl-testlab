@@ -8,8 +8,11 @@ O projeto e separado do `livrePL`. Ele usa o interpretador como dependencia loca
 
 - Fase 0: levantamento e arquitetura documentados.
 - Fase 1: `GetMV(cParam)` lendo `parametros` do fixture JSON.
+- Fase 1b: casos reais `U_SolMailCfg()` e `TextoHtml()` extraidos do desafio1.
 - Nomes de parametros sao case-insensitive.
 - Parametro ausente gera erro explicito.
+- `GetMV(cParam, lHelp, uDefault)` devolve o default quando a chave nao existe.
+- Builtins adicionais usados pelos casos reais: `StrTran` e `Chr`.
 - O formato de `tabelas` aceita a lista simples atual e reserva a possibilidade de um objeto com registros e metadados.
 
 ## Estrutura
@@ -19,8 +22,11 @@ advpl-testlab/
 |-- fixture_runtime.py
 |-- main.py
 |-- examples/getmv.prw
+|-- examples/real-cases/sol_mail_cfg.prw
 |-- fixtures/getmv.json
+|-- fixtures/sol_mail_cfg.json
 |-- tests/test_getmv.py
+|-- tests/test_real_cases.py
 `-- docs/
 ```
 
@@ -74,6 +80,8 @@ Na Fase 1, apenas `parametros` participa da execucao. `tabelas` ja e validado pa
 - `docs/DECISIONS.md`: decisoes de arquitetura.
 - `docs/PROMPT.md`: objetivo mestre e bootstrap de sessao.
 - `docs/fase-0-levantamento.md` e `docs/fase-1-getmv.md`: entregas tecnicas por fase.
+- `docs/fase-1b-casos-reais.md`: primeiros casos extraidos de fontes funcionais.
+- `docs/corpus-desafio1-context-map.md`: inventario e priorizacao do corpus real.
 
 ## Decisao de erro do GetMV
 

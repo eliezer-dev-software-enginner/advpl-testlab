@@ -21,6 +21,18 @@ Status: `[ ]`
 
 ## Concluido
 
+### Fase 1b — Casos reais do desafio1
+
+- [x] Mapear `TRNSOL01.prw`, `TRNSOL02.prw`, `ENVEMAIL.prw` e `NOTIFSOL.prw`.
+- [x] Isolar `U_SolMailCfg()` como primeiro caso real portavel.
+- [x] Estender `GetMV` para aceitar `lHelp` e `uDefault`.
+- [x] Preservar o erro de parametro ausente quando nao houver default.
+- [x] Isolar `TextoHtml()` como segundo caso real portavel.
+- [x] Implementar `StrTran` e `Chr` na camada do TestLab.
+- [x] Verificar o ciclo TDD e ampliar a suite para nove testes.
+
+Status: `[x]` — concluido em 21/09/2026.
+
 ### Fase 0 — Levantamento
 
 - [x] Mapear APIs prioritarias do framework Protheus.
@@ -52,6 +64,7 @@ Status: `[x]` — concluido em 21/09/2026.
 - [ ] Implementar `DbSkip`/`MoveNext`.
 - [ ] Implementar `Eof()` e `Bof()`.
 - [ ] Validar `DO WHILE` percorrendo tabela completa.
+- [ ] Usar `TabelaItensEmail()` de `NOTIFSOL.prw` como caso de aceite real.
 
 ### Fase 4 — Escrita simulada
 
@@ -73,6 +86,7 @@ Status: `[x]` — concluido em 21/09/2026.
 - [ ] Avaliar empacotamento ou configuracao explicita do caminho do LivrePL sem quebrar o uso atual por diretorios irmaos.
 - [ ] Adicionar CI quando houver repositorio remoto configurado.
 - [ ] Manter README, CONTEXT e DECISIONS sincronizados com cada fase.
+- [ ] Cobrir validacoes antecipadas de `U_EnviarEmailSolicitacao()` com `At` e `Left`, sem simular SMTP.
 
 ---
 

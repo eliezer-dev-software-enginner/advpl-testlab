@@ -3,6 +3,9 @@ import sys
 from pathlib import Path
 
 
+_MISSING = object()
+
+
 class FixtureError(ValueError):
     pass
 
@@ -76,9 +79,11 @@ class Fixture:
             normalized[str(alias).upper()] = table
         return normalized
 
-    def get_parameter(self, name):
+    def get_parameter(self, name, default=_MISSING):
         key = str(name).upper()
         if key not in self.parametros:
+            if default is not _MISSING:
+                return default
             raise AdvPLRuntimeError(
                 f"GetMV: parametro '{name}' nao encontrado no fixture"
             )
@@ -94,13 +99,29 @@ class FixtureInterpreter(Interpreter):
         builtins = super()._build_builtins()
 
         def b_getmv(args):
-            if len(args) != 1:
-                raise AdvPLRuntimeError("GetMV espera exatamente 1 argumento")
+            if not 1 <= len(args) <= 3:
+                raise AdvPLRuntimeError("GetMV espera de 1 a 3 argumentos")
             if not isinstance(args[0], str):
                 raise AdvPLRuntimeError("GetMV espera o nome do parametro como texto")
-            return self.fixture.get_parameter(args[0])
+            default = args[2] if len(args) == 3 else _MISSING
+            return self.fixture.get_parameter(args[0], default=default)
+
+        def b_strtran(args):
+            if len(args) != 3 or not all(isinstance(value, str) for value in args):
+                raise AdvPLRuntimeError("StrTran espera 3 argumentos de texto")
+            return args[0].replace(args[1], args[2])
+
+        def b_chr(args):
+            if len(args) != 1 or not isinstance(args[0], (int, float)):
+                raise AdvPLRuntimeError("Chr espera 1 argumento numerico")
+            try:
+                return chr(int(args[0]))
+            except ValueError as exc:
+                raise AdvPLRuntimeError("Chr recebeu um codigo invalido") from exc
 
         builtins["GETMV"] = b_getmv
+        builtins["STRTRAN"] = b_strtran
+        builtins["CHR"] = b_chr
         return builtins
 
 
