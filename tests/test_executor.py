@@ -10,7 +10,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from executor import discover_entry, execute_file
+from executor import discover_entry, execute_file, execute_source
+from fixture_runtime import Fixture, FixtureError
 
 
 TRNSOL02 = (
@@ -70,6 +71,39 @@ Return NIL
                 self.assertIsInstance(field["titulo"], str)
                 self.assertIsInstance(field["descricao"], str)
         self.assertEqual("Quantidade", z05_fields["Z05_QUANT"]["titulo"])
+        specificity = data["especificidadesPrw"][0]
+        self.assertEqual("TRNSOL02.prw", specificity["fonte"])
+        self.assertEqual("MSGYESNO", specificity["funcoes"][0]["nome"])
+        self.assertFalse(specificity["funcoes"][0]["retorno"])
+
+    @unittest.skipUnless(TRNSOL02.is_file(), "corpus TRNSOL02 nao disponivel")
+    def test_trnsol02_true_confirmation_reports_unsupported_export_branch(self):
+        source = TRNSOL02.read_text(encoding="utf-8", errors="replace")
+        fixture = Fixture.from_dict(
+            {
+                "funcoes": [{"FASKFILTROS": True}],
+                "consultas": [{"Z04CON": {"registros": []}}],
+                "especificidadesPrw": [
+                    {
+                        "fonte": "TRNSOL02.prw",
+                        "funcoes": [
+                            {
+                                "nome": "MSGYESNO",
+                                "conteudo": "'Gerar arquivo Excel com o resultado da consulta?', 'Consulta'",
+                                "retorno": True,
+                            }
+                        ],
+                    }
+                ],
+            }
+        )
+        with contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaisesRegex(FixtureError, "ramo de confirmacao"):
+                execute_source(
+                    source,
+                    fixture=fixture,
+                    source_name="TRNSOL02.prw",
+                )
 
 
 if __name__ == "__main__":

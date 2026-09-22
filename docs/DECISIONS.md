@@ -86,13 +86,30 @@
 - **Decisao:** Procurar `advpl-testlab.json` no diretorio do fonte e, em seguida, nos diretorios pais. `--fixture` continua disponivel para sobrescrita explicita.
 - **Consequencias:** Cada projeto AdvPL pode versionar sua propria simulacao. O fixture de `desafios-pedro-torres` contem Z04, Z05, Z06 e a consulta de aceite de `Z04CON`.
 
+## ADR-011 — Confirmacoes identificadas por fonte e conteudo
+
+- **Data:** 22/09/2026
+- **Estado:** Aceita
+- **Contexto:** `MsgYesNo` pode aparecer varias vezes no mesmo fonte e em fontes diferentes. Um unico retorno global nao identifica qual decisao esta sendo simulada e pode esconder cenarios incompletos.
+- **Decisao:** Configurar confirmacoes em `especificidadesPrw`, usando `fonte`, `nome`, `conteudo` e `retorno`. O conteudo corresponde aos argumentos ja avaliados e formatados como chamada AdvPL. `MsgYesNo` exige retorno logico e nao produz texto.
+- **Consequencias:** Cada decisao fica explicita e deterministica. Regras ausentes falham cedo. O retorno global anterior em `funcoes` permanece como fallback de compatibilidade.
+
+## ADR-012 — Interface Protheus representada como efeito textual
+
+- **Data:** 22/09/2026
+- **Estado:** Aceita
+- **Contexto:** Testes headless precisam observar mensagens e atravessar fontes com declaracoes de dialogo sem depender de SmartClient.
+- **Decisao:** Representar `Define MSDialog`, `MsgAlert` e `MsgInfo` por linhas no terminal. Controles `@` e `Activate Dialog` sao no-op. Nenhuma janela e criada e nenhuma acao de botao e executada.
+- **Consequencias:** Mensagens tornam-se verificaveis em testes. Fluxos que dependem de preenchimento ou clique em controles ainda precisam de simulacao propria.
+
 - Teste de aceite da CLI: saida `000007`.
 - Cinco testes automatizados executados e aprovados.
 - Nove testes automatizados executados e aprovados apos incorporar os primeiros casos reais.
 - Treze testes automatizados executados e aprovados apos migrar o schema JSON.
 - Dezesseis testes automatizados executados e aprovados com o executor de `TRNSOL02.prw`.
+- Vinte e sete testes automatizados executados e aprovados com UI headless e `MsgYesNo` por fonte/chamada/ocorrencia.
 - Regressao do LivrePL aprovada com `exemplos/ola.prw`, `exemplos/todas-etapas.prw` e `interpreter.py`.
 
 ---
 
-*Ultima atualizacao: 21/09/2026*
+*Ultima atualizacao: 22/09/2026*

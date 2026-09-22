@@ -13,6 +13,11 @@ _BROWSE_DESCRIPTION = re.compile(
 _BROWSE_COLUMN = re.compile(
     r"(?i):AddColumn\s*\(\s*(['\"])(.*?)\1\s*,\s*(['\"])(.*?)\3"
 )
+_MSGYESNO_LITERAL = re.compile(
+    r"(?is)\bMsgYesNo\s*\(\s*"
+    r"(?P<message>'(?:''|[^'])*'|\"(?:\"\"|[^\"])*\")\s*"
+    r"(?:,\s*(?P<title>'(?:''|[^'])*'|\"(?:\"\"|[^\"])*\")\s*)?\)"
+)
 
 
 def discover_entry(source):
@@ -68,7 +73,22 @@ def _print_browse(source, records):
         )
 
 
-def execute_source(source, fixture, entry=None):
+def _unquote_advpl(value):
+    quote = value[0]
+    return value[1:-1].replace(quote * 2, quote)
+
+
+def _literal_msgyesno_calls(source):
+    calls = []
+    for match in _MSGYESNO_LITERAL.finditer(source):
+        args = [_unquote_advpl(match.group("message"))]
+        if match.group("title") is not None:
+            args.append(_unquote_advpl(match.group("title")))
+        calls.append(args)
+    return calls
+
+
+def execute_source(source, fixture, entry=None, source_name="<memoria>"):
     entry = entry or discover_entry(source)
 
     # Adaptador headless para fontes Protheus que abrem consulta e FWBrowse.
@@ -81,11 +101,32 @@ def execute_source(source, fixture, entry=None):
             return None
         records = fixture.get_query_records(entry)
         _print_browse(source, records)
+        call_occurrences = {}
+        for call_args in _literal_msgyesno_calls(source):
+            call_key = tuple(call_args)
+            occurrence = call_occurrences.get(call_key, 0) + 1
+            call_occurrences[call_key] = occurrence
+            answer = fixture.get_prw_function_result(
+                source_name,
+                "MsgYesNo",
+                call_args,
+                occurrence=occurrence,
+            )
+            if answer:
+                raise FixtureError(
+                    "MsgYesNo retornou true, mas o ramo de confirmacao do "
+                    "adaptador FWBrowse ainda nao e executado"
+                )
         return None
 
     # Fontes que usam somente a linguagem coberta pelo LivrePL seguem pelo
     # interpretador completo já existente.
-    return run_source(source, fixture=fixture, entry=entry)
+    return run_source(
+        source,
+        fixture=fixture,
+        entry=entry,
+        source_name=source_name,
+    )
 
 
 def execute_file(source_path, fixture_path=None, entry=None):
@@ -96,4 +137,9 @@ def execute_file(source_path, fixture_path=None, entry=None):
     with source_path.open(encoding="utf-8", errors="replace") as source_file:
         source = source_file.read()
     fixture = Fixture.from_file(fixture_path)
-    return execute_source(source, fixture=fixture, entry=entry)
+    return execute_source(
+        source,
+        fixture=fixture,
+        entry=entry,
+        source_name=source_path,
+    )

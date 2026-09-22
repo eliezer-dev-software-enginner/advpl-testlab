@@ -17,6 +17,7 @@
 | `docs/fase-1-getmv.md` | Implementacao e evidencia do `GetMV` |
 | `docs/fase-1b-casos-reais.md` | Casos reais `U_SolMailCfg` e `TextoHtml` |
 | `docs/corpus-desafio1-context-map.md` | Mapa dos fontes funcionais usados como corpus |
+| `docs/fase-ui-headless.md` | Mensagens, dialogos sem UI e respostas deterministicas |
 
 ## O que e o projeto
 
@@ -56,6 +57,7 @@ executor (descoberta de entrada e fixture)
 | `main.py` | CLI `advpl-testlab -run` |
 | `pyproject.toml` | Empacotamento e comando instalavel |
 | `examples/getmv.prw` | Exemplo de codigo AdvPL real usando `GetMV` |
+| `examples/ui-headless.prw` | Exemplo executavel de dialogo e mensagens sem UI |
 | `examples/real-cases/sol_mail_cfg.prw` | Funcoes isoladas de `NOTIFSOL.prw` |
 | `fixtures/getmv.json` | Fixture de exemplo com parametros e tabelas |
 | `fixtures/sol_mail_cfg.json` | Parametros SMTP para o primeiro caso real |
@@ -86,6 +88,7 @@ executor (descoberta de entrada e fixture)
 - `tabelas`: lista em que cada objeto declara exatamente um alias; o valor do alias possui `registros` e pode receber metadados.
 - `funcoes`: respostas configuradas para chamadas externas em modo headless.
 - `consultas`: conjuntos de registros devolvidos por consultas simuladas, indexados pela funcao de entrada.
+- `especificidadesPrw`: respostas de funcoes identificadas por fonte, nome e conteudo da chamada.
 - Chaves de parametros e aliases sao normalizadas para maiusculas.
 - O formato legado baseado em objetos continua aceito apenas para compatibilidade de leitura.
 
@@ -122,6 +125,15 @@ executor (descoberta de entrada e fixture)
 - Fixture real no projeto `DGB/desafios-pedro-torres`, com metadados e registros de Z04, Z05 e Z06.
 - Dezesseis testes automatizados aprovados.
 
+### UI headless e confirmacoes deterministicas
+
+- `Define MSDialog` produz uma linha `[MSDIALOG]` com o titulo; controles `@` e `Activate Dialog` nao abrem interface.
+- `MsgAlert` e `MsgInfo` produzem texto no terminal e retornam `NIL`.
+- `MsgYesNo` nao produz texto e resolve `true` ou `false` por `fonte` + `nome` + `conteudo` em `especificidadesPrw`.
+- Ausencia de resposta deterministica para `MsgYesNo` gera erro explicito.
+- O retorno global legado em `funcoes` permanece aceito como fallback.
+- Suite ampliada para vinte e sete testes automatizados.
+
 ## Como executar
 
 ```powershell
@@ -157,4 +169,4 @@ python -m unittest discover -s tests -v
 
 ---
 
-*Ultima atualizacao: 21/09/2026*
+*Ultima atualizacao: 22/09/2026*

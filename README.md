@@ -27,8 +27,10 @@ advpl-testlab/
 |-- main.py
 |-- pyproject.toml
 |-- examples/getmv.prw
+|-- examples/ui-headless.prw
 |-- examples/real-cases/sol_mail_cfg.prw
 |-- fixtures/getmv.json
+|-- fixtures/ui-headless.json
 |-- fixtures/sol_mail_cfg.json
 |-- tests/test_getmv.py
 |-- tests/test_real_cases.py
@@ -103,6 +105,23 @@ Saida:
 000007
 ```
 
+Exemplo de diálogo e mensagens sem UI:
+
+```powershell
+advpl-testlab -run examples/ui-headless.prw --fixture fixtures/ui-headless.json
+```
+
+Saída:
+
+```text
+[MSDIALOG] Cadastro sem UI
+[ALERTA] Atencao: Falha simulada
+[INFO] Resultado: Operacao concluida
+[INFO] MsgYesNo: Resposta configurada: nao
+```
+
+A pergunta `Continuar?` não é impressa; ela apenas seleciona o ramo `false` configurado no fixture.
+
 ## Rodar os testes
 
 ```powershell
@@ -166,6 +185,37 @@ As coleções opcionais `funcoes` e `consultas` substituem integrações externa
 
 O nome da consulta deve coincidir, sem diferenciar maiúsculas e minúsculas, com a função de entrada.
 
+### Respostas de MsgYesNo por fonte e chamada
+
+Como cada `.prw` pode possuir várias confirmações, configure `MsgYesNo` em `especificidadesPrw`:
+
+```json
+{
+  "especificidadesPrw": [
+    {
+      "fonte": "TRNSOL02.prw",
+      "funcoes": [
+        {
+          "nome": "MSGYESNO",
+          "conteudo": "'Gerar arquivo Excel com o resultado da consulta?', 'Consulta'",
+          "retorno": false
+        }
+      ]
+    }
+  ]
+}
+```
+
+- `fonte` é comparado pelo nome do arquivo, sem diferenciar maiúsculas e minúsculas.
+- `conteudo` identifica os argumentos da chamada no formato AdvPL, separados por vírgula e espaço.
+- `retorno` de `MSGYESNO` deve ser `true` ou `false`.
+- Várias chamadas no mesmo fonte são declaradas como vários itens em `funcoes`, cada uma com seu `conteudo`.
+- Se duas chamadas tiverem exatamente o mesmo conteúdo e precisarem de respostas diferentes, adicione `"ocorrencia": 1`, `"ocorrencia": 2` e assim por diante. Sem `ocorrencia`, a regra é o padrão para todas as chamadas com aquele conteúdo.
+- Em argumentos calculados, `conteudo` deve representar o valor depois da avaliação. Exemplo: se o código monta `"Confirmar " + cCodigo + "?"`, configure o texto final esperado para aquele cenário.
+- `MsgYesNo` não imprime a pergunta; ele apenas devolve o valor configurado.
+- Sem regra específica, o carregador ainda aceita `{"MSGYESNO": false}` na coleção global `funcoes` por compatibilidade.
+- Sem regra específica nem retorno global, a execução falha com uma mensagem que informa fonte e conteúdo procurados.
+
 ## Testar um novo projeto
 
 1. Crie `advpl-testlab.json` na raiz do projeto AdvPL.
@@ -192,6 +242,10 @@ Estes recursos passam pelo parser e pelo interpretador, portanto sua lógica é 
 - classes, métodos e code blocks dentro do subconjunto implementado pelo LivrePL;
 - builtins básicos do LivrePL, como `Len`, `AllTrim`, `Upper`, `Lower`, `AAdd`, `Empty`, `ValType` e `cValToChar`;
 - builtins Protheus adicionados pelo TestLab: `GetMV`, `StrTran` e `Chr`;
+- `MsgAlert` e `MsgInfo` como saída textual `[ALERTA]` e `[INFO]`, sem janela;
+- `MsgYesNo` com retorno determinístico por fonte e conteúdo, sem saída textual;
+- `Define MSDialog ... TITLE ... FROM ...` como saída textual `[MSDIALOG]`;
+- linhas de controles `@ ...` e `Activate Dialog` como operações sem interface;
 - leitura e validação das coleções `parametros`, `tabelas`, `funcoes` e `consultas` do fixture;
 - `GetMV(cParam)` em modo estrito e `GetMV(cParam, lHelp, uDefault)` com valor padrão;
 - execução integral dos casos isolados `U_SolMailCfg()` e `TextoHtml()` usados nos testes.
@@ -206,6 +260,7 @@ O caso `TRNSOL02.prw` usa um adaptador headless especializado para o padrão `FW
 - os registros são obtidos de `consultas -> Z04CON -> registros` no fixture;
 - a grade do `FWBrowse` é representada como tabela no terminal;
 - respostas configuradas em `funcoes`, como `FASKFILTROS`, podem controlar o adaptador.
+- a resposta específica de `MsgYesNo` é consultada; `false` encerra o fluxo após o browse.
 
 Nesse caminho, o corpo completo de `Z04CON()` **não** é interpretado linha por linha. O teste confirma a integração entre fonte, função de entrada, fixture e saída headless, mas não valida integralmente a regra de negócio da rotina.
 
@@ -217,8 +272,10 @@ Nesse caminho, o corpo completo de `Z04CON()` **não** é interpretado linha por
 - aliases dinâmicos e expressões como `(cAlias)->Z04_CODIGO`;
 - navegação completa com `DbGoTop()`, `DbSkip()`, `Eof()` e `DbCloseArea()`;
 - objetos genéricos de `FWExecStatement` e `FWBrowse` com todos os métodos;
-- macros visuais `Define MSDialog`, `@ ... SAY`, `GET`, `BUTTON` e `ACTIVATE DIALOG`;
-- execução de `MsgAlert`, `MsgInfo` e `MsgYesNo` com semântica de interface Protheus;
+- comportamento interativo dos controles `SAY`, `GET` e `BUTTON`; atualmente essas linhas são ignoradas;
+- execução das ações associadas aos botões ou alteração das variáveis da tela;
+- semântica visual real de `Define MSDialog`, `MsgAlert` e `MsgInfo`; há somente representação textual;
+- no adaptador do `TRNSOL02`, o ramo selecionado quando `MsgYesNo` retorna `true`; a exportação gera erro explícito de recurso ainda não suportado;
 - geração do arquivo Excel por `FCreate`, `FWrite` e `FClose`;
 - pós-incremento, como `nCnt++`, nesse fluxo;
 - execução arbitrária de qualquer `.prw` ou de qualquer API Protheus.

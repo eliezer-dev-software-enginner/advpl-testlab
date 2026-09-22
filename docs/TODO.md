@@ -33,6 +33,19 @@ Status: `[ ]`
 
 ## Concluido
 
+### UI headless e MsgYesNo deterministico
+
+- [x] Adaptar `Define MSDialog` para saida textual sem SmartClient.
+- [x] Ignorar controles `@ ...` e `Activate Dialog` sem executar UI.
+- [x] Implementar `MsgAlert` e `MsgInfo` como texto no terminal.
+- [x] Implementar `MsgYesNo` sem saida textual.
+- [x] Resolver `MsgYesNo` por fonte e conteudo em `especificidadesPrw`.
+- [x] Preservar o retorno global legado em `funcoes`.
+- [x] Falhar quando nao houver resposta deterministica.
+- [x] Cobrir fontes e chamadas multiplas com testes automatizados.
+
+Status: `[x]` — concluido em 22/09/2026.
+
 ### Fase 1b — Casos reais do desafio1
 
 - [x] Mapear `TRNSOL01.prw`, `TRNSOL02.prw`, `ENVEMAIL.prw` e `NOTIFSOL.prw`.
@@ -93,7 +106,7 @@ Status: `[x]` — concluido em 21/09/2026.
 
 - [ ] Implementar `RecLock` e desbloqueio em memoria.
 - [ ] Implementar atribuicao de campo no registro corrente.
-- [ ] Definir `MsgAlert` e `ConOut` como captura de efeitos ou no-op configuravel.
+- [x] Definir `MsgAlert` como saida textual; `ConOut` continua pendente.
 - [ ] Garantir que o fixture de entrada no disco nao seja alterado involuntariamente.
 
 ### Fase 5 — Casos de teste declarativos
@@ -115,4 +128,4 @@ Status: `[x]` — concluido em 21/09/2026.
 
 ---
 
-*Ultima atualizacao: 21/09/2026*
+*Ultima atualizacao: 22/09/2026*

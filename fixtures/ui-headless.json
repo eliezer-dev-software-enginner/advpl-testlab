@@ -1,0 +1,18 @@
+{
+  "parametros": [],
+  "tabelas": [],
+  "funcoes": [],
+  "consultas": [],
+  "especificidadesPrw": [
+    {
+      "fonte": "ui-headless.prw",
+      "funcoes": [
+        {
+          "nome": "MSGYESNO",
+          "conteudo": "'Continuar?', 'Teste'",
+          "retorno": false
+        }
+      ]
+    }
+  ]
+}
