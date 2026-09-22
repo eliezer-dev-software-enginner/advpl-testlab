@@ -1,16 +1,28 @@
 {
-  "parametros": {
-    "MV_ADMIN": "000007",
-    "MV_MVCSA1": ".T."
-  },
-  "tabelas": {
-    "SB1": [
-      {
-        "B1_COD": "000001",
-        "B1_DESC": "Produto Teste",
-        "B1_PRECO": 10.5
+  "parametros": [
+    {
+      "MV_ADMIN": "000007"
+    },
+    {
+      "MV_MVCSA1": ".T."
+    }
+  ],
+  "tabelas": [
+    {
+      "SB1": {
+        "registros": [
+          {
+            "B1_COD": "000001",
+            "B1_DESC": "Produto Teste",
+            "B1_PRECO": 10.5
+          }
+        ]
       }
-    ],
-    "SA1": []
-  }
+    },
+    {
+      "SA1": {
+        "registros": []
+      }
+    }
+  ]
 }

@@ -36,12 +36,10 @@ protheus/
 arquivo .prw
     |
     v
-preprocessador + parser do LivrePL
+executor (descoberta de entrada e fixture)
     |
-    v
-FixtureInterpreter
-    |-- builtins da linguagem herdados do LivrePL
-    `-- builtins Protheus simulados pelo TestLab
+    |-- linguagem coberta -> parser + FixtureInterpreter do LivrePL
+    `-- integracoes Protheus -> adaptador headless
              |
              v
           Fixture JSON
@@ -54,7 +52,9 @@ FixtureInterpreter
 | Caminho | Responsabilidade |
 |---|---|
 | `fixture_runtime.py` | Carrega/valida fixtures, integra o LivrePL e registra builtins simulados |
-| `main.py` | CLI para executar `.prw` com fixture e funcao de entrada |
+| `executor.py` | Descobre entrada/fixture e executa via LivrePL ou adaptador headless |
+| `main.py` | CLI `advpl-testlab -run` |
+| `pyproject.toml` | Empacotamento e comando instalavel |
 | `examples/getmv.prw` | Exemplo de codigo AdvPL real usando `GetMV` |
 | `examples/real-cases/sol_mail_cfg.prw` | Funcoes isoladas de `NOTIFSOL.prw` |
 | `fixtures/getmv.json` | Fixture de exemplo com parametros e tabelas |
@@ -67,18 +67,27 @@ FixtureInterpreter
 
 ```json
 {
-  "parametros": {
-    "MV_ADMIN": "000007"
-  },
-  "tabelas": {
-    "SB1": []
-  }
+  "parametros": [
+    {
+      "MV_ADMIN": "000007"
+    }
+  ],
+  "tabelas": [
+    {
+      "SB1": {
+        "registros": []
+      }
+    }
+  ]
 }
 ```
 
-- `parametros`: objeto chave/valor consultado por `GetMV`.
-- `tabelas`: alias para lista de registros; tambem aceita objeto reservado para futura inclusao de `registros` e `metadados`.
+- `parametros`: lista em que cada objeto declara exatamente um parametro consultado por `GetMV`.
+- `tabelas`: lista em que cada objeto declara exatamente um alias; o valor do alias possui `registros` e pode receber metadados.
+- `funcoes`: respostas configuradas para chamadas externas em modo headless.
+- `consultas`: conjuntos de registros devolvidos por consultas simuladas, indexados pela funcao de entrada.
 - Chaves de parametros e aliases sao normalizadas para maiusculas.
+- O formato legado baseado em objetos continua aceito apenas para compatibilidade de leitura.
 
 ## Funcionalidade entregue
 
@@ -102,12 +111,21 @@ FixtureInterpreter
 - `U_SolMailCfg()` executado com configuracoes presentes e defaults ausentes.
 - `TextoHtml()` executado com escape HTML e quebra de linha.
 - Corpus real mapeado para orientar as fases seguintes.
-- Suite ampliada para nove testes automatizados.
+- Suite ampliada para treze testes automatizados apos a migracao do schema JSON.
+
+### Executor de `.prw` e TRNSOL02
+
+- CLI instalavel com `advpl-testlab -run arquivo.prw`.
+- Descoberta automatica da primeira `User Function` e de `advpl-testlab.json` nos diretorios pais.
+- Caminho nativo pelo LivrePL para a linguagem ja suportada.
+- Adaptador headless inicial para `FWExecStatement` e `FWBrowse`.
+- Fixture real no projeto `DGB/desafios-pedro-torres`, com metadados e registros de Z04, Z05 e Z06.
+- Dezesseis testes automatizados aprovados.
 
 ## Como executar
 
 ```powershell
-python main.py examples/getmv.prw fixtures/getmv.json ex
+python main.py -run examples/getmv.prw --fixture fixtures/getmv.json --entry ex
 ```
 
 Saida esperada e verificada:
@@ -125,7 +143,7 @@ python -m unittest discover -s tests -v
 ## Estado atual
 
 - Fases 0, 1 e 1b concluidas.
-- Proxima entrega recomendada: Fase 2, com runtime basico de aliases e leitura do primeiro registro.
+- O `TRNSOL02.prw` ja executa em modo headless; a proxima entrega e substituir gradualmente o adaptador por runtime generico de aliases e objetos Protheus.
 - Nao ha dependencias Python externas.
 - O repositorio Git foi inicializado na branch `main`.
 

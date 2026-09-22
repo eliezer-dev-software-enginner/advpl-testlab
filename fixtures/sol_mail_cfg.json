@@ -1,10 +1,20 @@
 {
-  "parametros": {
-    "MV_RELACNT": " conta.smtp ",
-    "MV_RELSERV": " smtp.exemplo.local:587 ",
-    "MV_RELPSW": "senha-teste",
-    "MV_PORSMTP": 587,
-    "MV_RELAUTH": true
-  },
-  "tabelas": {}
+  "parametros": [
+    {
+      "MV_RELACNT": " conta.smtp "
+    },
+    {
+      "MV_RELSERV": " smtp.exemplo.local:587 "
+    },
+    {
+      "MV_RELPSW": "senha-teste"
+    },
+    {
+      "MV_PORSMTP": 587
+    },
+    {
+      "MV_RELAUTH": true
+    }
+  ],
+  "tabelas": []
 }

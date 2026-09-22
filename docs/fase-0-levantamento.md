@@ -40,22 +40,32 @@ Nao foi necessario mudar a assinatura do `Interpreter` original. Isso reduz risc
 
 ## Formato evolutivo das tabelas
 
-O formato simples continua valido:
+O formato canonico usa uma lista de tabelas, um alias por item:
 
 ```json
-"SB1": []
+"tabelas": [
+  {
+    "SB1": {
+      "registros": []
+    }
+  }
+]
 ```
 
-O carregador tambem aceita um objeto para uma evolucao futura sem quebrar fixtures existentes:
+O objeto de cada alias pode receber metadados no futuro sem deslocar a lista de registros:
 
 ```json
-"SB1": {
-  "registros": [],
-  "metadados": {}
-}
+"tabelas": [
+  {
+    "SB1": {
+      "registros": [],
+      "metadados": {}
+    }
+  }
+]
 ```
 
-A semantica desse objeto sera definida quando a Fase 2 implementar aliases. Nesta fase ele e apenas preservado e validado como estrutura JSON.
+A semantica dos metadados sera definida quando a Fase 2 implementar aliases. O carregador preserva a leitura do formato antigo para nao quebrar fixtures existentes.
 
 ## Fora do escopo desta fase
 

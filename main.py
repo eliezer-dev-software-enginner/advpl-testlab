@@ -1,24 +1,28 @@
+import argparse
 import sys
 
-from fixture_runtime import FixtureError, run_file
+from executor import execute_file
+from fixture_runtime import FixtureError
 from interpreter import AdvPLRuntimeError
 from lexer import LexError
 from parser import ParseError
 
 
 def main(argv=None):
-    args = argv if argv is not None else sys.argv[1:]
-    if len(args) < 2:
-        print("Uso: python main.py arquivo.prw fixture.json [FuncaoDeEntrada]")
-        print("Ex.: python main.py examples/getmv.prw fixtures/getmv.json ex")
+    parser = argparse.ArgumentParser(
+        prog="advpl-testlab",
+        description="Executa fontes AdvPL com fixtures JSON, sem Protheus.",
+    )
+    parser.add_argument("-run", "--run", dest="source", metavar="ARQUIVO.PRW")
+    parser.add_argument("--fixture", help="fixture JSON (padrao: advpl-testlab.json)")
+    parser.add_argument("--entry", help="User Function de entrada")
+    args = parser.parse_args(argv)
+    if not args.source:
+        parser.print_help()
         return 2
 
-    source_path = args[0]
-    fixture_path = args[1]
-    entry = args[2] if len(args) > 2 else "MAIN"
-
     try:
-        run_file(source_path, fixture_path, entry=entry)
+        execute_file(args.source, fixture_path=args.fixture, entry=args.entry)
     except (FixtureError, ParseError, LexError, AdvPLRuntimeError, OSError) as exc:
         print(f"[ERRO] {exc}", file=sys.stderr)
         return 1

@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "advpl-testlab"
+version = "0.1.0"
+description = "Executor headless de fontes AdvPL com fixtures JSON"
+requires-python = ">=3.10"
+
+[project.scripts]
+advpl-testlab = "main:main"
+
+[tool.setuptools]
+py-modules = ["executor", "fixture_runtime", "main"]

@@ -31,7 +31,7 @@
 ## ADR-004 — Formato evolutivo de tabelas no fixture
 
 - **Data:** 21/09/2026
-- **Estado:** Aceita
+- **Estado:** Substituida pela ADR-008
 - **Contexto:** A forma inicial usa uma lista de registros, mas fases futuras podem precisar de metadados de campos, indices e ordem.
 - **Decisao:** Aceitar tanto lista simples quanto objeto JSON por alias, preservando o formato inicial.
 - **Consequencias:** Fixtures atuais nao precisam ser migrados. A semantica do objeto com metadados sera definida na Fase 2.
@@ -60,11 +60,37 @@
 - **Decisao:** Aceitar de um a tres argumentos. O terceiro argumento e retornado apenas quando o parametro nao existe; sem terceiro argumento, a ausencia continua gerando `AdvPLRuntimeError`. `lHelp` e aceito sem efeito de interface.
 - **Consequencias:** Fixtures incompletos continuam falhando no modo estrito e fontes reais podem declarar defaults de texto, numero, logico ou valor calculado.
 
+## ADR-008 — Colecoes JSON como listas de objetos nomeados
+
+- **Data:** 21/09/2026
+- **Estado:** Aceita
+- **Contexto:** O formato inicial representava `parametros` e `tabelas` como objetos. Foi definido que ambas as colecoes devem ser listas e que cada tabela deve possuir um objeto proprio para registros e futuros metadados.
+- **Decisao:** Novos fixtures usam `parametros: [{"NOME": valor}]` e `tabelas: [{"ALIAS": {"registros": []}}]`. Cada item declara exatamente um nome; duplicidades case-insensitive sao rejeitadas.
+- **Consequencias:** A ordem declarada fica explicita e o objeto da tabela pode evoluir sem mudar a colecao. O carregador normaliza internamente para dicionarios e continua aceitando o formato antigo apenas para compatibilidade.
+
 ## Evidencias da entrega inicial
+
+## ADR-009 — Executor hibrido para fontes reais
+
+- **Data:** 21/09/2026
+- **Estado:** Aceita
+- **Contexto:** `TRNSOL02.prw` combina linguagem AdvPL, SQL via `FWExecStatement`, alias dinamico e interface `FWBrowse`, recursos ainda nao compreendidos integralmente pelo LivrePL.
+- **Decisao:** A CLI descobre a primeira `User Function` e usa o LivrePL para fontes dentro da cobertura atual. Quando encontra o padrao de consulta com `FWExecStatement` e `FWBrowse`, usa um adaptador headless guiado pelo proprio fonte e por `consultas` do fixture.
+- **Consequencias:** O fonte original executa sem alteracao e sem Protheus. O adaptador nao representa ainda semantica arbitraria de todas as APIs; sua cobertura sera substituida incrementalmente por objetos, aliases e builtins genericos.
+
+## ADR-010 — Fixture localizado junto ao projeto alvo
+
+- **Data:** 21/09/2026
+- **Estado:** Aceita
+- **Contexto:** O comando deve funcionar no diretorio do `.prw`, sem exigir caminhos relativos ao repositorio do TestLab.
+- **Decisao:** Procurar `advpl-testlab.json` no diretorio do fonte e, em seguida, nos diretorios pais. `--fixture` continua disponivel para sobrescrita explicita.
+- **Consequencias:** Cada projeto AdvPL pode versionar sua propria simulacao. O fixture de `desafios-pedro-torres` contem Z04, Z05, Z06 e a consulta de aceite de `Z04CON`.
 
 - Teste de aceite da CLI: saida `000007`.
 - Cinco testes automatizados executados e aprovados.
 - Nove testes automatizados executados e aprovados apos incorporar os primeiros casos reais.
+- Treze testes automatizados executados e aprovados apos migrar o schema JSON.
+- Dezesseis testes automatizados executados e aprovados com o executor de `TRNSOL02.prw`.
 - Regressao do LivrePL aprovada com `exemplos/ola.prw`, `exemplos/todas-etapas.prw` e `interpreter.py`.
 
 ---

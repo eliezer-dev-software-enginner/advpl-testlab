@@ -32,7 +32,9 @@ class RealUseCaseTests(unittest.TestCase):
         )
 
     def test_getmv_uses_default_only_when_parameter_is_missing(self):
-        fixture = Fixture.from_dict({"parametros": {"MV_EXISTE": "configurado"}})
+        fixture = Fixture.from_dict(
+            {"parametros": [{"MV_EXISTE": "configurado"}]}
+        )
         result = run_source(
             """
 Function Main()

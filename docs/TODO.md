@@ -7,6 +7,18 @@
 
 ## Foco atual
 
+### Executor de `.prw` — primeiro caso completo
+
+- [x] Criar a CLI `advpl-testlab -run arquivo.prw`.
+- [x] Descobrir automaticamente a primeira `User Function`.
+- [x] Descobrir `advpl-testlab.json` no projeto alvo.
+- [x] Criar fixture de Z04, Z05 e Z06 em `desafios-pedro-torres`.
+- [x] Executar `TRNSOL02.prw` sem alterar o fonte.
+- [x] Simular `FWExecStatement` e renderizar `FWBrowse` no terminal.
+- [x] Cobrir o fluxo com testes automatizados.
+
+Status: `[x]` — primeiro corte concluido em 21/09/2026.
+
 ### Fase 2 — Leitura basica de tabela
 
 - [ ] Definir o objeto de runtime de alias e registro corrente.
@@ -30,6 +42,17 @@ Status: `[ ]`
 - [x] Isolar `TextoHtml()` como segundo caso real portavel.
 - [x] Implementar `StrTran` e `Chr` na camada do TestLab.
 - [x] Verificar o ciclo TDD e ampliar a suite para nove testes.
+
+Status: `[x]` — concluido em 21/09/2026.
+
+### Schema JSON canonico
+
+- [x] Migrar `parametros` de objeto para lista de objetos com uma chave.
+- [x] Migrar `tabelas` de objeto para lista de aliases.
+- [x] Representar cada alias como objeto com `registros`.
+- [x] Rejeitar parametros e aliases duplicados sem diferenciar maiusculas/minusculas.
+- [x] Preservar leitura do formato legado.
+- [x] Atualizar fixtures, testes e documentacao.
 
 Status: `[x]` — concluido em 21/09/2026.
 
@@ -84,6 +107,8 @@ Status: `[x]` — concluido em 21/09/2026.
 ## Pendencias tecnicas continuas
 
 - [ ] Avaliar empacotamento ou configuracao explicita do caminho do LivrePL sem quebrar o uso atual por diretorios irmaos.
+- [ ] Generalizar objetos `FWExecStatement`/`FWBrowse` no runtime, removendo a deteccao especializada quando houver cobertura equivalente.
+- [ ] Aplicar filtros da consulta simulada sobre Z04/Z05 em vez de usar resultados precomputados.
 - [ ] Adicionar CI quando houver repositorio remoto configurado.
 - [ ] Manter README, CONTEXT e DECISIONS sincronizados com cada fase.
 - [ ] Cobrir validacoes antecipadas de `U_EnviarEmailSolicitacao()` com `At` e `Left`, sem simular SMTP.

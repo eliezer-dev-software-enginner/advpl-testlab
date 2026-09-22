@@ -31,7 +31,9 @@ class GetMVTests(unittest.TestCase):
         self.assertEqual("000007\n", output.getvalue())
 
     def test_parameter_name_is_case_insensitive(self):
-        fixture = Fixture.from_dict({"parametros": {"mv_admin": "000007"}})
+        fixture = Fixture.from_dict(
+            {"parametros": [{"mv_admin": "000007"}]}
+        )
         result = run_source(
             'Function Main()\nReturn GetMV("MV_ADMIN")',
             fixture=fixture,
@@ -48,21 +50,65 @@ class GetMVTests(unittest.TestCase):
                 fixture=Fixture(),
             )
 
-    def test_fixture_rejects_invalid_parameters_shape(self):
-        with self.assertRaisesRegex(FixtureError, "'parametros' deve ser um objeto"):
-            Fixture.from_dict({"parametros": []})
-
-    def test_table_can_be_list_or_future_metadata_object(self):
+    def test_parameters_use_canonical_list_format(self):
         fixture = Fixture.from_dict(
             {
-                "tabelas": {
-                    "SB1": [],
-                    "SA1": {"registros": [], "metadados": {}},
-                }
+                "parametros": [
+                    {"MV_ADMIN": "000007"},
+                    {"MV_ATIVO": True},
+                ]
             }
         )
-        self.assertEqual([], fixture.tabelas["SB1"])
+        self.assertEqual("000007", fixture.parametros["MV_ADMIN"])
+        self.assertIs(True, fixture.parametros["MV_ATIVO"])
+
+    def test_tables_use_canonical_list_with_alias_objects(self):
+        fixture = Fixture.from_dict(
+            {
+                "tabelas": [
+                    {
+                        "SB1": {
+                            "registros": [
+                                {"B1_COD": "000001", "B1_DESC": "Produto"}
+                            ]
+                        }
+                    },
+                    {"SA1": {"registros": [], "metadados": {}}},
+                ]
+            }
+        )
+        self.assertEqual("000001", fixture.tabelas["SB1"]["registros"][0]["B1_COD"])
         self.assertEqual([], fixture.tabelas["SA1"]["registros"])
+
+    def test_fixture_rejects_invalid_parameter_list_entry(self):
+        with self.assertRaisesRegex(
+            FixtureError,
+            "Cada item de 'parametros' deve conter exatamente um parametro",
+        ):
+            Fixture.from_dict({"parametros": [{"MV_A": 1, "MV_B": 2}]})
+
+    def test_fixture_rejects_duplicate_parameter(self):
+        with self.assertRaisesRegex(FixtureError, "Parametro duplicado: 'MV_ADMIN'"):
+            Fixture.from_dict(
+                {"parametros": [{"MV_ADMIN": "1"}, {"mv_admin": "2"}]}
+            )
+
+    def test_fixture_rejects_table_without_records_list(self):
+        with self.assertRaisesRegex(
+            FixtureError,
+            "Tabela 'SB1' deve possuir 'registros' como lista",
+        ):
+            Fixture.from_dict({"tabelas": [{"SB1": {"registros": {}}}]})
+
+    def test_legacy_object_format_remains_compatible(self):
+        fixture = Fixture.from_dict(
+            {
+                "parametros": {"MV_ADMIN": "000007"},
+                "tabelas": {"SB1": []},
+            }
+        )
+        self.assertEqual("000007", fixture.parametros["MV_ADMIN"])
+        self.assertEqual([], fixture.tabelas["SB1"])
 
 
 if __name__ == "__main__":

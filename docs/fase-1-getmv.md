@@ -183,12 +183,18 @@ Fixture:
 
 ```json
 {
-  "parametros": {
-    "MV_ADMIN": "000007"
-  },
-  "tabelas": {
-    "SB1": []
-  }
+  "parametros": [
+    {
+      "MV_ADMIN": "000007"
+    }
+  ],
+  "tabelas": [
+    {
+      "SB1": {
+        "registros": []
+      }
+    }
+  ]
 }
 ```
 

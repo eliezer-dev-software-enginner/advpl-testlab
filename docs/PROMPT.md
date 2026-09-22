@@ -47,12 +47,18 @@ Fixture:
 
 ```json
 {
-  "parametros": {
-    "MV_ADMIN": "000007"
-  },
-  "tabelas": {
-    "SB1": []
-  }
+  "parametros": [
+    {
+      "MV_ADMIN": "000007"
+    }
+  ],
+  "tabelas": [
+    {
+      "SB1": {
+        "registros": []
+      }
+    }
+  ]
 }
 ```
 
@@ -70,6 +76,8 @@ Saida esperada:
 4. Fase 3: implementar busca, navegacao, `Eof()` e `Bof()`.
 5. Fase 4: simular escrita e efeitos como `RecLock`, `MsgAlert` e `ConOut`.
 6. Fase 5: definir casos declarativos com entrada e resultado esperado.
+
+O primeiro corte do objetivo final ja permite executar `TRNSOL02.prw` com `advpl-testlab -run`, usando adaptador headless para as integracoes ainda externas ao LivrePL.
 
 ## Regras permanentes
 
