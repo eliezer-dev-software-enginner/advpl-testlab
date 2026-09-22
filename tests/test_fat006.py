@@ -1,3 +1,4 @@
+import json
 import unittest
 from pathlib import Path
 
@@ -10,6 +11,20 @@ FAT006 = Path(__file__).resolve().parents[2] / "desafios-aprendizado" / "desafio
 
 @unittest.skipUnless(FAT006.is_dir(), "corpus FAT006 nao disponivel")
 class Fat006Tests(unittest.TestCase):
+    def test_project_fixtures_declare_all_sections(self):
+        required = {
+            "parametros", "tabelas", "funcoes", "consultas",
+            "especificidadesPrw", "ambiente", "dialogos",
+        }
+        fixtures = [
+            FAT006 / "advpl-testlab.json",
+            FAT006.parent / "desafio1-solicitacao-compra" / "advpl-testlab.json",
+        ]
+        for path in fixtures:
+            with self.subTest(path=path):
+                data = json.loads(path.read_text(encoding="utf-8"))
+                self.assertTrue(required <= data.keys(), required - data.keys())
+
     def interpreter(self, filename, entry, fixture=None):
         source = FAT006 / filename
         return build_interpreter_sources(

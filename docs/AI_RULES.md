@@ -34,6 +34,7 @@ Depois da leitura, informar em poucas linhas o estado atual e a proxima acao.
 - Fixtures simples existentes nao podem deixar de funcionar quando o formato evoluir.
 - Ausencia de dado obrigatorio deve produzir erro claro, evitando falso positivo em testes.
 - A simulacao nao persiste alteracoes no fixture original, salvo decisao futura registrada em ADR.
+- Ao criar ou editar um fixture versionado de um projeto AdvPL, nao omitir nenhuma secao de primeiro nivel: `parametros`, `tabelas`, `funcoes`, `ambiente`, `dialogos`, `especificidadesPrw` e `consultas`. Usar `[]` para secoes vazias. A leitura de fixtures minimos legados permanece aceita para compatibilidade.
 
 ## 4. Padroes de codigo
 

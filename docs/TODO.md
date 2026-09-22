@@ -12,6 +12,7 @@
 - [x] Validar os quatro fontes reais na ordem das dependencias.
 - [x] Executar consolidacao, preview, montagem da NF-e e gravacao simulada na SC5.
 - [x] Cobrir nota de entrada e falha de bloqueio sem persistencia.
+- [x] Garantir em teste que fixtures versionados dos desafios declarem todas as sete secoes, mesmo vazias.
 - [ ] Integrar ou comparar resultados com AppServer/DBAccess/emissor NF-e reais.
 
 ### TRNSOL01 headless

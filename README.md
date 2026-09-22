@@ -304,6 +304,7 @@ No `TRNSOL02`, `LRET: true` representa o botão Consultar e `false` representa C
 ## Testar um novo projeto
 
 1. Crie `advpl-testlab.json` na pasta dos fontes do caso de teste. Para projetos com varios desafios, use um fixture por pasta; a CLI prefere o JSON mais proximo do `.prw`.
+   Nos fixtures versionados, mantenha sempre `parametros`, `tabelas`, `funcoes`, `ambiente`, `dialogos`, `especificidadesPrw` e `consultas`, usando `[]` para secoes vazias.
 2. Cadastre parâmetros, tabelas, funções externas e consultas usadas pelo fonte.
 3. Abra um terminal no diretório do `.prw`.
 4. Execute `advpl-testlab -run NomeDoFonte.prw`.
