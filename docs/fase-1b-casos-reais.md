@@ -5,7 +5,7 @@
 Os casos desta entrega foram extraidos de:
 
 ```text
-DGB/desafios-pedro-torres/desafio1-solicitacao-compra/NOTIFSOL.prw
+desafios-aprendizado/desafio1-solicitacao-compra/NOTIFSOL.prw
 ```
 
 O fonte e funcional no Protheus e passa a servir como referencia concreta para a evolucao do TestLab.

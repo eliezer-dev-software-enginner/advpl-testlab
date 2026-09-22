@@ -87,13 +87,27 @@ Depois, a partir do diretorio de qualquer fonte:
 advpl-testlab -run TRNSOL02.prw
 ```
 
-O executor procura `advpl-testlab.json` no diretorio do `.prw` e nos diretorios pais. Tambem e possivel usar `--fixture caminho.json` e `--entry NomeDaFuncao`.
+O executor procura `advpl-testlab.json` no diretorio do `.prw` e nos diretorios pais. Tambem e possivel usar `--fixture caminho.json`, `--entry NomeDaFuncao` e `--args-json '[...]'`.
 
 ```text
 -run ARQUIVO.PRW       fonte AdvPL alvo da execução ou simulação
 --fixture ARQUIVO.JSON fixture específico; opcional com advpl-testlab.json
 --entry FUNCAO         entrada; opcional, usa a primeira User Function
+--args-json ARRAY       argumentos da entrada como array JSON
 ```
+
+### Dependencias locais com `usePrw`
+
+Um fonte pode declarar dependencias locais pela convencao:
+
+```advpl
+//usePrw('ENVEMAIL.prw')
+//usePrw('NOTIFSOL.prw')
+```
+
+Cada declaracao deve ocupar sua propria linha. O caminho e relativo ao arquivo que contem o comentario, deve terminar em `.prw` e permanecer dentro do diretorio do fonte principal. O TestLab carrega as dependencias recursivamente, evita duplicacao/ciclos e gera erro claro quando o arquivo nao existe.
+
+As funcoes dos arquivos carregados participam da validacao semantica e da execucao. Uma `User Function EnviarEmailSolicitacao()` pode ser chamada por outro fonte como `U_EnviarEmailSolicitacao()`, conforme a convencao do AdvPL. O comentario continua inofensivo para o compilador Protheus e tambem serve como mapa direto para pessoas e agentes localizarem o codigo relacionado.
 
 Para validar todas as funções do arquivo sem executar nenhuma delas:
 
@@ -120,6 +134,12 @@ Sem instalar, o mesmo fluxo pode ser executado dentro deste repositorio:
 
 ```powershell
 python main.py -run examples/getmv.prw --fixture fixtures/getmv.json --entry ex
+```
+
+Funcoes de entrada com parametros podem ser chamadas assim:
+
+```powershell
+advpl-testlab -run NOTIFSOL.prw --entry NotificarSolicitacao --args-json '["ENVIO"]'
 ```
 
 Saida:
@@ -153,6 +173,25 @@ python -m unittest discover -s tests -v
 
 A suíte inclui fontes `.prw` propositalmente inválidos em `tests/fixtures` para conferir sintaxe incompleta, identificador não declarado, linha, trecho, marcador e cor do diagnóstico.
 
+### Simulacao headless de e-mail
+
+O `ENVEMAIL.prw` real e validado e executado pela suite. `TMailManager` e `TMailMessage` sao objetos somente em memoria: nenhuma conexao SMTP e aberta e `Send()` nunca envia uma mensagem real. Um envio aceito e armazenado em `FixtureInterpreter.sent_emails` sem senha, permitindo conferir remetente, destinatario, assunto, tipo e corpo.
+
+Os retornos usam valores numericos em `ambiente`; quando ausentes, o padrao e sucesso (`0`):
+
+```json
+"ambiente": [
+  {"MAIL_INIT_RESULT": 0},
+  {"MAIL_TIMEOUT_RESULT": 0},
+  {"MAIL_CONNECT_RESULT": 0},
+  {"MAIL_AUTH_RESULT": 0},
+  {"MAIL_SEND_RESULT": 0},
+  {"MAIL_ERROR_MESSAGE": "Falha SMTP simulada"}
+]
+```
+
+Para exercitar o tratamento de erro de `Send()`, configure `MAIL_SEND_RESULT` com valor diferente de zero. `MAIL_ERROR_MESSAGE` sera devolvida por `GetErrorString()`. Tambem possuem suporte headless as funcoes `At`, `Left`, `EncodeUTF8` e `FreeObj`; `EncodeUTF8` preserva a string Python porque nao ha transporte de bytes real.
+
 ## Formato do fixture
 
 ```json
@@ -169,10 +208,7 @@ A suíte inclui fontes `.prw` propositalmente inválidos em `tests/fixtures` par
           {
             "nome": "B1_COD",
             "tipo": "C",
-            "tamanho": 15,
-            "obrigatorio": true,
-            "titulo": "Código",
-            "descricao": "Código do produto"
+            "titulo": "Código"
           }
         ],
         "registros": []
@@ -186,7 +222,7 @@ Cada item de `parametros` deve declarar exatamente uma chave. Cada item de `tabe
 
 O carregador ainda aceita o formato antigo baseado em objetos para manter compatibilidade, mas novos fixtures devem usar somente o formato acima.
 
-O dicionário usa título e descrição apenas em português. `tamanho` pode ser numérico, `null` para Memo, `"padrao"` para o padrão ou uma referência como `"conforme_SB1"`.
+O dicionário usa títulos apenas em português. Os campos precisam somente de `nome`, `tipo` e, quando útil para a saída, `titulo`; metadados como `tamanho`, `descricao`, `obrigatorio` e `decimais` não são necessários para a execução headless.
 
 As coleções opcionais `funcoes` e `consultas` substituem integrações externas por respostas determinísticas:
 
@@ -267,7 +303,7 @@ No `TRNSOL02`, `LRET: true` representa o botão Consultar e `false` representa C
 
 ## Testar um novo projeto
 
-1. Crie `advpl-testlab.json` na raiz do projeto AdvPL.
+1. Crie `advpl-testlab.json` na pasta dos fontes do caso de teste. Para projetos com varios desafios, use um fixture por pasta; a CLI prefere o JSON mais proximo do `.prw`.
 2. Cadastre parâmetros, tabelas, funções externas e consultas usadas pelo fonte.
 3. Abra um terminal no diretório do `.prw`.
 4. Execute `advpl-testlab -run NomeDoFonte.prw`.
@@ -286,19 +322,61 @@ Estes recursos passam pelo parser e pelo interpretador, portanto sua lógica é 
 - atribuições simples, `+=` e `-=`;
 - valores texto, numérico, lógico, `Nil` e arrays;
 - operadores aritméticos, relacionais e lógicos suportados pelo LivrePL;
-- estruturas `If/ElseIf/Else`, `For`, `Do While`, `Do Case` e `Begin Sequence`;
+- estruturas `If/ElseIf/Else`, `For`, `While`, `Do While`, `Do Case` e `Begin Sequence`;
 - chamadas de função, funções estáticas, acesso a arrays e retorno de valores;
 - classes, métodos e code blocks dentro do subconjunto implementado pelo LivrePL;
 - builtins básicos do LivrePL, como `Len`, `AllTrim`, `Upper`, `Lower`, `AAdd`, `Empty`, `ValType` e `cValToChar`;
-- builtins Protheus adicionados pelo TestLab: `GetMV`, `StrTran` e `Chr`;
+- builtins Protheus adicionados pelo TestLab: `GetMV`, `StrTran`, `Chr`, `Transform`, `DToC` e `MsgStop`;
 - `MsgAlert` e `MsgInfo` como saída textual `[ALERTA]` e `[INFO]`, sem janela;
 - `MsgYesNo` com retorno determinístico por fonte e conteúdo, sem saída textual;
 - `Define MSDialog ... TITLE ... FROM ...` como saída textual `[MSDIALOG]`;
 - linhas de controles `@ ...` e `Activate Dialog` como operações sem interface;
 - leitura e validação das coleções `parametros`, `tabelas`, `funcoes` e `consultas` do fixture;
 - validação semântica de identificadores e chamadas contra parâmetros, declarações, globais, built-ins e funções simuladas;
+- descoberta e execucao recursiva de dependencias locais declaradas com `//usePrw('arquivo.prw')`;
+- simulacao sem rede de `TMailManager`, `TMailMessage` e `Send()`;
 - `GetMV(cParam)` em modo estrito e `GetMV(cParam, lHelp, uDefault)` com valor padrão;
 - execução integral dos casos isolados `U_SolMailCfg()` e `TextoHtml()` usados nos testes.
+
+### NOTIFSOL.prw interpretado integralmente
+
+O fonte real e sua dependencia `ENVEMAIL.prw` passam juntos por lexer, parser, validacao semantica e interpretacao. A suite executa `ENVIO`, `APROVACAO`, `REJEICAO`, `PROCESSAMENTO` e o evento invalido.
+
+- aliases estaticos `Z02->CAMPO` e `Z03->(...)` leem as tabelas do fixture;
+- `DbSetOrder`, `DbSeek`, `Eof`, `Deleted` e `DbSkip` operam somente em memoria;
+- `UsrRetMail` e `FwGetUserName` recebem retornos determinísticos de `funcoes`;
+- o HTML e montado pela logica original, incluindo totais e resultados por item;
+- `U_EnviarEmailSolicitacao()` resolve a dependencia local e captura o envio em memoria, sem SMTP real;
+- `--args-json` fornece o `cEvento` da funcao de entrada pela CLI.
+
+### TRNSOL01.prw em modo headless
+
+O fonte real e as dependencias declaradas com `//usePrw` passam por lexer, parser e validacao semantica. A suite executa a entrada `TRNSOL01`, menu, modelo/view e os fluxos de envio, aprovacao, rejeicao, processamento e cancelamento, incluindo erro de item e rollback por falha de bloqueio.
+
+```powershell
+advpl-testlab -validate TRNSOL01.prw
+advpl-testlab -run TRNSOL01.prw
+advpl-testlab -run TRNSOL01.prw --entry Z04PROC
+```
+
+- `Z04`, `Z05` e `Z06` sao registros em memoria; `DbSetOrder` usa `indices` do fixture, quando declarados, para ordenar e buscar pela chave configurada;
+- `RecLock`, `MsUnlock` e transacoes alteram apenas os registros da execucao atual; `RECLOCK_Z06: false` em `ambiente` simula falha de bloqueio e exercita o rollback;
+- `FWBrowse`, `MPFormModel`, `FWFormView`, `MSDialog` e controles de tela usam adaptadores sem UI; `dialogos` fornece os valores finais da rejeicao;
+- confirmacoes `MsgYesNo` de processamento e cancelamento usam `especificidadesPrw` e podem ser alteradas entre `true` e `false`;
+- as notificacoes passam pelo codigo real de `NOTIFSOL`/`ENVEMAIL`, mas o envio fica somente em memoria, sem SMTP.
+
+`-run` valida todas as funcoes carregadas, mas executa apenas a entrada escolhida e os ramos que ela chamar. As acoes de menu nao sao clicadas automaticamente. Os adaptadores de controles `@` ignoram callbacks de UI, portanto a validacao headless nao comprova a sintaxe interna desses callbacks, nem substitui compilacao e testes no AppServer/DBAccess.
+
+### desafio0-Fat006 em modo headless
+
+Os quatro fontes da pasta `desafios-aprendizado/desafio0-Fat006` usam um fixture proprio. `U_MSGDANFE`, `A410CONS` e `PE01NFESEFAZ` sao independentes; `UFATE003` carrega `U_MSGDANFE` via `usePrw`. A suite `tests/test_fat006.py` verifica consolidacao sem duplicatas, preview, mensagem da NF-e, gravacao em SC5 e falha de bloqueio.
+
+- `AScan` avalia blocos de busca e a adaptacao aceita `a[linha, coluna]`;
+- `PARAMIXB`, `aHeader` e `aCols` sao valores declarados em `ambiente`; `Type`, `AClone`, `ChkFile`, `ErrorBlock` e `Break` possuem adaptadores headless;
+- `FieldPos`, `FieldGet`, `DbStruct`, atribuicao `ALIAS->CAMPO` e `ALIAS->(MsUnlock())` usam tabelas em memoria;
+- a CLI executa uma entrada por vez e nao imprime automaticamente seu valor de retorno; os testes automatizados verificam os retornos.
+
+Nada e persistido em SC5 real nem enviado ao emissor NF-e. `ErrorBlock` armazena/restaura o bloco no interpretador, mas nao simula toda a semantica de erros do AppServer.
 
 ### TRNSOL02.prw interpretado integralmente
 
@@ -323,6 +401,7 @@ O SQL é montado e seus parâmetros são vinculados pela lógica original, mas n
 - o marcador `@` de passagem por referência é aceito sintaticamente, mas a propagação genérica de alterações ao chamador ainda não está implementada;
 - a exportação é validada em memória e não cria um `.xls` físico;
 - `FWExecStatement` não interpreta SQL nem aplica automaticamente os filtros aos registros do fixture;
+- `DbSetOrder` usa os campos de `indices` quando configurados; sem eles, `DbSeek` usa a ordem dos campos do registro como chave de prefixo. Nao interpreta indices SX2/SIX;
 - a cobertura implementada atende todo o `TRNSOL02.prw`, mas ainda não representa qualquer API Protheus ou qualquer `.prw` arbitrário.
 
 ### Garantias do fixture

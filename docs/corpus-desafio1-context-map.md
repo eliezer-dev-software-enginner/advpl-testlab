@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Usar os fontes funcionais de `DGB/desafios-pedro-torres/desafio1-solicitacao-compra` como corpus real para orientar a evolucao incremental do AdvPL TestLab.
+Usar os fontes funcionais de `desafios-aprendizado/desafio1-solicitacao-compra` como corpus real para orientar a evolucao incremental do AdvPL TestLab.
 
 ## Fontes analisados
 

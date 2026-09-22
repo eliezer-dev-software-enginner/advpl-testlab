@@ -134,7 +134,7 @@ parser + FixtureInterpreter do LivrePL
 - Runtime de `FWExecStatement`, alias dinamico, navegacao e `FWBrowse`.
 - Exportacao HTML simulada em arquivo virtual.
 - Cenarios de cancelamento, consulta vazia, browse e exportacao confirmada.
-- Fixture real no projeto `DGB/desafios-pedro-torres`, com metadados e registros de Z04, Z05 e Z06.
+- Fixture real em `desafios-aprendizado/desafio1-solicitacao-compra/advpl-testlab.json`, com metadados e registros de Z02 a Z06. Cada desafio mantem seu fixture ao lado dos fontes.
 - Trinta e tres testes automatizados aprovados.
 
 ### UI headless e confirmacoes deterministicas
@@ -155,6 +155,36 @@ parser + FixtureInterpreter do LivrePL
 - Cinco testes dedicados cobrem sintaxe, coordenadas, cor, identificadores e funcoes inexistentes, alem de funcoes simuladas; a suite possui trinta e oito casos. Se o corpus externo `TRNSOL02.prw` estiver propositalmente invalido, os nove testes de integracao que dependem dele falham como esperado ate o fonte ser corrigido.
 - `Local oStmt := Nilo` falha como `SemanticError`, enquanto `Nil` permanece um literal valido.
 - `GetAreaTESTE()` falha antes da execucao; funcoes declaradas em `funcoes` no fixture continuam permitidas.
+
+### Dependencias `usePrw` e ENVEMAIL
+
+- `//usePrw('arquivo.prw')` declara uma dependencia local relativa ao fonte atual.
+- O executor carrega o grafo recursivamente, rejeita arquivo ausente/fora da raiz e disponibiliza as funcoes para validacao e execucao, incluindo chamadas `U_Nome()`.
+- O `ENVEMAIL.prw` real passa por lexer, parser, validacao semantica e execucao automatizada de suas validacoes de entrada.
+- `TMailManager`/`TMailMessage` sao simulados em memoria; `Send()` nunca acessa a rede e os dados nao sensiveis do envio ficam em `sent_emails`.
+- Resultados SMTP podem ser controlados por `MAIL_INIT_RESULT`, `MAIL_TIMEOUT_RESULT`, `MAIL_CONNECT_RESULT`, `MAIL_AUTH_RESULT`, `MAIL_SEND_RESULT` e `MAIL_ERROR_MESSAGE` em `ambiente`.
+- Seis testes adicionais cobrem dependencias locais, referencia ausente, validacoes do `ENVEMAIL`, sucesso headless e erro de envio; a suite passa a ter quarenta e quatro casos.
+
+### NOTIFSOL integral
+
+- O corpus real fica em `desafios-aprendizado/desafio1-solicitacao-compra/NOTIFSOL.prw`.
+- Aliases estaticos Z02/Z03, `While`, `DbSeek`, `DbSkip`, `Eof`, `Deleted`, `Transform`, `DToC` e `MsgStop` possuem runtime headless.
+- Os eventos ENVIO, APROVACAO, REJEICAO e PROCESSAMENTO montam o HTML original e capturam o e-mail em memoria; evento desconhecido retorna falso.
+- A CLI aceita argumentos da entrada por `--args-json`, por exemplo `["ENVIO"]`.
+- Quatro novos testes elevam a suite a quarenta e oito casos; nove casos de TRNSOL02 ficam ignorados porque esse fonte nao esta presente no corpus renomeado atual.
+
+### TRNSOL01 headless
+
+- O mesmo corpus contem `TRNSOL01.prw`; `//usePrw` carrega `NOTIFSOL` e `ENVEMAIL`.
+- Fluxos de menu, aprovacao, rejeicao, processamento e cancelamento sao interpretados com Z04/Z05/Z06 em memoria.
+- `indices` no fixture definem a ordenacao/chave de `DbSetOrder`/`DbSeek`; transacoes copiam o estado das tabelas para rollback.
+- MVC e dialogos sao adaptadores headless; callbacks de controles `@` nao sao validados internamente. Nenhuma integracao real com AppServer, DBAccess ou SMTP ocorre.
+
+### desafio0-Fat006 headless
+
+- O fixture local `desafios-aprendizado/desafio0-Fat006/advpl-testlab.json` fornece SC5, area M, `PARAMIXB`, `aHeader` e `aCols`.
+- `UFATE003.prw` declara dependencia direta de `U_MSGDANFE.prw`; `A410CONS` e `PE01NFESEFAZ` sao independentes.
+- O runtime suporta busca `AScan` com bloco, indice bidimensional adaptado, metadados de alias e escrita com RecLock em memoria. `ErrorBlock` e simplificado e nao representa AppServer.
 
 ## Como executar
 

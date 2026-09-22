@@ -49,7 +49,7 @@
 - **Data:** 21/09/2026
 - **Estado:** Aceita
 - **Contexto:** Exemplos artificiais confirmam infraestrutura, mas nao revelam todas as assinaturas, sintaxes e combinacoes usadas em customizacoes Protheus reais.
-- **Decisao:** Usar `DGB/desafios-pedro-torres/desafio1-solicitacao-compra` como corpus de referencia, isolando primeiro funcoes puras e depois avancando para aliases, navegacao e escrita.
+- **Decisao:** Usar `desafios-aprendizado/desafio1-solicitacao-compra` como corpus de referencia, isolando primeiro funcoes puras e depois avancando para aliases, navegacao e escrita.
 - **Consequencias:** Cada builtin novo precisa estar ligado a um caso concreto. O corpus de origem nao e copiado integralmente nem alterado; trechos portaveis ficam em `examples/real-cases/` com origem documentada.
 
 ## ADR-007 — GetMV com default preserva modo estrito
@@ -84,7 +84,7 @@
 - **Estado:** Aceita
 - **Contexto:** O comando deve funcionar no diretorio do `.prw`, sem exigir caminhos relativos ao repositorio do TestLab.
 - **Decisao:** Procurar `advpl-testlab.json` no diretorio do fonte e, em seguida, nos diretorios pais. `--fixture` continua disponivel para sobrescrita explicita.
-- **Consequencias:** Cada projeto AdvPL pode versionar sua propria simulacao. O fixture de `desafios-pedro-torres` contem Z04, Z05, Z06 e a consulta de aceite de `Z04CON`.
+- **Consequencias:** Cada projeto AdvPL pode versionar sua propria simulacao. O fixture de `desafios-aprendizado` contem Z02 a Z06 e a consulta de aceite de `Z04CON`.
 
 ## ADR-011 — Confirmacoes identificadas por fonte e conteudo
 
@@ -142,6 +142,46 @@
 - **Decisao:** A analise semantica aceita apenas funcoes do fonte, built-ins do LivrePL/TestLab, classes instanciaveis ou funcoes simuladas em `funcoes` no fixture. `-validate` descobre o fixture do projeto e tambem respeita `--fixture` explicito.
 - **Consequencias:** Erros de digitacao em nomes de funcao falham antes de qualquer efeito colateral. Integracoes externas ainda podem ser declaradas deterministicamente no JSON.
 
+## ADR-018 — Dependencias locais explicitas e SMTP headless
+
+- **Data:** 22/09/2026
+- **Estado:** Aceita
+- **Contexto:** Fontes AdvPL reais chamam `User Function` de outros `.prw`, mas o comentario nao padrao que registra essa relacao era apenas orientativo. `ENVEMAIL.prw` tambem depende de objetos SMTP que nao podem acessar rede durante testes.
+- **Decisao:** Interpretar `//usePrw('arquivo.prw')` como metadado local recursivo, resolver o caminho relativo e carregar as funcoes referenciadas. Simular `TMailManager`/`TMailMessage` em memoria, com resultados controlados por `ambiente` e captura de mensagens sem credenciais.
+- **Consequencias:** Pessoas, agentes e TestLab compartilham um mapa de dependencias direto. Chamadas `U_Nome()` resolvem uma `User Function Nome()` carregada. Testes de e-mail exercitam toda a logica sem conexao SMTP ou envio real.
+
+## ADR-019 — NOTIFSOL usa aliases estaticos e argumentos de entrada deterministas
+
+- **Data:** 22/09/2026
+- **Estado:** Aceita
+- **Contexto:** `NOTIFSOL.prw` depende de Z02/Z03, navegacao por indice, `While` direto e de um parametro `cEvento`, que nao podia ser informado pela CLI.
+- **Decisao:** Adaptar aliases estaticos para o runtime em memoria, implementar navegacao de prefixo por `DbSeek` e expor `--args-json` como array de argumentos da funcao de entrada.
+- **Consequencias:** Todos os eventos do fonte executam deterministicamente sem DBAccess ou SMTP. A busca simula a chave pela ordem dos campos do registro e nao substitui a definicao real de indices do Protheus.
+
+## ADR-020 — TRNSOL01 usa indices declarados e transacoes em memoria
+
+- **Data:** 22/09/2026
+- **Estado:** Aceita
+- **Contexto:** Os fluxos de `TRNSOL01.prw` precisam de ordem/chave Z03/Z05, bloqueios, rollback e formularios MVC sem AppServer.
+- **Decisao:** Permitir `indices` por tabela no fixture, navegar Z04/Z05/Z06 em memoria, filtrar o grid pelo cabecalho corrente e criar adaptadores headless para MVC/dialogo. Uma falha `RECLOCK_ALIAS: false` permite exercitar rollback deterministico.
+- **Consequencias:** Os fluxos de negocio podem ser testados sem efeitos externos; layout e callbacks de controles `@` nao sao executados/validados internamente, e os indices nao sao importados de SX2/SIX.
+
+## ADR-021 — FAT006 usa contexto do ponto de entrada em fixture local
+
+- **Data:** 22/09/2026
+- **Estado:** Aceita
+- **Contexto:** Os fontes FAT006 recebem `PARAMIXB` e buffers de tela do Protheus e consultam/gravam SC5 sem depender de uma sessao real.
+- **Decisao:** Expor variaveis declaradas em `ambiente` como globais semanticas, adaptar indices de matriz e metodos de alias necessarios, e simular `ErrorBlock` apenas como armazenamento/restauracao do bloco.
+- **Consequencias:** Os caminhos exercitados ficam reproduziveis em memoria; a semantica completa de erro, bloqueio concorrente e emissao fiscal continua fora do TestLab.
+
+## ADR-022 — Um fixture por pasta de desafio
+
+- **Data:** 22/09/2026
+- **Estado:** Aceita
+- **Contexto:** O desafio0 tinha JSON junto aos fontes; o desafio1 herdava um JSON da raiz do repositorio.
+- **Decisao:** Mover o fixture do desafio1 para `desafio1-solicitacao-compra/advpl-testlab.json` e recomendar um fixture local por caso. A busca da CLI continua priorizando o diretorio do `.prw`.
+- **Consequencias:** Os cenarios nao se misturam; caminhos explicitos dos testes e da documentacao foram atualizados, sem alterar o executor.
+
 - Teste de aceite da CLI: saida `000007`.
 - Cinco testes automatizados executados e aprovados.
 - Nove testes automatizados executados e aprovados apos incorporar os primeiros casos reais.
@@ -151,6 +191,8 @@
 - Dois testes de regressao adicionados para coordenadas e cor do diagnostico; a suite passa a ter trinta e cinco casos.
 - Um teste semantico adicional eleva a suite para trinta e seis casos aprovados.
 - Dois testes adicionais cobrem funcao inexistente e funcao simulada, totalizando trinta e oito casos aprovados.
+- Seis testes adicionais cobrem `usePrw` e `ENVEMAIL`, totalizando quarenta e quatro casos.
+- Quatro testes adicionais cobrem validacao, eventos e CLI do `NOTIFSOL`, totalizando quarenta e oito casos (nove ignorados sem o antigo `TRNSOL02`).
 - Regressao do LivrePL aprovada com `exemplos/ola.prw`, `exemplos/todas-etapas.prw` e `interpreter.py`.
 
 ---

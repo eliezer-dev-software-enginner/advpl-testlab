@@ -7,6 +7,23 @@
 
 ## Foco atual
 
+### desafio0-Fat006
+
+- [x] Validar os quatro fontes reais na ordem das dependencias.
+- [x] Executar consolidacao, preview, montagem da NF-e e gravacao simulada na SC5.
+- [x] Cobrir nota de entrada e falha de bloqueio sem persistencia.
+- [ ] Integrar ou comparar resultados com AppServer/DBAccess/emissor NF-e reais.
+
+### TRNSOL01 headless
+
+- [x] Validar o fonte real e as dependencias locais.
+- [x] Executar browse, menu, modelo/view, envio, aprovacao, rejeicao, processamento e cancelamento.
+- [x] Cobrir erro de item, transacao com rollback e grid filtrado pela solicitacao corrente.
+- [x] Configurar indices Z03/Z05, dialogo, confirmacoes e parametros no fixture real.
+- [ ] Validar callbacks de controles `@` internamente e integrar com AppServer/DBAccess/SMTP reais.
+
+Estado: fluxos de negocio cobertos em memoria; integracao Protheus permanece externa ao TestLab.
+
 ### TRNSOL02 integral pelo interpretador
 
 - [x] Validar as tres funcoes do arquivo pelo lexer e parser.
@@ -21,6 +38,10 @@
 - [x] Adicionar o comando `-validate`.
 - [x] Rejeitar leituras de identificadores nao declarados em `-validate` e `-run`.
 - [x] Rejeitar chamadas de funcoes inexistentes e aceitar funcoes simuladas no fixture.
+- [x] Carregar dependencias locais declaradas por `//usePrw('arquivo.prw')`.
+- [x] Validar e executar `ENVEMAIL.prw` com SMTP e envio simulados em memoria.
+- [x] Validar e executar integralmente `NOTIFSOL.prw` nos eventos ENVIO, APROVACAO, REJEICAO e PROCESSAMENTO.
+- [x] Aceitar argumentos da funcao de entrada pela CLI com `--args-json`.
 
 Status: `[x]` — concluido em 22/09/2026.
 
@@ -29,7 +50,7 @@ Status: `[x]` — concluido em 22/09/2026.
 - [x] Criar a CLI `advpl-testlab -run arquivo.prw`.
 - [x] Descobrir automaticamente a primeira `User Function`.
 - [x] Descobrir `advpl-testlab.json` no projeto alvo.
-- [x] Criar fixture de Z04, Z05 e Z06 em `desafios-pedro-torres`.
+- [x] Criar fixture de Z04, Z05 e Z06 em `desafios-aprendizado/desafio1-solicitacao-compra`.
 - [x] Executar `TRNSOL02.prw` sem alterar o fonte.
 - [x] Simular `FWExecStatement` e renderizar `FWBrowse` no terminal.
 - [x] Cobrir o fluxo com testes automatizados.
@@ -113,11 +134,11 @@ Status: `[x]` — concluido em 21/09/2026.
 
 ### Fase 3 — Navegacao e busca
 
-- [ ] Implementar `DBSeek` sobre registros do fixture.
-- [ ] Implementar `DbSkip`/`MoveNext`.
-- [ ] Implementar `Eof()` e `Bof()`.
-- [ ] Validar `DO WHILE` percorrendo tabela completa.
-- [ ] Usar `TabelaItensEmail()` de `NOTIFSOL.prw` como caso de aceite real.
+- [x] Implementar `DBSeek` sobre registros do fixture.
+- [x] Implementar `DbSkip`.
+- [x] Implementar `Eof()` e `Deleted()`; `Bof()` permanece pendente.
+- [x] Validar `While` percorrendo tabela completa.
+- [x] Usar `TabelaItensEmail()` de `NOTIFSOL.prw` como caso de aceite real.
 
 ### Fase 4 — Escrita simulada
 

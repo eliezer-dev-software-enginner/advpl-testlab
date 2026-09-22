@@ -1,4 +1,5 @@
 import argparse
+import json
 import sys
 
 from diagnostics import SourceValidationError, print_diagnostic
@@ -25,6 +26,10 @@ def main(argv=None):
     )
     parser.add_argument("--fixture", help="fixture JSON (padrao: advpl-testlab.json)")
     parser.add_argument("--entry", help="User Function de entrada")
+    parser.add_argument(
+        "--args-json",
+        help='argumentos da entrada como array JSON, por exemplo: ["ENVIO"]',
+    )
     args = parser.parse_args(argv)
     try:
         if args.validate_source:
@@ -37,7 +42,22 @@ def main(argv=None):
                 f"({function_count} funcao(oes))"
             )
         else:
-            execute_file(args.source, fixture_path=args.fixture, entry=args.entry)
+            entry_args = []
+            if args.args_json is not None:
+                try:
+                    entry_args = json.loads(args.args_json)
+                except json.JSONDecodeError as exc:
+                    raise FixtureError(
+                        f"--args-json invalido: {exc.msg}"
+                    ) from exc
+                if not isinstance(entry_args, list):
+                    raise FixtureError("--args-json deve ser um array JSON")
+            execute_file(
+                args.source,
+                fixture_path=args.fixture,
+                entry=args.entry,
+                args=entry_args,
+            )
     except (
         FixtureError,
         SourceValidationError,
