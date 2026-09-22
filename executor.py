@@ -1,25 +1,12 @@
 import re
 from pathlib import Path
 
-from fixture_runtime import Fixture, FixtureError, run_source
+from fixture_runtime import Fixture, FixtureError, compile_source, run_source
 
 
 _USER_FUNCTION = re.compile(
     r"(?im)^\s*user\s+function\s+([A-Za-z_][A-Za-z0-9_]*)\s*\("
 )
-_BROWSE_DESCRIPTION = re.compile(
-    r"(?i):SetDescription\s*\(\s*(['\"])(.*?)\1\s*\)"
-)
-_BROWSE_COLUMN = re.compile(
-    r"(?i):AddColumn\s*\(\s*(['\"])(.*?)\1\s*,\s*(['\"])(.*?)\3"
-)
-_MSGYESNO_LITERAL = re.compile(
-    r"(?is)\bMsgYesNo\s*\(\s*"
-    r"(?P<message>'(?:''|[^'])*'|\"(?:\"\"|[^\"])*\")\s*"
-    r"(?:,\s*(?P<title>'(?:''|[^'])*'|\"(?:\"\"|[^\"])*\")\s*)?\)"
-)
-
-
 def discover_entry(source):
     match = _USER_FUNCTION.search(source)
     if not match:
@@ -39,88 +26,8 @@ def discover_fixture(source_path):
     )
 
 
-def _print_browse(source, records):
-    description_match = _BROWSE_DESCRIPTION.search(source)
-    description = (
-        description_match.group(2) if description_match else "Resultado AdvPL"
-    )
-    columns = [
-        (match.group(2), match.group(4))
-        for match in _BROWSE_COLUMN.finditer(source)
-    ]
-    if not columns and records:
-        columns = [(name, name) for name in records[0]]
-
-    print(description)
-    if not records:
-        print("Nenhum registro encontrado.")
-        return
-
-    widths = []
-    for field, title in columns:
-        widths.append(
-            max(len(title), *(len(str(row.get(field, ""))) for row in records))
-        )
-
-    print(" | ".join(title.ljust(width) for (_, title), width in zip(columns, widths)))
-    print("-+-".join("-" * width for width in widths))
-    for row in records:
-        print(
-            " | ".join(
-                str(row.get(field, "")).ljust(width)
-                for (field, _), width in zip(columns, widths)
-            )
-        )
-
-
-def _unquote_advpl(value):
-    quote = value[0]
-    return value[1:-1].replace(quote * 2, quote)
-
-
-def _literal_msgyesno_calls(source):
-    calls = []
-    for match in _MSGYESNO_LITERAL.finditer(source):
-        args = [_unquote_advpl(match.group("message"))]
-        if match.group("title") is not None:
-            args.append(_unquote_advpl(match.group("title")))
-        calls.append(args)
-    return calls
-
-
 def execute_source(source, fixture, entry=None, source_name="<memoria>"):
     entry = entry or discover_entry(source)
-
-    # Adaptador headless para fontes Protheus que abrem consulta e FWBrowse.
-    # A estrutura (entrada, descricao e colunas) continua sendo lida do .prw;
-    # apenas SQL/UI externos sao substituidos pelos dados determinísticos.
-    if re.search(r"(?i)FWExecStatement\s*\(\s*\)\s*:\s*New", source) and re.search(
-        r"(?i)FWBrowse\s*\(\s*\)\s*:\s*New", source
-    ):
-        if fixture.get_function_result("FASKFILTROS", default=True) is False:
-            return None
-        records = fixture.get_query_records(entry)
-        _print_browse(source, records)
-        call_occurrences = {}
-        for call_args in _literal_msgyesno_calls(source):
-            call_key = tuple(call_args)
-            occurrence = call_occurrences.get(call_key, 0) + 1
-            call_occurrences[call_key] = occurrence
-            answer = fixture.get_prw_function_result(
-                source_name,
-                "MsgYesNo",
-                call_args,
-                occurrence=occurrence,
-            )
-            if answer:
-                raise FixtureError(
-                    "MsgYesNo retornou true, mas o ramo de confirmacao do "
-                    "adaptador FWBrowse ainda nao e executado"
-                )
-        return None
-
-    # Fontes que usam somente a linguagem coberta pelo LivrePL seguem pelo
-    # interpretador completo já existente.
     return run_source(
         source,
         fixture=fixture,
@@ -143,3 +50,13 @@ def execute_file(source_path, fixture_path=None, entry=None):
         entry=entry,
         source_name=source_path,
     )
+
+
+def validate_file(source_path):
+    source_path = Path(source_path).resolve()
+    if not source_path.is_file():
+        raise FixtureError(f"Fonte PRW nao encontrado: '{source_path}'")
+    with source_path.open(encoding="utf-8", errors="replace") as source_file:
+        source = source_file.read()
+    program = compile_source(source)
+    return len(program.functions)

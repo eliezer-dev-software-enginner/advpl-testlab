@@ -16,7 +16,7 @@ O projeto e separado do `livrePL`. Ele usa o interpretador como dependencia loca
 - `parametros` e `tabelas` usam listas de objetos no formato canonico.
 - Cada tabela possui `campos` opcionais e `registros`.
 - CLI instalavel `advpl-testlab -run arquivo.prw` com descoberta automatica da primeira `User Function` e do fixture.
-- Primeiro fonte real integrado em modo headless: `TRNSOL02.prw`. Esse caso usa um adaptador parcial e ainda não executa todo o corpo da função linha por linha.
+- Primeiro fonte real executado pelo parser e interpretador completos: `TRNSOL02.prw`, incluindo diálogo headless, statement, alias, browse e exportação virtual.
 
 ## Estrutura
 
@@ -92,6 +92,14 @@ O executor procura `advpl-testlab.json` no diretorio do `.prw` e nos diretorios 
 --fixture ARQUIVO.JSON fixture específico; opcional com advpl-testlab.json
 --entry FUNCAO         entrada; opcional, usa a primeira User Function
 ```
+
+Para validar todas as funções do arquivo sem executar nenhuma delas:
+
+```powershell
+advpl-testlab -validate TRNSOL02.prw
+```
+
+O comando falha com erro de lexer ou parser e número da linha quando encontra sintaxe sem suporte.
 
 Sem instalar, o mesmo fluxo pode ser executado dentro deste repositorio:
 
@@ -216,6 +224,30 @@ Como cada `.prw` pode possuir várias confirmações, configure `MsgYesNo` em `e
 - Sem regra específica, o carregador ainda aceita `{"MSGYESNO": false}` na coleção global `funcoes` por compatibilidade.
 - Sem regra específica nem retorno global, a execução falha com uma mensagem que informa fonte e conteúdo procurados.
 
+### Diálogos e ambiente determinístico
+
+`dialogos` aplica o estado final esperado quando o fonte executa `Activate Dialog`:
+
+```json
+{
+  "dialogos": [
+    {
+      "fonte": "TRNSOL02.prw",
+      "titulo": "Consulta de Solicitacoes - Filtros",
+      "variaveis": [
+        {"LRET": true}
+      ]
+    }
+  ],
+  "ambiente": [
+    {"CUSERLOCAL": "C:\\advpl-testlab"},
+    {"TIME": "12:34:56"}
+  ]
+}
+```
+
+No `TRNSOL02`, `LRET: true` representa o botão Consultar e `false` representa Cancelar. `ambiente` torna o caminho e o nome da exportação reproduzíveis; o arquivo continua virtual.
+
 ## Testar um novo projeto
 
 1. Crie `advpl-testlab.json` na raiz do projeto AdvPL.
@@ -250,41 +282,37 @@ Estes recursos passam pelo parser e pelo interpretador, portanto sua lógica é 
 - `GetMV(cParam)` em modo estrito e `GetMV(cParam, lHelp, uDefault)` com valor padrão;
 - execução integral dos casos isolados `U_SolMailCfg()` e `TextoHtml()` usados nos testes.
 
-### Parcialmente implementado
+### TRNSOL02.prw interpretado integralmente
 
-O caso `TRNSOL02.prw` usa um adaptador headless especializado para o padrão `FWExecStatement` + `FWBrowse`:
+O executor não possui mais um atalho especializado para esse fonte. As três funções são analisadas pelo lexer/parser e os cenários executam seus comandos pelo `FixtureInterpreter`:
 
-- o arquivo `.prw` é aberto e sua primeira `User Function` é descoberta;
-- a presença de `FWExecStatement():New()` e `FWBrowse():New()` seleciona o adaptador;
-- `SetDescription()` e `AddColumn()` são lidos do texto do fonte;
-- os registros são obtidos de `consultas -> Z04CON -> registros` no fixture;
-- a grade do `FWBrowse` é representada como tabela no terminal;
-- respostas configuradas em `funcoes`, como `FASKFILTROS`, podem controlar o adaptador.
-- a resposta específica de `MsgYesNo` é consultada; `false` encerra o fluxo após o browse.
+- `Z04CON()` executa declarações, montagem do SQL, condições, parâmetros, statement, alias, browse, confirmação e fechamento;
+- `fAskFiltros()` executa a declaração do diálogo e seus comandos headless; `dialogos` no fixture aplica os valores simulados durante `Activate Dialog`;
+- `fGerarExcel()` executa condição, loop, leitura de campos, `nCnt++`, montagem do HTML e chamadas de arquivo;
+- `FWExecStatement():New()`, `SetString()`, `SetDate()`, `OpenAlias()` e `Destroy()` possuem objetos simulados;
+- `(cAlias)->(...)` e `(cAlias)->CAMPO` são adaptados para o runtime de alias;
+- `DbGoTop()`, `DbSkip()`, `Eof()` e `DbCloseArea()` operam sobre registros em memória;
+- `FWBrowse` recebe alias, descrição, colunas e legendas e renderiza os dados no terminal;
+- `FCreate`, `FWrite` e `FClose` escrevem em arquivo virtual na memória, sem alterar o disco;
+- `Time()` e `cUserLocal` podem ser definidos em `ambiente` para resultados determinísticos;
+- os testes cobrem cancelamento do diálogo, consulta vazia, browse com dados e exportação confirmada.
 
-Nesse caminho, o corpo completo de `Z04CON()` **não** é interpretado linha por linha. O teste confirma a integração entre fonte, função de entrada, fixture e saída headless, mas não valida integralmente a regra de negócio da rotina.
+O SQL é montado e seus parâmetros são vinculados pela lógica original, mas não é enviado a um banco. `OpenAlias()` hidrata o alias com `consultas -> Z04CON -> registros` do fixture.
 
-### Ainda não implementado para o TRNSOL02.prw
+### Limitações que permanecem
 
-- montagem e execução real da consulta SQL;
-- aplicação dos filtros preenchidos em `fAskFiltros()`;
-- parâmetros por referência, como `@dDe` e `@cNum`;
-- aliases dinâmicos e expressões como `(cAlias)->Z04_CODIGO`;
-- navegação completa com `DbGoTop()`, `DbSkip()`, `Eof()` e `DbCloseArea()`;
-- objetos genéricos de `FWExecStatement` e `FWBrowse` com todos os métodos;
-- comportamento interativo dos controles `SAY`, `GET` e `BUTTON`; atualmente essas linhas são ignoradas;
-- execução das ações associadas aos botões ou alteração das variáveis da tela;
-- semântica visual real de `Define MSDialog`, `MsgAlert` e `MsgInfo`; há somente representação textual;
-- no adaptador do `TRNSOL02`, o ramo selecionado quando `MsgYesNo` retorna `true`; a exportação gera erro explícito de recurso ainda não suportado;
-- geração do arquivo Excel por `FCreate`, `FWrite` e `FClose`;
-- pós-incremento, como `nCnt++`, nesse fluxo;
-- execução arbitrária de qualquer `.prw` ou de qualquer API Protheus.
+- os controles `SAY`, `GET` e `BUTTON` não possuem interação visual; `dialogos` injeta o estado final esperado;
+- o marcador `@` de passagem por referência é aceito sintaticamente, mas a propagação genérica de alterações ao chamador ainda não está implementada;
+- a exportação é validada em memória e não cria um `.xls` físico;
+- `FWExecStatement` não interpreta SQL nem aplica automaticamente os filtros aos registros do fixture;
+- a cobertura implementada atende todo o `TRNSOL02.prw`, mas ainda não representa qualquer API Protheus ou qualquer `.prw` arbitrário.
 
 ### Garantias do fixture
 
 - O fixture é somente entrada; a execução não altera o JSON no disco.
 - Nomes de parâmetros, tabelas, funções e consultas são normalizados sem diferenciar maiúsculas e minúsculas.
 - APIs ou sintaxes fora da cobertura devem ser implementadas incrementalmente com um caso real e teste automatizado.
+- `-validate` sempre analisa todas as funções; `-run` valida o arquivo inteiro antes de executar a entrada.
 
 ## Documentacao
 
@@ -296,6 +324,8 @@ Nesse caminho, o corpo completo de `Z04CON()` **não** é interpretado linha por
 - `docs/fase-0-levantamento.md` e `docs/fase-1-getmv.md`: entregas tecnicas por fase.
 - `docs/fase-1b-casos-reais.md`: primeiros casos extraidos de fontes funcionais.
 - `docs/corpus-desafio1-context-map.md`: inventario e priorizacao do corpus real.
+- `docs/fase-ui-headless.md`: mensagens e confirmacoes sem interface.
+- `docs/fase-trnsol02-integral.md`: validacao e execucao das tres funcoes do primeiro fonte real.
 
 ## Decisao de erro do GetMV
 

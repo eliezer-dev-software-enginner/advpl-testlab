@@ -39,6 +39,8 @@ class Fixture:
         funcoes=None,
         consultas=None,
         especificidades_prw=None,
+        ambiente=None,
+        dialogos=None,
     ):
         self.parametros = self._normalize_parameters(
             [] if parametros is None else parametros
@@ -53,6 +55,10 @@ class Fixture:
         self.especificidades_prw = self._validate_prw_specificities(
             [] if especificidades_prw is None else especificidades_prw
         )
+        self.ambiente = self._normalize_parameters(
+            [] if ambiente is None else ambiente
+        )
+        self.dialogos = self._validate_dialogs([] if dialogos is None else dialogos)
 
     @classmethod
     def from_dict(cls, data):
@@ -71,6 +77,8 @@ class Fixture:
             funcoes=data.get("funcoes", []),
             consultas=data.get("consultas", []),
             especificidades_prw=especificidades,
+            ambiente=data.get("ambiente", []),
+            dialogos=data.get("dialogos", []),
         )
 
     @classmethod
@@ -244,6 +252,30 @@ class Fixture:
                 )
         return normalized
 
+    @staticmethod
+    def _validate_dialogs(dialogs):
+        if not isinstance(dialogs, list):
+            raise FixtureError("'dialogos' deve ser uma lista JSON")
+        normalized = {}
+        for dialog in dialogs:
+            if not isinstance(dialog, dict):
+                raise FixtureError("Cada item de 'dialogos' deve ser um objeto")
+            source = dialog.get("fonte")
+            title = dialog.get("titulo")
+            variables = dialog.get("variaveis", [])
+            if not isinstance(source, str) or not source.strip():
+                raise FixtureError("Dialogo deve possuir 'fonte' como texto")
+            if not isinstance(title, str) or not title:
+                raise FixtureError("Dialogo deve possuir 'titulo' como texto")
+            values = Fixture._normalize_parameters(variables)
+            key = (Path(source.replace("\\", "/")).name.upper(), title)
+            if key in normalized:
+                raise FixtureError(
+                    f"Dialogo duplicado para '{source}' com titulo '{title}'"
+                )
+            normalized[key] = values
+        return normalized
+
     def get_parameter(self, name, default=_MISSING):
         key = str(name).upper()
         if key not in self.parametros:
@@ -253,6 +285,20 @@ class Fixture:
                 f"GetMV: parametro '{name}' nao encontrado no fixture"
             )
         return self.parametros[key]
+
+    def get_environment(self, name, default=_MISSING):
+        key = str(name).upper()
+        if key in self.ambiente:
+            return self.ambiente[key]
+        if default is not _MISSING:
+            return default
+        raise AdvPLRuntimeError(
+            f"Ambiente: valor '{name}' nao encontrado no fixture"
+        )
+
+    def get_dialog_variables(self, source_name, title):
+        source_key = Path(str(source_name).replace("\\", "/")).name.upper()
+        return self.dialogos.get((source_key, title), {})
 
     def get_function_result(self, name, default=_MISSING):
         key = str(name).upper()
@@ -306,12 +352,178 @@ class Fixture:
         return query["registros"]
 
 
+class _AliasRuntime:
+    def __init__(self, records):
+        self.records = [
+            {str(field).upper(): value for field, value in record.items()}
+            for record in records
+        ]
+        self.position = 0
+        self.closed = False
+
+    def go_top(self):
+        self.position = 0
+
+    def eof(self):
+        return self.closed or self.position >= len(self.records)
+
+    def skip(self):
+        self.position += 1
+
+    def field(self, name):
+        if self.eof():
+            raise AdvPLRuntimeError(
+                f"Alias sem registro corrente para ler o campo '{name}'"
+            )
+        return self.records[self.position].get(str(name).upper())
+
+
+class _StatementRuntime:
+    def __init__(self):
+        self.query = ""
+        self.parameters = {}
+
+
+class _BrowseRuntime:
+    def __init__(self):
+        self.alias = ""
+        self.description = "Resultado AdvPL"
+        self.columns = []
+        self.legends = []
+
+
 class FixtureInterpreter(Interpreter):
-    def __init__(self, program, fixture=None, source_name="<memoria>"):
+    def __init__(
+        self,
+        program,
+        fixture=None,
+        source_name="<memoria>",
+        entry_name="MAIN",
+    ):
         self.fixture = fixture or Fixture()
         self.source_name = source_name
+        self.entry_name = entry_name
         self._prw_function_calls = {}
+        self._aliases = {}
+        self._alias_sequence = 0
+        self._virtual_files = {}
+        self._file_handles = {}
+        self._file_sequence = 0
+        self._current_dialog_title = None
+        self._statements = []
         super().__init__(program)
+        self.globals["CUSERLOCAL"] = self.fixture.get_environment(
+            "CUSERLOCAL", default="."
+        )
+
+    @property
+    def virtual_files(self):
+        return dict(self._virtual_files)
+
+    @property
+    def statements(self):
+        return [
+            {"query": statement.query, "parameters": dict(statement.parameters)}
+            for statement in self._statements
+        ]
+
+    def call_function(self, name, args):
+        upper = name.upper()
+        if upper in self.fixture.funcoes and upper not in self.builtins:
+            return self.fixture.get_function_result(upper)
+        return super().call_function(name, args)
+
+    def call_method(self, obj, method_name, args):
+        method = method_name.upper()
+        if isinstance(obj, _StatementRuntime):
+            if method == "NEW":
+                obj.query = args[0] if args else ""
+                return obj
+            if method in ("SETSTRING", "SETDATE"):
+                if len(args) != 2:
+                    raise AdvPLRuntimeError(
+                        f"FWExecStatement:{method_name} espera indice e valor"
+                    )
+                obj.parameters[int(args[0])] = args[1]
+                return None
+            if method == "OPENALIAS":
+                if len(args) != 1 or not isinstance(args[0], str):
+                    raise AdvPLRuntimeError(
+                        "FWExecStatement:OpenAlias espera um alias como texto"
+                    )
+                alias = args[0].upper()
+                records = self.fixture.get_query_records(self.entry_name)
+                self._aliases[alias] = _AliasRuntime(records)
+                return args[0]
+            if method == "DESTROY":
+                return None
+            raise AdvPLRuntimeError(
+                f"Metodo FWExecStatement:{method_name} nao suportado"
+            )
+
+        if isinstance(obj, _BrowseRuntime):
+            if method == "NEW":
+                return obj
+            if method == "SETALIAS":
+                obj.alias = str(args[0]).upper()
+                return None
+            if method == "SETDESCRIPTION":
+                obj.description = str(args[0])
+                return None
+            if method == "ADDCOLUMN":
+                if len(args) < 2:
+                    raise AdvPLRuntimeError(
+                        "FWBrowse:AddColumn espera campo e titulo"
+                    )
+                obj.columns.append((str(args[0]).upper(), str(args[1])))
+                return None
+            if method == "ADDLEGEND":
+                obj.legends.append(tuple(args))
+                return None
+            if method == "ACTIVATE":
+                self._activate_browse(obj)
+                return None
+            raise AdvPLRuntimeError(f"Metodo FWBrowse:{method_name} nao suportado")
+
+        return super().call_method(obj, method_name, args)
+
+    def _get_alias(self, name):
+        key = str(name).upper()
+        alias = self._aliases.get(key)
+        if alias is None or alias.closed:
+            raise AdvPLRuntimeError(f"Alias '{name}' nao esta aberto")
+        return alias
+
+    def _activate_browse(self, browse):
+        alias = self._get_alias(browse.alias)
+        print(browse.description)
+        if not alias.records:
+            print("Nenhum registro encontrado.")
+            return
+        columns = browse.columns or [
+            (field, field) for field in alias.records[0]
+        ]
+        widths = [
+            max(
+                len(title),
+                *(len(str(record.get(field, ""))) for record in alias.records),
+            )
+            for field, title in columns
+        ]
+        print(
+            " | ".join(
+                title.ljust(width)
+                for (_, title), width in zip(columns, widths)
+            )
+        )
+        print("-+-".join("-" * width for width in widths))
+        for record in alias.records:
+            print(
+                " | ".join(
+                    str(record.get(field, "")).ljust(width)
+                    for (field, _), width in zip(columns, widths)
+                )
+            )
 
     def _build_builtins(self):
         builtins = super()._build_builtins()
@@ -373,11 +585,138 @@ class FixtureInterpreter(Interpreter):
         def b_testlab_msdialog(args):
             if len(args) != 1 or not isinstance(args[0], str):
                 raise AdvPLRuntimeError("Define MSDialog espera titulo como texto")
+            self._current_dialog_title = args[0]
             print(f"[MSDIALOG] {args[0]}")
             return None
 
         def b_testlab_noop(args):
             return None
+
+        def b_testlab_activate_dialog(args):
+            require_count("Activate Dialog", args, 0)
+            if self._current_dialog_title is None:
+                raise AdvPLRuntimeError(
+                    "Activate Dialog executado sem Define MSDialog anterior"
+                )
+            values = self.fixture.get_dialog_variables(
+                self.source_name, self._current_dialog_title
+            )
+            frame = self.call_stack[-1]
+            for name, value in values.items():
+                if name not in frame.locals:
+                    raise AdvPLRuntimeError(
+                        f"Dialogo '{self._current_dialog_title}': variavel "
+                        f"'{name}' nao existe na funcao atual"
+                    )
+                frame.locals[name] = value
+            return None
+
+        def require_count(name, args, count):
+            if len(args) != count:
+                raise AdvPLRuntimeError(f"{name} espera {count} argumento(s)")
+
+        def b_getarea(args):
+            require_count("GetArea", args, 0)
+            return []
+
+        def b_restarea(args):
+            require_count("RestArea", args, 1)
+            return None
+
+        def b_ctod(args):
+            require_count("CToD", args, 1)
+            if not isinstance(args[0], str):
+                raise AdvPLRuntimeError("CToD espera texto")
+            return None if args[0].strip() == "" else args[0]
+
+        def b_retsqlname(args):
+            require_count("RetSQLName", args, 1)
+            return str(args[0])
+
+        def b_xfilial(args):
+            require_count("xFilial", args, 1)
+            alias = str(args[0]).upper()
+            table = self.fixture.tabelas.get(alias, {})
+            records = table.get("registros", []) if isinstance(table, dict) else table
+            field = f"{alias}_FILIAL"
+            if records and field in records[0]:
+                return records[0][field]
+            return "01"
+
+        def b_changequery(args):
+            require_count("ChangeQuery", args, 1)
+            return args[0]
+
+        def b_getnextalias(args):
+            require_count("GetNextAlias", args, 0)
+            self._alias_sequence += 1
+            return f"TL{self._alias_sequence:04d}"
+
+        def b_fwexecstatement(args):
+            require_count("FWExecStatement", args, 0)
+            statement = _StatementRuntime()
+            self._statements.append(statement)
+            return statement
+
+        def b_fwbrowse(args):
+            require_count("FWBrowse", args, 0)
+            return _BrowseRuntime()
+
+        def b_alias_call(args):
+            require_count("TestLabAliasCall", args, 2)
+            alias = self._get_alias(args[0])
+            method = str(args[1]).upper()
+            if method == "DBGOTOP":
+                alias.go_top()
+                return None
+            if method == "EOF":
+                return alias.eof()
+            if method == "DBSKIP":
+                alias.skip()
+                return None
+            if method == "DBCLOSEAREA":
+                alias.closed = True
+                return None
+            raise AdvPLRuntimeError(f"Metodo de alias '{args[1]}' nao suportado")
+
+        def b_alias_field(args):
+            require_count("TestLabAliasField", args, 2)
+            return self._get_alias(args[0]).field(args[1])
+
+        def b_time(args):
+            require_count("Time", args, 0)
+            value = self.fixture.get_environment("TIME", default="00:00:00")
+            if not isinstance(value, str):
+                raise AdvPLRuntimeError("Ambiente TIME deve ser texto")
+            return value
+
+        def b_fcreate(args):
+            require_count("FCreate", args, 1)
+            if not isinstance(args[0], str):
+                raise AdvPLRuntimeError("FCreate espera o caminho como texto")
+            self._file_sequence += 1
+            handle = self._file_sequence
+            self._virtual_files[args[0]] = ""
+            self._file_handles[handle] = args[0]
+            return handle
+
+        def b_fwrite(args):
+            require_count("FWrite", args, 2)
+            handle = int(args[0])
+            path = self._file_handles.get(handle)
+            if path is None:
+                raise AdvPLRuntimeError(f"FWrite: handle {handle} nao esta aberto")
+            text = str(args[1])
+            self._virtual_files[path] += text
+            return len(text)
+
+        def b_fclose(args):
+            require_count("FClose", args, 1)
+            handle = int(args[0])
+            if handle not in self._file_handles:
+                raise AdvPLRuntimeError(f"FClose: handle {handle} nao esta aberto")
+            del self._file_handles[handle]
+            return 0
 
         builtins["GETMV"] = b_getmv
         builtins["STRTRAN"] = b_strtran
@@ -387,6 +726,22 @@ class FixtureInterpreter(Interpreter):
         builtins["MSGYESNO"] = b_msgyesno
         builtins["TESTLABMSDIALOG"] = b_testlab_msdialog
         builtins["TESTLABNOOP"] = b_testlab_noop
+        builtins["TESTLABACTIVATEDIALOG"] = b_testlab_activate_dialog
+        builtins["GETAREA"] = b_getarea
+        builtins["RESTAREA"] = b_restarea
+        builtins["CTOD"] = b_ctod
+        builtins["RETSQLNAME"] = b_retsqlname
+        builtins["XFILIAL"] = b_xfilial
+        builtins["CHANGEQUERY"] = b_changequery
+        builtins["GETNEXTALIAS"] = b_getnextalias
+        builtins["FWEXECSTATEMENT"] = b_fwexecstatement
+        builtins["FWBROWSE"] = b_fwbrowse
+        builtins["TESTLABALIASCALL"] = b_alias_call
+        builtins["TESTLABALIASFIELD"] = b_alias_field
+        builtins["TIME"] = b_time
+        builtins["FCREATE"] = b_fcreate
+        builtins["FWRITE"] = b_fwrite
+        builtins["FCLOSE"] = b_fclose
         return builtins
 
 
@@ -410,6 +765,66 @@ _DEFINE_MSDIALOG = re.compile(
 )
 _UI_CONTROL = re.compile(r"^\s*@")
 _ACTIVATE_DIALOG = re.compile(r"^\s*ACTIVATE\s+DIALOG\b", re.IGNORECASE)
+_ALIAS_CALL = re.compile(
+    r"\(\s*(?P<alias>[A-Za-z_]\w*)\s*\)\s*->\s*"
+    r"\(\s*(?P<method>[A-Za-z_]\w*)\s*\(\s*\)\s*\)"
+)
+_ALIAS_FIELD = re.compile(
+    r"\(\s*(?P<alias>[A-Za-z_]\w*)\s*\)\s*->\s*(?P<field>[A-Za-z_]\w*)"
+)
+_POST_INCREMENT = re.compile(r"\b(?P<name>[A-Za-z_]\w*)\s*\+\+")
+
+
+def _replace_advpl_operators(line):
+    result = []
+    quote = None
+    index = 0
+    while index < len(line):
+        char = line[index]
+        if quote:
+            result.append(char)
+            if char == quote:
+                if index + 1 < len(line) and line[index + 1] == quote:
+                    result.append(line[index + 1])
+                    index += 1
+                else:
+                    quote = None
+        elif char in ("'", '"'):
+            quote = char
+            result.append(char)
+        elif char == "!" and not (
+            index + 1 < len(line) and line[index + 1] == "="
+        ):
+            result.append(".NOT.")
+        elif (
+            char == "@"
+            and index + 1 < len(line)
+            and (line[index + 1].isalpha() or line[index + 1] == "_")
+        ):
+            pass
+        else:
+            result.append(char)
+        index += 1
+    return "".join(result)
+
+
+def _adapt_advpl_line(line):
+    line = _ALIAS_CALL.sub(
+        lambda match: (
+            f"TestLabAliasCall({match.group('alias')}, "
+            f"'{match.group('method')}')"
+        ),
+        line,
+    )
+    line = _ALIAS_FIELD.sub(
+        lambda match: (
+            f"TestLabAliasField({match.group('alias')}, "
+            f"'{match.group('field')}')"
+        ),
+        line,
+    )
+    line = _POST_INCREMENT.sub(r"\g<name> += 1", line)
+    return _replace_advpl_operators(line)
 
 
 def adapt_headless_ui(source):
@@ -420,18 +835,46 @@ def adapt_headless_ui(source):
             lines.append(
                 f"{dialog.group('indent')}TestLabMSDialog({dialog.group('title')})"
             )
-        elif _UI_CONTROL.match(line) or _ACTIVATE_DIALOG.match(line):
+        elif _UI_CONTROL.match(line):
             indent = line[: len(line) - len(line.lstrip())]
             lines.append(f"{indent}TestLabNoOp()")
+        elif _ACTIVATE_DIALOG.match(line):
+            indent = line[: len(line) - len(line.lstrip())]
+            lines.append(f"{indent}TestLabActivateDialog()")
         else:
-            lines.append(line)
+            lines.append(_adapt_advpl_line(line))
     return "\n".join(lines)
 
 
+def prepare_source(source):
+    return adapt_headless_ui(preprocess(source))
+
+
+def compile_source(source):
+    return parse_source(prepare_source(source))
+
+
+def build_interpreter(
+    source,
+    fixture=None,
+    entry="MAIN",
+    source_name="<memoria>",
+):
+    program = compile_source(source)
+    return FixtureInterpreter(
+        program,
+        fixture=fixture,
+        source_name=source_name,
+        entry_name=entry,
+    )
+
+
 def run_source(source, fixture=None, entry="MAIN", args=None, source_name="<memoria>"):
-    program = parse_source(adapt_headless_ui(preprocess(source)))
-    interpreter = FixtureInterpreter(
-        program, fixture=fixture, source_name=source_name
+    interpreter = build_interpreter(
+        source,
+        fixture=fixture,
+        entry=entry,
+        source_name=source_name,
     )
     return interpreter.run(entry, args)
 

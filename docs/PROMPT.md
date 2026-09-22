@@ -77,7 +77,7 @@ Saida esperada:
 5. Fase 4: simular escrita e efeitos como `RecLock`, `MsgAlert` e `ConOut`.
 6. Fase 5: definir casos declarativos com entrada e resultado esperado.
 
-O primeiro corte do objetivo final ja permite executar `TRNSOL02.prw` com `advpl-testlab -run`, usando adaptador headless para as integracoes ainda externas ao LivrePL.
+O primeiro objetivo real foi concluido: `TRNSOL02.prw` passa integralmente pelo preparo sintatico, parser e interpretador. Dialogo, SQL, alias, browse e arquivos sao fronteiras headless alimentadas pelo fixture, sem atalho especializado no executor.
 
 ## Regras permanentes
 

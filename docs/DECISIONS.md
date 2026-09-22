@@ -73,7 +73,7 @@
 ## ADR-009 — Executor hibrido para fontes reais
 
 - **Data:** 21/09/2026
-- **Estado:** Aceita
+- **Estado:** Substituida pela ADR-013
 - **Contexto:** `TRNSOL02.prw` combina linguagem AdvPL, SQL via `FWExecStatement`, alias dinamico e interface `FWBrowse`, recursos ainda nao compreendidos integralmente pelo LivrePL.
 - **Decisao:** A CLI descobre a primeira `User Function` e usa o LivrePL para fontes dentro da cobertura atual. Quando encontra o padrao de consulta com `FWExecStatement` e `FWBrowse`, usa um adaptador headless guiado pelo proprio fonte e por `consultas` do fixture.
 - **Consequencias:** O fonte original executa sem alteracao e sem Protheus. O adaptador nao representa ainda semantica arbitraria de todas as APIs; sua cobertura sera substituida incrementalmente por objetos, aliases e builtins genericos.
@@ -102,12 +102,28 @@
 - **Decisao:** Representar `Define MSDialog`, `MsgAlert` e `MsgInfo` por linhas no terminal. Controles `@` e `Activate Dialog` sao no-op. Nenhuma janela e criada e nenhuma acao de botao e executada.
 - **Consequencias:** Mensagens tornam-se verificaveis em testes. Fluxos que dependem de preenchimento ou clique em controles ainda precisam de simulacao propria.
 
+## ADR-013 — TRNSOL02 sempre passa pelo interpretador
+
+- **Data:** 22/09/2026
+- **Estado:** Aceita
+- **Contexto:** O adaptador inicial reconhecia `FWExecStatement` e `FWBrowse`, mas nao executava o corpo de `Z04CON`, `fAskFiltros` ou `fGerarExcel`.
+- **Decisao:** Remover a deteccao especializada do executor. Todo fonte passa pelo preparo sintatico, parser e `FixtureInterpreter`. Integracoes externas sao objetos e builtins simulados: dialogos, statements, aliases, browse e arquivos virtuais.
+- **Consequencias:** As tres funcoes de `TRNSOL02.prw` sao validadas e executadas nos cenarios automatizados. SQL, UI e sistema de arquivos continuam headless e deterministas.
+
+## ADR-014 — Validacao de sintaxe independente da execucao
+
+- **Data:** 22/09/2026
+- **Estado:** Aceita
+- **Contexto:** Executar somente a funcao de entrada nao oferece um comando explicito para conferir todas as funcoes de um fonte sem exigir fixture de runtime.
+- **Decisao:** Disponibilizar `advpl-testlab -validate arquivo.prw`, usando o mesmo preparo e parser de `-run` sem executar nenhuma funcao.
+- **Consequencias:** Sintaxe sem suporte falha antes da execucao e informa a linha. O `TRNSOL02.prw` valida tres funcoes.
+
 - Teste de aceite da CLI: saida `000007`.
 - Cinco testes automatizados executados e aprovados.
 - Nove testes automatizados executados e aprovados apos incorporar os primeiros casos reais.
 - Treze testes automatizados executados e aprovados apos migrar o schema JSON.
 - Dezesseis testes automatizados executados e aprovados com o executor de `TRNSOL02.prw`.
-- Vinte e sete testes automatizados executados e aprovados com UI headless e `MsgYesNo` por fonte/chamada/ocorrencia.
+- Trinta e tres testes automatizados executados e aprovados com o `TRNSOL02.prw` integral pelo interpretador.
 - Regressao do LivrePL aprovada com `exemplos/ola.prw`, `exemplos/todas-etapas.prw` e `interpreter.py`.
 
 ---

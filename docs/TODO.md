@@ -7,6 +7,21 @@
 
 ## Foco atual
 
+### TRNSOL02 integral pelo interpretador
+
+- [x] Validar as tres funcoes do arquivo pelo lexer e parser.
+- [x] Remover o adaptador especializado de `executor.py`.
+- [x] Executar `Z04CON()` pelo `FixtureInterpreter`.
+- [x] Executar `fAskFiltros()` com dialogo configurado no fixture.
+- [x] Simular `FWExecStatement`, parametros e abertura de alias.
+- [x] Implementar navegacao e leitura do alias temporario.
+- [x] Simular `FWBrowse` com descricao, colunas e legendas.
+- [x] Executar `fGerarExcel()` com arquivo virtual.
+- [x] Cobrir cancelamento, consulta vazia, browse e exportacao.
+- [x] Adicionar o comando `-validate`.
+
+Status: `[x]` — concluido em 22/09/2026.
+
 ### Executor de `.prw` — primeiro caso completo
 
 - [x] Criar a CLI `advpl-testlab -run arquivo.prw`.
@@ -21,8 +36,8 @@ Status: `[x]` — primeiro corte concluido em 21/09/2026.
 
 ### Fase 2 — Leitura basica de tabela
 
-- [ ] Definir o objeto de runtime de alias e registro corrente.
-- [ ] Normalizar aliases e campos como case-insensitive.
+- [x] Definir o objeto de runtime de alias e registro corrente para consultas temporarias.
+- [x] Normalizar aliases e campos como case-insensitive.
 - [ ] Implementar abertura de alias simulado por `DBUseArea` ou adaptacao minima equivalente.
 - [ ] Implementar leitura do primeiro registro por `FieldGet` antes de introduzir sintaxe nova.
 - [ ] Definir o comportamento de tabela vazia e alias inexistente.

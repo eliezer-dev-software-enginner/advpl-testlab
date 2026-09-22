@@ -18,6 +18,7 @@
 | `docs/fase-1b-casos-reais.md` | Casos reais `U_SolMailCfg` e `TextoHtml` |
 | `docs/corpus-desafio1-context-map.md` | Mapa dos fontes funcionais usados como corpus |
 | `docs/fase-ui-headless.md` | Mensagens, dialogos sem UI e respostas deterministicas |
+| `docs/fase-trnsol02-integral.md` | Validacao e execucao integral do primeiro fonte real |
 
 ## O que e o projeto
 
@@ -39,8 +40,13 @@ arquivo .prw
     v
 executor (descoberta de entrada e fixture)
     |
-    |-- linguagem coberta -> parser + FixtureInterpreter do LivrePL
-    `-- integracoes Protheus -> adaptador headless
+    v
+preparo de sintaxe Protheus suportada
+    |
+    v
+parser + FixtureInterpreter do LivrePL
+    |-- objetos, aliases e arquivos virtuais
+    `-- integracoes Protheus simuladas
              |
              v
           Fixture JSON
@@ -53,8 +59,8 @@ executor (descoberta de entrada e fixture)
 | Caminho | Responsabilidade |
 |---|---|
 | `fixture_runtime.py` | Carrega/valida fixtures, integra o LivrePL e registra builtins simulados |
-| `executor.py` | Descobre entrada/fixture e executa via LivrePL ou adaptador headless |
-| `main.py` | CLI `advpl-testlab -run` |
+| `executor.py` | Descobre entrada/fixture, valida e executa pelo interpretador |
+| `main.py` | CLI `advpl-testlab -run` e `-validate` |
 | `pyproject.toml` | Empacotamento e comando instalavel |
 | `examples/getmv.prw` | Exemplo de codigo AdvPL real usando `GetMV` |
 | `examples/ui-headless.prw` | Exemplo executavel de dialogo e mensagens sem UI |
@@ -89,6 +95,8 @@ executor (descoberta de entrada e fixture)
 - `funcoes`: respostas configuradas para chamadas externas em modo headless.
 - `consultas`: conjuntos de registros devolvidos por consultas simuladas, indexados pela funcao de entrada.
 - `especificidadesPrw`: respostas de funcoes identificadas por fonte, nome e conteudo da chamada.
+- `dialogos`: estado final de variaveis aplicado por dialogos headless.
+- `ambiente`: valores deterministas como `CUSERLOCAL` e `TIME`.
 - Chaves de parametros e aliases sao normalizadas para maiusculas.
 - O formato legado baseado em objetos continua aceito apenas para compatibilidade de leitura.
 
@@ -116,14 +124,17 @@ executor (descoberta de entrada e fixture)
 - Corpus real mapeado para orientar as fases seguintes.
 - Suite ampliada para treze testes automatizados apos a migracao do schema JSON.
 
-### Executor de `.prw` e TRNSOL02
+### Executor integral do TRNSOL02
 
 - CLI instalavel com `advpl-testlab -run arquivo.prw`.
 - Descoberta automatica da primeira `User Function` e de `advpl-testlab.json` nos diretorios pais.
-- Caminho nativo pelo LivrePL para a linguagem ja suportada.
-- Adaptador headless inicial para `FWExecStatement` e `FWBrowse`.
+- Validacao das tres funcoes do fonte por `-validate`.
+- Execucao de `Z04CON`, `fAskFiltros` e `fGerarExcel` pelo interpretador.
+- Runtime de `FWExecStatement`, alias dinamico, navegacao e `FWBrowse`.
+- Exportacao HTML simulada em arquivo virtual.
+- Cenarios de cancelamento, consulta vazia, browse e exportacao confirmada.
 - Fixture real no projeto `DGB/desafios-pedro-torres`, com metadados e registros de Z04, Z05 e Z06.
-- Dezesseis testes automatizados aprovados.
+- Trinta e tres testes automatizados aprovados.
 
 ### UI headless e confirmacoes deterministicas
 
@@ -132,7 +143,7 @@ executor (descoberta de entrada e fixture)
 - `MsgYesNo` nao produz texto e resolve `true` ou `false` por `fonte` + `nome` + `conteudo` em `especificidadesPrw`.
 - Ausencia de resposta deterministica para `MsgYesNo` gera erro explicito.
 - O retorno global legado em `funcoes` permanece aceito como fallback.
-- Suite ampliada para vinte e sete testes automatizados.
+- A entrega inicial de UI headless foi incorporada à suíte atual de trinta e três testes automatizados.
 
 ## Como executar
 
@@ -155,7 +166,8 @@ python -m unittest discover -s tests -v
 ## Estado atual
 
 - Fases 0, 1 e 1b concluidas.
-- O `TRNSOL02.prw` ja executa em modo headless; a proxima entrega e substituir gradualmente o adaptador por runtime generico de aliases e objetos Protheus.
+- O `TRNSOL02.prw` e validado integralmente e executado pelo interpretador com fronteiras Protheus simuladas.
+- A proxima entrega e generalizar a cobertura adquirida para os demais fontes do corpus.
 - Nao ha dependencias Python externas.
 - O repositorio Git foi inicializado na branch `main`.
 

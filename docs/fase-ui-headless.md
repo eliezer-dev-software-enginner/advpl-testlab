@@ -7,7 +7,7 @@ Permitir que fontes AdvPL emitam mensagens e declarem dialogos sem SmartClient, 
 ## Desenho
 
 - `Define MSDialog ... TITLE ... FROM ...` e adaptado antes do parser para `TestLabMSDialog(titulo)`.
-- Linhas iniciadas por `@` e `Activate Dialog` viram operacoes sem efeito visual.
+- Linhas iniciadas por `@` viram operacoes sem efeito visual; `Activate Dialog` aplica as variaveis declaradas em `dialogos`.
 - `MsgAlert` imprime `[ALERTA] Titulo: Mensagem` e retorna `NIL`.
 - `MsgInfo` imprime `[INFO] Titulo: Mensagem` e retorna `NIL`.
 - `MsgYesNo` nao imprime texto e busca um retorno logico no fixture.
@@ -53,9 +53,9 @@ A chave de busca e formada pelo nome do arquivo, nome da funcao e argumentos ava
 
 - abrir janelas reais;
 - preencher variaveis por `GET`;
-- executar `ACTION` de botoes;
+- executar diretamente o `ACTION` de botoes; o fixture fornece o estado final esperado;
 - interpretar coordenadas, tamanho, picture ou alinhamento;
-- executar o ramo de exportacao do `TRNSOL02` quando sua confirmacao retorna `true`.
+- abrir uma janela real do Protheus.
 
 ## Verificacao
 
@@ -64,4 +64,4 @@ python -m unittest discover -s tests -v
 advpl-testlab -run TRNSOL02.prw
 ```
 
-Resultado da entrega: vinte e sete testes aprovados, exemplo `ui-headless.prw` executado ponta a ponta e `TRNSOL02.prw` executado com retorno `false` configurado especificamente para sua chamada de `MsgYesNo`.
+Resultado inicial da entrega: exemplo `ui-headless.prw` executado ponta a ponta e `MsgYesNo` configurado especificamente por fonte, conteudo e ocorrencia. A evolucao integral do `TRNSOL02` esta documentada em `fase-trnsol02-integral.md`.

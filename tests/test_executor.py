@@ -10,8 +10,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from executor import discover_entry, execute_file, execute_source
-from fixture_runtime import Fixture, FixtureError
+from executor import discover_entry, execute_file, validate_file
+from fixture_runtime import Fixture, build_interpreter, run_source
 
 
 TRNSOL02 = (
@@ -36,6 +36,10 @@ Return NIL
         self.assertEqual("MinhaRotina", discover_entry(source))
 
     @unittest.skipUnless(TRNSOL02.is_file(), "corpus TRNSOL02 nao disponivel")
+    def test_validates_every_function_in_original_trnsol02(self):
+        self.assertEqual(3, validate_file(TRNSOL02))
+
+    @unittest.skipUnless(TRNSOL02.is_file(), "corpus TRNSOL02 nao disponivel")
     def test_executes_original_trnsol02_headless(self):
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
@@ -49,6 +53,46 @@ Return NIL
         self.assertIn("000001", text)
         self.assertIn("350.5", text)
         self.assertIn("000002", text)
+
+    @unittest.skipUnless(TRNSOL02.is_file(), "corpus TRNSOL02 nao disponivel")
+    def test_interpreter_executes_original_trnsol02_without_executor_adapter(self):
+        source = TRNSOL02.read_text(encoding="utf-8", errors="replace")
+        fixture = Fixture.from_file(TARGET_FIXTURE)
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            result = run_source(
+                source,
+                fixture=fixture,
+                entry="Z04CON",
+                source_name=TRNSOL02,
+            )
+
+        self.assertIsNone(result)
+        text = output.getvalue()
+        self.assertIn("Consulta de Solicitacoes Internas", text)
+        self.assertIn("000001", text)
+        self.assertIn("350.5", text)
+
+    @unittest.skipUnless(TRNSOL02.is_file(), "corpus TRNSOL02 nao disponivel")
+    def test_trnsol02_builds_query_and_binds_branch_parameter(self):
+        source = TRNSOL02.read_text(encoding="utf-8", errors="replace")
+        fixture = Fixture.from_file(TARGET_FIXTURE)
+        interpreter = build_interpreter(
+            source,
+            fixture=fixture,
+            entry="Z04CON",
+            source_name=TRNSOL02,
+        )
+        with contextlib.redirect_stdout(io.StringIO()):
+            interpreter.run("Z04CON")
+
+        self.assertEqual(1, len(interpreter.statements))
+        statement = interpreter.statements[0]
+        self.assertIn("SELECT Z04.Z04_CODIGO", statement["query"])
+        self.assertIn("LEFT JOIN Z05", statement["query"])
+        self.assertIn("GROUP BY Z04.Z04_CODIGO", statement["query"])
+        self.assertIn("ORDER BY Z04.Z04_DATA DESC", statement["query"])
+        self.assertEqual({1: "01"}, statement["parameters"])
 
     @unittest.skipUnless(TRNSOL02.is_file(), "corpus TRNSOL02 nao disponivel")
     def test_discovers_fixture_in_target_project(self):
@@ -77,12 +121,39 @@ Return NIL
         self.assertFalse(specificity["funcoes"][0]["retorno"])
 
     @unittest.skipUnless(TRNSOL02.is_file(), "corpus TRNSOL02 nao disponivel")
-    def test_trnsol02_true_confirmation_reports_unsupported_export_branch(self):
+    def test_trnsol02_true_confirmation_executes_virtual_export_branch(self):
         source = TRNSOL02.read_text(encoding="utf-8", errors="replace")
         fixture = Fixture.from_dict(
             {
-                "funcoes": [{"FASKFILTROS": True}],
-                "consultas": [{"Z04CON": {"registros": []}}],
+                "funcoes": [],
+                "dialogos": [
+                    {
+                        "fonte": "TRNSOL02.prw",
+                        "titulo": "Consulta de Solicitacoes - Filtros",
+                        "variaveis": [{"LRET": True}],
+                    }
+                ],
+                "ambiente": [
+                    {"CUSERLOCAL": "C:\\testlab"},
+                    {"TIME": "12:34:56"},
+                ],
+                "consultas": [
+                    {
+                        "Z04CON": {
+                            "registros": [
+                                {
+                                    "Z04_CODIGO": "000001",
+                                    "Z04_DATA": "2026-09-18",
+                                    "Z04_USER": "001",
+                                    "Z04_CCUSTO": "CC001",
+                                    "Z04_STATUS": "3",
+                                    "QT_ITENS": 2,
+                                    "VL_TOTAL": 350.5,
+                                }
+                            ]
+                        }
+                    }
+                ],
                 "especificidadesPrw": [
                     {
                         "fonte": "TRNSOL02.prw",
@@ -97,13 +168,103 @@ Return NIL
                 ],
             }
         )
-        with contextlib.redirect_stdout(io.StringIO()):
-            with self.assertRaisesRegex(FixtureError, "ramo de confirmacao"):
-                execute_source(
-                    source,
-                    fixture=fixture,
-                    source_name="TRNSOL02.prw",
-                )
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            interpreter = build_interpreter(
+                source,
+                fixture=fixture,
+                entry="Z04CON",
+                source_name="TRNSOL02.prw",
+            )
+            result = interpreter.run("Z04CON")
+
+        self.assertIsNone(result)
+        self.assertIn("Arquivo gerado com 1 registro(s)", output.getvalue())
+        self.assertIn("TRNSOL_Consulta_123456.xls", output.getvalue())
+        self.assertEqual(1, len(interpreter.virtual_files))
+        exported_html = next(iter(interpreter.virtual_files.values()))
+        self.assertIn("<th>Solicitacao</th>", exported_html)
+        self.assertIn("<td>000001</td>", exported_html)
+        self.assertTrue(exported_html.endswith("</table>"))
+
+    @unittest.skipUnless(TRNSOL02.is_file(), "corpus TRNSOL02 nao disponivel")
+    def test_executes_original_filter_dialog_function(self):
+        source = TRNSOL02.read_text(encoding="utf-8", errors="replace")
+        fixture = Fixture.from_file(TARGET_FIXTURE)
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            result = run_source(
+                source,
+                fixture=fixture,
+                entry="fAskFiltros",
+                args=[None, None, "", "", "", "", ""],
+                source_name=TRNSOL02,
+            )
+
+        self.assertTrue(result)
+        self.assertIn(
+            "[MSDIALOG] Consulta de Solicitacoes - Filtros",
+            output.getvalue(),
+        )
+
+    @unittest.skipUnless(TRNSOL02.is_file(), "corpus TRNSOL02 nao disponivel")
+    def test_trnsol02_stops_when_filter_dialog_is_cancelled(self):
+        source = TRNSOL02.read_text(encoding="utf-8", errors="replace")
+        fixture = Fixture.from_dict(
+            {
+                "dialogos": [
+                    {
+                        "fonte": "TRNSOL02.prw",
+                        "titulo": "Consulta de Solicitacoes - Filtros",
+                        "variaveis": [{"LRET": False}],
+                    }
+                ]
+            }
+        )
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            result = run_source(
+                source,
+                fixture=fixture,
+                entry="Z04CON",
+                source_name=TRNSOL02,
+            )
+
+        self.assertIsNone(result)
+        self.assertEqual(
+            "[MSDIALOG] Consulta de Solicitacoes - Filtros\n",
+            output.getvalue(),
+        )
+
+    @unittest.skipUnless(TRNSOL02.is_file(), "corpus TRNSOL02 nao disponivel")
+    def test_trnsol02_reports_empty_query_result(self):
+        source = TRNSOL02.read_text(encoding="utf-8", errors="replace")
+        fixture = Fixture.from_dict(
+            {
+                "dialogos": [
+                    {
+                        "fonte": "TRNSOL02.prw",
+                        "titulo": "Consulta de Solicitacoes - Filtros",
+                        "variaveis": [{"LRET": True}],
+                    }
+                ],
+                "consultas": [{"Z04CON": {"registros": []}}],
+            }
+        )
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            result = run_source(
+                source,
+                fixture=fixture,
+                entry="Z04CON",
+                source_name=TRNSOL02,
+            )
+
+        self.assertIsNone(result)
+        self.assertIn(
+            "[ALERTA] Atencao: Nenhuma solicitacao encontrada",
+            output.getvalue(),
+        )
 
 
 if __name__ == "__main__":
