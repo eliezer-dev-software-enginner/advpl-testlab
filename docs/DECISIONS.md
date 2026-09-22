@@ -134,6 +134,14 @@
 - **Decisao:** Executar uma analise semantica sobre a AST antes de `-validate` e `-run`. Leituras devem corresponder a parametro, declaracao local/estatica/privada/publica, variavel criada por atribuicao ou global simulada conhecida.
 - **Consequencias:** `Nilo` gera `SemanticError` antes de qualquer execucao, com arquivo, linha e coluna. `Nil` continua literal. Atribuicoes sem declaracao continuam podendo criar `PRIVATE` implicitamente, conforme a semantica ja adotada pelo LivrePL.
 
+## ADR-017 — Chamadas devem resolver para uma funcao conhecida
+
+- **Data:** 22/09/2026
+- **Estado:** Aceita
+- **Contexto:** Uma chamada e sintaticamente valida independentemente do nome. Por isso, `GetAreaTESTE()` passava no parser e so falharia ao ser executada.
+- **Decisao:** A analise semantica aceita apenas funcoes do fonte, built-ins do LivrePL/TestLab, classes instanciaveis ou funcoes simuladas em `funcoes` no fixture. `-validate` descobre o fixture do projeto e tambem respeita `--fixture` explicito.
+- **Consequencias:** Erros de digitacao em nomes de funcao falham antes de qualquer efeito colateral. Integracoes externas ainda podem ser declaradas deterministicamente no JSON.
+
 - Teste de aceite da CLI: saida `000007`.
 - Cinco testes automatizados executados e aprovados.
 - Nove testes automatizados executados e aprovados apos incorporar os primeiros casos reais.
@@ -142,6 +150,7 @@
 - Trinta e tres testes automatizados executados e aprovados com o `TRNSOL02.prw` integral pelo interpretador.
 - Dois testes de regressao adicionados para coordenadas e cor do diagnostico; a suite passa a ter trinta e cinco casos.
 - Um teste semantico adicional eleva a suite para trinta e seis casos aprovados.
+- Dois testes adicionais cobrem funcao inexistente e funcao simulada, totalizando trinta e oito casos aprovados.
 - Regressao do LivrePL aprovada com `exemplos/ola.prw`, `exemplos/todas-etapas.prw` e `interpreter.py`.
 
 ---

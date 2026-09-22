@@ -59,14 +59,23 @@ def execute_file(source_path, fixture_path=None, entry=None):
         raise SourceValidationError(source_path, source, exc) from exc
 
 
-def validate_file(source_path):
+def validate_file(source_path, fixture_path=None):
     source_path = Path(source_path).resolve()
     if not source_path.is_file():
         raise FixtureError(f"Fonte PRW nao encontrado: '{source_path}'")
+    if fixture_path:
+        fixture = Fixture.from_file(Path(fixture_path).resolve())
+    else:
+        try:
+            discovered_fixture = discover_fixture(source_path)
+        except FixtureError:
+            fixture = Fixture()
+        else:
+            fixture = Fixture.from_file(discovered_fixture)
     with source_path.open(encoding="utf-8", errors="replace") as source_file:
         source = source_file.read()
     try:
-        program = compile_source(source)
+        program = compile_source(source, fixture=fixture)
     except (ParseError, LexError, SemanticError) as exc:
         raise SourceValidationError(source_path, source, exc) from exc
     return len(program.functions)

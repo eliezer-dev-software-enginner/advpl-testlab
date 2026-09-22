@@ -28,7 +28,10 @@ def main(argv=None):
     args = parser.parse_args(argv)
     try:
         if args.validate_source:
-            function_count = validate_file(args.validate_source)
+            function_count = validate_file(
+                args.validate_source,
+                fixture_path=args.fixture,
+            )
             print(
                 f"[OK] Sintaxe valida: {args.validate_source} "
                 f"({function_count} funcao(oes))"

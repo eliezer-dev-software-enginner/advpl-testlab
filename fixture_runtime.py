@@ -857,9 +857,12 @@ def prepare_source(source):
     return adapt_headless_ui(preprocessed)
 
 
-def compile_source(source):
+def compile_source(source, fixture=None):
+    fixture = fixture or Fixture()
     program = parse_source(prepare_source(source))
-    validate_program(program, source)
+    supported_runtime = FixtureInterpreter(program, fixture=fixture)
+    allowed_functions = set(supported_runtime.builtins) | set(fixture.funcoes)
+    validate_program(program, source, allowed_functions=allowed_functions)
     return program
 
 
@@ -869,7 +872,8 @@ def build_interpreter(
     entry="MAIN",
     source_name="<memoria>",
 ):
-    program = compile_source(source)
+    fixture = fixture or Fixture()
+    program = compile_source(source, fixture=fixture)
     return FixtureInterpreter(
         program,
         fixture=fixture,

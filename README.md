@@ -16,7 +16,7 @@ O projeto e separado do `livrePL`. Ele usa o interpretador como dependencia loca
 - `parametros` e `tabelas` usam listas de objetos no formato canonico.
 - Cada tabela possui `campos` opcionais e `registros`.
 - CLI instalavel `advpl-testlab -run arquivo.prw` com descoberta automatica da primeira `User Function` e do fixture.
-- Validacao semantica rejeita leituras de variaveis nao declaradas antes da execucao.
+- Validacao semantica rejeita variaveis nao declaradas e funcoes inexistentes antes da execucao.
 - Primeiro fonte real executado pelo parser e interpretador completos: `TRNSOL02.prw`, incluindo diálogo headless, statement, alias, browse e exportação virtual.
 
 ## Estrutura
@@ -101,7 +101,7 @@ Para validar todas as funções do arquivo sem executar nenhuma delas:
 advpl-testlab -validate TRNSOL02.prw
 ```
 
-O comando falha com erro de lexer, parser ou semântica quando encontra sintaxe inválida, construção sem suporte ou leitura de variável não declarada. O diagnóstico preserva a numeração do `.prw` original, inclusive quando existem diretivas `#include`, mostra a linha e aponta a coluna aproximada:
+O comando falha com erro de lexer, parser ou semântica quando encontra sintaxe inválida, construção sem suporte, variável não declarada ou função inexistente. O diagnóstico preserva a numeração do `.prw` original, inclusive quando existem diretivas `#include`, mostra a linha e aponta a coluna aproximada:
 
 ```text
 SyntaxError: Token inesperado TokenType.NEWLINE (None)
@@ -113,6 +113,8 @@ SyntaxError: Token inesperado TokenType.NEWLINE (None)
 Em um terminal interativo, o erro é exibido em vermelho e o processo termina com código `1`. Defina a variável de ambiente `NO_COLOR` para desativar cores. Saídas redirecionadas e ferramentas sem TTY recebem texto puro automaticamente.
 
 Por exemplo, `Local oStmt := Nilo` produz `SemanticError: Variável 'Nilo' não declarada`. `Nil` continua sendo reconhecido normalmente como o literal AdvPL. A atribuição direta a um nome ainda segue a semântica Clipper/AdvPL já adotada pelo LivrePL: `x := 1` pode criar uma variável `PRIVATE` implícita.
+
+Da mesma forma, `Local aArea := GetAreaTESTE()` produz `SemanticError: Função 'GetAreaTESTE' não encontrada`. São aceitas as funções declaradas no próprio fonte, os built-ins implementados pelo LivrePL/TestLab, construtores de classes e funções simuladas em `funcoes` no JSON. Para validar uma simulação declarada em outro fixture, informe `--fixture arquivo.json` também com `-validate`.
 
 Sem instalar, o mesmo fluxo pode ser executado dentro deste repositorio:
 
@@ -294,7 +296,7 @@ Estes recursos passam pelo parser e pelo interpretador, portanto sua lógica é 
 - `Define MSDialog ... TITLE ... FROM ...` como saída textual `[MSDIALOG]`;
 - linhas de controles `@ ...` e `Activate Dialog` como operações sem interface;
 - leitura e validação das coleções `parametros`, `tabelas`, `funcoes` e `consultas` do fixture;
-- validação semântica de identificadores contra parâmetros, declarações e globais simuladas;
+- validação semântica de identificadores e chamadas contra parâmetros, declarações, globais, built-ins e funções simuladas;
 - `GetMV(cParam)` em modo estrito e `GetMV(cParam, lHelp, uDefault)` com valor padrão;
 - execução integral dos casos isolados `U_SolMailCfg()` e `TextoHtml()` usados nos testes.
 

@@ -1,6 +1,6 @@
 import re
 
-from parser import Assign, BlockLiteral, ForLoop, Identifier, SequenceStmt, VarDecl
+from parser import Assign, BlockLiteral, Call, ForLoop, Identifier, SequenceStmt, VarDecl
 
 
 class SemanticError(Exception):
@@ -61,22 +61,36 @@ def _source_location(source, name):
     return None, None
 
 
-def validate_program(program, source, allowed_globals=None):
+def validate_program(
+    program,
+    source,
+    allowed_globals=None,
+    allowed_functions=None,
+):
     globals_ = set(_DEFAULT_GLOBALS)
     globals_.update(_public_names(program))
     globals_.update(name.upper() for name in (allowed_globals or ()))
+    functions = {function.name.upper() for function in program.functions}
+    functions.update(class_.name.upper() for class_ in program.classes)
+    functions.update(name.upper() for name in (allowed_functions or ()))
 
     callables = list(program.functions) + list(program.methods)
     for callable_decl in callables:
         declared = _declared_names(callable_decl) | globals_
         for node in _walk(callable_decl.body):
-            if not isinstance(node, Identifier):
-                continue
-            if node.name.upper() in declared:
-                continue
-            line, column = _source_location(source, node.name)
-            raise SemanticError(
-                f"Variável '{node.name}' não declarada",
-                line=line,
-                column=column,
-            )
+            if isinstance(node, Identifier):
+                if node.name.upper() in declared:
+                    continue
+                line, column = _source_location(source, node.name)
+                raise SemanticError(
+                    f"Variável '{node.name}' não declarada",
+                    line=line,
+                    column=column,
+                )
+            if isinstance(node, Call) and node.name.upper() not in functions:
+                line, column = _source_location(source, node.name)
+                raise SemanticError(
+                    f"Função '{node.name}' não encontrada",
+                    line=line,
+                    column=column,
+                )
