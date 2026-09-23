@@ -105,7 +105,7 @@ def execute_source(source, fixture, entry=None, source_name="<memoria>",
 
 
 def execute_file(source_path, fixture_path=None, entry=None, args=None,
-                 name_profile="modern"):
+                 name_profile="modern", mvc_case=None):
     source_path = Path(source_path).resolve()
     if not source_path.is_file():
         raise FixtureError(f"Fonte PRW nao encontrado: '{source_path}'")
@@ -122,6 +122,7 @@ def execute_file(source_path, fixture_path=None, entry=None, args=None,
             args=args,
             source_name=source_path,
             name_profile=name_profile,
+            mvc_case=mvc_case,
         )
     except SourceUnitError as exc:
         raise SourceValidationError(

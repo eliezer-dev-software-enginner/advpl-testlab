@@ -124,6 +124,7 @@ class Fixture:
         especificidades_prw=None,
         ambiente=None,
         dialogos=None,
+        cenarios_mvc=None,
     ):
         self.parametros = self._normalize_parameters(
             [] if parametros is None else parametros
@@ -142,6 +143,9 @@ class Fixture:
             [] if ambiente is None else ambiente
         )
         self.dialogos = self._validate_dialogs([] if dialogos is None else dialogos)
+        self.cenarios_mvc = self._validate_mvc_cases(
+            [] if cenarios_mvc is None else cenarios_mvc
+        )
 
     @classmethod
     def from_dict(cls, data):
@@ -162,7 +166,44 @@ class Fixture:
             especificidades_prw=especificidades,
             ambiente=data.get("ambiente", []),
             dialogos=data.get("dialogos", []),
+            cenarios_mvc=data.get("cenariosMvc", []),
         )
+
+    @staticmethod
+    def _validate_mvc_cases(cases):
+        if not isinstance(cases, list):
+            raise FixtureError("'cenariosMvc' deve ser uma lista JSON")
+        normalized = {}
+        for case in cases:
+            if not isinstance(case, dict):
+                raise FixtureError("Cada cenario MVC deve ser um objeto")
+            name = case.get("nome")
+            if not isinstance(name, str) or not name.strip():
+                raise FixtureError("Cenario MVC deve ter 'nome' nao vazio")
+            if name in normalized:
+                raise FixtureError(f"Cenario MVC duplicado: '{name}'")
+            if str(case.get("operacao", "")).lower() != "incluir":
+                raise FixtureError(f"Cenario MVC '{name}': operacao deve ser 'incluir'")
+            data = case.get("dados")
+            if not isinstance(data, dict) or not data or not all(
+                isinstance(key, str) and isinstance(value, dict)
+                for key, value in data.items()
+            ):
+                raise FixtureError(f"Cenario MVC '{name}': 'dados' deve mapear modelos para campos")
+            expected = case.get("esperado")
+            if not isinstance(expected, dict) or type(expected.get("salvou")) is not bool:
+                raise FixtureError(f"Cenario MVC '{name}': 'esperado.salvou' deve ser booleano")
+            if "totalRegistros" in expected and (
+                type(expected["totalRegistros"]) is not int
+                or expected["totalRegistros"] < 0
+            ):
+                raise FixtureError(
+                    f"Cenario MVC '{name}': 'esperado.totalRegistros' deve ser inteiro nao negativo"
+                )
+            if "registro" in expected and not isinstance(expected["registro"], dict):
+                raise FixtureError(f"Cenario MVC '{name}': 'esperado.registro' deve ser objeto")
+            normalized[name] = case
+        return normalized
 
     @classmethod
     def read_data(cls, path):
@@ -550,6 +591,8 @@ class _MvcRuntime(AdvPLObject):
         self.models = {}
         self.alias = None
         self.position = 0
+        self.post_block = None
+        self.draft = None
 
 
 class _MailManagerRuntime(AdvPLObject):
@@ -594,6 +637,8 @@ class FixtureInterpreter(Interpreter):
         self._error_block = None
         self._current_alias = next(iter(self._aliases), None)
         self._locked_alias = None
+        self.mvc_case = None
+        self.mvc_result = None
         super().__init__(program, name_profile=name_profile)
         self._fixture_function_symbols = {}
         for name in self.fixture.funcoes:
@@ -852,6 +897,8 @@ class FixtureInterpreter(Interpreter):
 
         if isinstance(obj, _MvcRuntime):
             if method == "NEW":
+                if obj.class_name == "MPFORMMODEL" and len(args) > 2:
+                    obj.post_block = args[2]
                 return obj
             if method == "SETPRIMARYKEY":
                 if len(args) != 1 or not isinstance(args[0], list):
@@ -874,19 +921,32 @@ class FixtureInterpreter(Interpreter):
                 if not args:
                     raise AdvPLRuntimeError(f"{method_name} espera identificador")
                 child = _MvcRuntime("MVCGRID" if method == "ADDGRID" else "MVCFIELDS")
-                child.alias = "Z05" if method == "ADDGRID" else "Z04"
+                child.alias = (
+                    args[2].alias if len(args) > 2 and isinstance(args[2], _MvcRuntime)
+                    and args[2].alias else ("Z05" if method == "ADDGRID" else "Z04")
+                )
                 child.models = obj.models
                 obj.models[str(args[0]).upper()] = child
                 return None
             if method == "GETOPERATION":
+                if self.mvc_case is not None:
+                    return 3
                 return self.fixture.get_environment("MODEL_OPERATION", default=2)
             if method == "GETVALUE":
                 if obj.class_name == "MPFORMMODEL":
                     if len(args) != 2:
                         raise AdvPLRuntimeError("GetValue espera modelo e campo")
-                    return self.call_method(obj.models[str(args[0]).upper()], "GetValue", [args[1]])
+                    child = obj.models.get(str(args[0]).upper())
+                    if child is None:
+                        raise AdvPLRuntimeError(f"GetValue: modelo '{args[0]}' nao encontrado")
+                    return self.call_method(child, "GetValue", [args[1]])
                 if len(args) != 1:
                     raise AdvPLRuntimeError("GetValue espera campo")
+                if obj.draft is not None:
+                    key = str(args[0]).upper()
+                    if key not in obj.draft:
+                        raise AdvPLRuntimeError(f"GetValue: campo '{key}' ausente nos dados do cenario MVC")
+                    return obj.draft[key]
                 alias = self._get_alias(obj.alias)
                 if obj.class_name == "MVCGRID":
                     alias.position = self._mvc_grid_positions(obj)[obj.position]
@@ -929,6 +989,9 @@ class FixtureInterpreter(Interpreter):
         return alias
 
     def _activate_browse(self, browse):
+        if self.mvc_case is not None:
+            self._run_mvc_case(browse)
+            return
         alias = self._get_alias(browse.alias)
         print(browse.description)
         if not alias.records:
@@ -958,6 +1021,72 @@ class FixtureInterpreter(Interpreter):
                     for (field, _), width in zip(columns, widths)
                 )
             )
+
+    def _run_mvc_case(self, browse):
+        case = self.mvc_case
+        if self.mvc_result is not None:
+            raise FixtureError(f"Cenario MVC '{case['nome']}' acionou mais de um browse")
+        model = self.call_function("ModelDef", [])
+        if not isinstance(model, _MvcRuntime) or model.class_name != "MPFORMMODEL":
+            raise FixtureError(f"Cenario MVC '{case['nome']}': ModelDef nao retornou MPFormModel")
+        if not isinstance(model.post_block, AdvPLBlock):
+            raise FixtureError(f"Cenario MVC '{case['nome']}': MPFormModel nao possui bPost")
+        if len(case["dados"]) != 1:
+            raise FixtureError(f"Cenario MVC '{case['nome']}': inclusao suporta um modelo de campos")
+        model_name, fields = next(iter(case["dados"].items()))
+        child = model.models.get(model_name.upper())
+        if child is None or child.class_name != "MVCFIELDS":
+            raise FixtureError(f"Cenario MVC '{case['nome']}': modelo '{model_name}' nao encontrado")
+        if child.alias != browse.alias:
+            raise FixtureError(
+                f"Cenario MVC '{case['nome']}': modelo '{model_name}' usa '{child.alias}', "
+                f"mas browse usa '{browse.alias}'"
+            )
+        table = self.fixture.tabelas.get(child.alias)
+        if not isinstance(table, dict) or not isinstance(table.get("campos"), list):
+            raise FixtureError(f"Cenario MVC '{case['nome']}': tabela '{child.alias}' sem metadados de campos")
+        declared = {field["nome"].upper(): field.get("tipo", "").upper()
+                    for field in table["campos"]}
+        draft = {}
+        for name, value in fields.items():
+            key = str(name).upper()
+            if key not in declared:
+                raise FixtureError(f"Cenario MVC '{case['nome']}': campo '{name}' nao existe em '{child.alias}'")
+            kind = declared[key]
+            if kind == "N" and (isinstance(value, bool) or not isinstance(value, (int, float))):
+                raise FixtureError(f"Cenario MVC '{case['nome']}': campo '{name}' deve ser numerico")
+            if kind == "C" and not isinstance(value, str):
+                raise FixtureError(f"Cenario MVC '{case['nome']}': campo '{name}' deve ser texto")
+            draft[key] = value
+        child.draft = draft
+        saved = self.invoke_block(model.post_block, [model])
+        if type(saved) is not bool:
+            raise FixtureError(f"Cenario MVC '{case['nome']}': bPost deve retornar logico")
+        alias = self._get_alias(child.alias)
+        if saved:
+            alias.records.append(copy.deepcopy(draft))
+        self.mvc_result = {"salvou": saved, "totalRegistros": len(alias.records),
+                           "registros": copy.deepcopy(alias.records)}
+        expected = case["esperado"]
+        if saved != expected["salvou"]:
+            raise FixtureError(
+                f"Cenario MVC '{case['nome']}': esperado salvou={expected['salvou']}, "
+                f"obtido salvou={saved}"
+            )
+        if "totalRegistros" in expected and len(alias.records) != expected["totalRegistros"]:
+            raise FixtureError(
+                f"Cenario MVC '{case['nome']}': esperado totalRegistros="
+                f"{expected['totalRegistros']}, obtido {len(alias.records)}"
+            )
+        if "registro" in expected:
+            expected_record = {str(key).upper(): value
+                               for key, value in expected["registro"].items()}
+            if not saved or alias.records[-1] != expected_record:
+                raise FixtureError(
+                    f"Cenario MVC '{case['nome']}': ultimo registro difere de 'esperado.registro'"
+                )
+        print(f"[MVC] {case['nome']}: salvou={str(saved).lower()}, "
+              f"totalRegistros={len(alias.records)}")
 
     def _build_builtins(self):
         builtins = super()._build_builtins()
@@ -1259,7 +1388,10 @@ class FixtureInterpreter(Interpreter):
         def b_mvc_object(name, args):
             if name != "FWFORMSTRUCT" and args:
                 raise AdvPLRuntimeError(f"{name} nao espera argumentos")
-            return _MvcRuntime(name)
+            result = _MvcRuntime(name)
+            if name == "FWFORMSTRUCT" and len(args) > 1 and isinstance(args[1], str):
+                result.alias = args[1].upper()
+            return result
 
         def b_fwloadmodel(args):
             require_count("FWLoadModel", args, 1)
@@ -1821,6 +1953,7 @@ def run_sources(
     args=None,
     source_name="<memoria>",
     name_profile="modern",
+    mvc_case=None,
 ):
     interpreter = build_interpreter_sources(
         source_units,
@@ -1829,7 +1962,16 @@ def run_sources(
         source_name=source_name,
         name_profile=name_profile,
     )
-    return interpreter.run(entry, args)
+    if mvc_case is not None:
+        if mvc_case not in interpreter.fixture.cenarios_mvc:
+            raise FixtureError(f"Cenario MVC '{mvc_case}' nao encontrado na fixture")
+        interpreter.mvc_case = interpreter.fixture.cenarios_mvc[mvc_case]
+    result = interpreter.run(entry, args)
+    if mvc_case is not None:
+        if interpreter.mvc_result is None:
+            raise FixtureError(f"Cenario MVC '{mvc_case}' nao foi executado: entrada nao ativou browse")
+        return interpreter.mvc_result
+    return result
 
 
 def run_file(source_path, fixture_path, entry="MAIN", args=None,

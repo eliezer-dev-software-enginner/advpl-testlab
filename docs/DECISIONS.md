@@ -222,6 +222,14 @@
 - **Decisao:** Validar estaticamente acoes literais `VIEWDEF.<modulo>` de `ADD OPTION` contra as `User Function` carregadas, e campos literais de `SetPrimaryKey` contra o dicionario da fixture. Campos de chave calculados dinamicamente tambem serao verificados quando `SetPrimaryKey` for executado.
 - **Consequencias:** `-validate` e `-run` falham cedo nesses erros, inclusive em funcoes MVC que a entrada nao chamou. A verificacao estatica nao pretende cobrir acoes ou chaves construidas dinamicamente.
 
+## ADR-028 — Cenarios MVC nomeados com inclusao isolada
+
+- **Data:** 23/09/2026
+- **Estado:** Aceita
+- **Contexto:** O browse headless nao exercitava o `bPost` de `MPFormModel`, e a validacao de inclusao precisava de entradas e expectativas reproduziveis.
+- **Decisao:** Adicionar `cenariosMvc` a fixture JSONC e `--mvc-case` ao `-run`. Ao ativar o browse, chamar `ModelDef` no escopo da entrada, aplicar `dados` a um unico `AddFields`, executar o `bPost`, incluir somente em memoria quando ele aprovar e conferir `esperado.salvou`, `totalRegistros` e `registro` quando informados.
+- **Consequencias:** Cada invocacao comeca dos registros originais. Nao ha escrita no fixture nem simulacao de UI, `ViewDef`, grid ou AppServer. Ausencia de `bPost`, modelo/campo desconhecido e divergencia de expectativa produzem falha explicita.
+
 - Teste de aceite da CLI: saida `000007`.
 - Cinco testes automatizados executados e aprovados.
 - Nove testes automatizados executados e aprovados apos incorporar os primeiros casos reais.

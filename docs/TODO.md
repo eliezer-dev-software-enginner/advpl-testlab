@@ -147,13 +147,16 @@ Status: `[x]` — concluido em 21/09/2026.
 - [ ] Implementar atribuicao de campo no registro corrente.
 - [x] Definir `MsgAlert` como saida textual; `ConOut` continua pendente.
 - [ ] Garantir que o fixture de entrada no disco nao seja alterado involuntariamente.
+- [x] Confirmar por teste que cenarios MVC nao alteram a fixture de origem.
 
 ### Fase 5 — Casos de teste declarativos
 
 - [ ] Definir fixture de entrada e resultado esperado no mesmo caso de teste.
+- [x] Definir casos MVC nomeados com entrada e expectativa de inclusao.
 - [ ] Comparar retorno de funcao.
 - [ ] Comparar saida capturada.
 - [ ] Comparar estado final das tabelas simuladas.
+- [x] Comparar `totalRegistros` final nos cenarios MVC de inclusao.
 - [ ] Produzir relatorio claro de divergencias.
 
 ## Pendencias tecnicas continuas

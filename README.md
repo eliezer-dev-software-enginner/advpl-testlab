@@ -95,7 +95,29 @@ O executor procura `advpl-testlab.jsonc` ou `advpl-testlab.json` no diretorio do
 --entry FUNCAO         entrada; opcional, usa a primeira User Function
 --args-json ARRAY       argumentos da entrada como array JSON
 --name-profile PERFIL    modern (padrao) ou legacy10 (10 caracteres historicos)
+--mvc-case NOME          executa cenario MVC de inclusao definido no fixture
 ```
+
+### Cenarios de inclusao MVC
+
+Defina `cenariosMvc` no `advpl-testlab.jsonc` e selecione um cenario por nome:
+
+```jsonc
+"cenariosMvc": [
+  {
+    "nome": "incluir-preco-negativo",
+    "operacao": "incluir",
+    "dados": {"ZA1MASTER": {"ZA1_COD": "000002", "ZA1_PRECO": -10}},
+    "esperado": {"salvou": false, "totalRegistros": 1}
+  }
+]
+```
+
+```powershell
+advpl-testlab -run ZA1MVC.prw --mvc-case incluir-preco-negativo
+```
+
+O `Activate()` do browse chama `ModelDef` no escopo ativo da entrada, preenche o modelo com `dados`, executa o bloco de pos-validacao (`bPost`) e compara `salvou` e, se declarados, `totalRegistros` e `registro` (ultimo registro completo). Uma inclusao aprovada acrescenta o registro somente na memoria da execucao; o JSONC nao e alterado. Erro de expectativa retorna codigo `1`. A primeira versao aceita um unico `AddFields`/alias no `MPFormModel`, com campos `C` e `N` declarados na fixture; nao simula a UI, `ViewDef`, persistencia Protheus ou outras operacoes MVC. Sem `--mvc-case`, `-run` conserva o browse headless anterior.
 
 O perfil de nomes e passado ao LivrePL na validacao e na execucao. Use, por exemplo, `advpl-testlab -validate rotina.prw --name-profile legacy10` para detectar colisoes de nomes historicos; o padrao `modern` mantem nomes completos. O perfil legado tambem considera `U_` mais oito caracteres para `User Function`.
 
