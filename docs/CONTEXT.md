@@ -19,6 +19,8 @@
 | `docs/corpus-desafio1-context-map.md` | Mapa dos fontes funcionais usados como corpus |
 | `docs/fase-ui-headless.md` | Mensagens, dialogos sem UI e respostas deterministicas |
 | `docs/fase-trnsol02-integral.md` | Validacao e execucao integral do primeiro fonte real |
+| `docs/fix-private-semantics.md` | Escopo dinamico de `PRIVATE` e localizacao de erros semanticos |
+| `docs/fase-mvc-validacao.md` | Validacao de acoes de menu e chaves primarias MVC |
 
 ## O que e o projeto
 
@@ -53,6 +55,10 @@ parser + FixtureInterpreter do LivrePL
 ```
 
 `FixtureInterpreter` herda de `Interpreter` e estende `_build_builtins()`. A decisao evita mudancas no lexer, parser e runtime central quando o recurso pode ser expresso como funcao de framework.
+
+Na validacao semantica, nomes `PRIVATE` declarados nos fontes carregados sao considerados potencialmente visiveis entre funcoes; `LOCAL` continua restrito a sua funcao. A disponibilidade efetiva de `PRIVATE` e resolvida no runtime pela pilha dinamica. Erros de identificador usam a linha da AST para apontar a leitura que falhou.
+
+Fontes MVC recebem verificacao adicional: `ADD OPTION` com `VIEWDEF.<modulo>` literal deve apontar para uma `User Function` carregada, e `SetPrimaryKey` literal deve usar campos da fixture. O runtime tambem verifica chaves calculadas dinamicamente quando o metodo e chamado.
 
 ## Arquivos do projeto
 

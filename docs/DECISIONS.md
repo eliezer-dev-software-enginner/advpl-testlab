@@ -206,6 +206,22 @@
 - **Decisao:** Expor `--name-profile modern|legacy10` em validacao e execucao e delegar a politica ao LivrePL. A validacao semantica do TestLab usa a mesma chave normalizada, incluindo funcoes de fixture.
 - **Consequencias:** Nao ha regras de truncamento independentes nos dois projetos; o padrao moderno preserva a compatibilidade existente.
 
+## ADR-026 — PRIVATE na validacao semantica
+
+- **Data:** 23/09/2026
+- **Estado:** Aceita
+- **Contexto:** Fontes MVC declaram `PRIVATE` na entrada e a consultam em funcoes auxiliares. A verificacao isolada por funcao acusa falso positivo e aponta a primeira ocorrencia do nome, nao a leitura.
+- **Decisao:** Considerar nomes `PRIVATE` declarados em qualquer fonte carregado como potencialmente visiveis entre funcoes na analise estatica. Manter `LOCAL` restrito a sua funcao. A disponibilidade efetiva de `PRIVATE` continua sendo verificada em tempo de execucao pelo escopo dinamico do LivrePL. Usar a linha do no da AST para localizar erros semanticos.
+- **Consequencias:** `-validate` nao garante que uma rota runtime tenha inicializado a `PRIVATE`; em compensacao, nao bloqueia codigo AdvPL valido com escopo dinamico.
+
+## ADR-027 — Validacoes MVC ligadas ao fonte e a fixture
+
+- **Data:** 23/09/2026
+- **Estado:** Aceita
+- **Contexto:** O browse headless nao executa automaticamente `MenuDef` ou `ModelDef`, entao `VIEWDEF` com nome de modulo inexistente e `SetPrimaryKey` com campo ausente podiam passar em `-run`.
+- **Decisao:** Validar estaticamente acoes literais `VIEWDEF.<modulo>` de `ADD OPTION` contra as `User Function` carregadas, e campos literais de `SetPrimaryKey` contra o dicionario da fixture. Campos de chave calculados dinamicamente tambem serao verificados quando `SetPrimaryKey` for executado.
+- **Consequencias:** `-validate` e `-run` falham cedo nesses erros, inclusive em funcoes MVC que a entrada nao chamou. A verificacao estatica nao pretende cobrir acoes ou chaves construidas dinamicamente.
+
 - Teste de aceite da CLI: saida `000007`.
 - Cinco testes automatizados executados e aprovados.
 - Nove testes automatizados executados e aprovados apos incorporar os primeiros casos reais.

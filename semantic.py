@@ -1,7 +1,10 @@
 import re
 
 from naming import NamePolicy
-from parser import Assign, BlockLiteral, Call, ForLoop, Identifier, SequenceStmt, VarDecl
+from parser import (
+    ArrayLiteral, Assign, BlockLiteral, Call, ForLoop, Identifier, Literal,
+    MethodCall, SequenceStmt, VarDecl,
+)
 
 
 class SemanticError(Exception):
@@ -53,9 +56,41 @@ def _public_names(program, policy):
     return names
 
 
-def _source_location(source, name):
+def private_names(program):
+    return {
+        node.name for node in _walk(program)
+        if isinstance(node, VarDecl) and node.kind.upper() == "PRIVATE"
+    }
+
+
+def mvc_field_names(fixture):
+    names = set()
+    for table in fixture.tabelas.values():
+        if isinstance(table, dict):
+            if "campos" in table:
+                names.update(
+                    str(field["nome"]).upper()
+                    for field in table["campos"]
+                    if isinstance(field, dict) and "nome" in field
+                )
+                continue
+            records = table.get("registros", [])
+        else:
+            records = table
+        for record in records:
+            if isinstance(record, dict):
+                names.update(str(name).upper() for name in record)
+    return names
+
+
+def _source_location(source, name, line_hint=None):
     pattern = re.compile(rf"\b{re.escape(name)}\b", re.IGNORECASE)
-    for line_number, line in enumerate(source.splitlines(), start=1):
+    source_lines = source.splitlines()
+    if line_hint is not None and 1 <= line_hint <= len(source_lines):
+        match = pattern.search(source_lines[line_hint - 1])
+        if match:
+            return line_hint, match.start() + 1
+    for line_number, line in enumerate(source_lines, start=1):
         match = pattern.search(line)
         if match:
             return line_number, match.start() + 1
@@ -67,11 +102,14 @@ def validate_program(
     source,
     allowed_globals=None,
     allowed_functions=None,
+    allowed_privates=None,
     name_profile="modern",
 ):
     policy = NamePolicy(name_profile)
     globals_ = {policy.key(name) for name in _DEFAULT_GLOBALS}
     globals_.update(_public_names(program, policy))
+    globals_.update(policy.key(name) for name in private_names(program))
+    globals_.update(policy.key(name) for name in (allowed_privates or ()))
     globals_.update(policy.key(name) for name in (allowed_globals or ()))
     functions = {policy.key(function.name) for function in program.functions}
     functions.update(policy.key(class_.name) for class_ in program.classes)
@@ -84,16 +122,60 @@ def validate_program(
             if isinstance(node, Identifier):
                 if policy.key(node.name) in declared:
                     continue
-                line, column = _source_location(source, node.name)
+                line, column = _source_location(source, node.name, getattr(node, "line", None))
                 raise SemanticError(
                     f"Variável '{node.name}' não declarada",
                     line=line,
                     column=column,
                 )
             if isinstance(node, Call) and policy.key(node.name) not in functions:
-                line, column = _source_location(source, node.name)
+                line, column = _source_location(source, node.name, getattr(node, "line", None))
                 raise SemanticError(
                     f"Função '{node.name}' não encontrada",
                     line=line,
                     column=column,
                 )
+
+
+def validate_mvc_metadata(program, source, fixture, user_functions,
+                          name_profile="modern"):
+    policy = NamePolicy(name_profile)
+    modules = {policy.key(name) for name in user_functions}
+    fields = mvc_field_names(fixture)
+    lines = source.splitlines()
+    for callable_decl in (*program.functions, *program.methods):
+        for node in _walk(callable_decl.body):
+            line_number = getattr(node, "line", None)
+            if isinstance(node, Call) and node.name.upper() == "AADD":
+                if not (line_number and line_number <= len(lines)
+                        and lines[line_number - 1].lstrip().upper().startswith("ADD OPTION")):
+                    continue
+                if len(node.args) < 2 or not isinstance(node.args[1], ArrayLiteral):
+                    continue
+                items = node.args[1].elements
+                if len(items) < 2 or not isinstance(items[1], Literal):
+                    continue
+                action = items[1].value
+                if not isinstance(action, str) or not action.upper().startswith("VIEWDEF."):
+                    continue
+                module = action.split(".", 1)[1]
+                if policy.key(module) not in modules:
+                    line, column = _source_location(source, action, line_number)
+                    raise SemanticError(
+                        f"Ação MVC '{action}' referencia User Function '{module}' inexistente",
+                        line=line, column=column,
+                    )
+            if isinstance(node, MethodCall) and node.name.upper() == "SETPRIMARYKEY":
+                if not node.args or not isinstance(node.args[0], ArrayLiteral):
+                    continue
+                for item in node.args[0].elements:
+                    if not isinstance(item, Literal) or not isinstance(item.value, str):
+                        continue
+                    if item.value.upper() not in fields:
+                        line, column = _source_location(
+                            source, item.value, getattr(item, "line", line_number)
+                        )
+                        raise SemanticError(
+                            f"Campo '{item.value}' de SetPrimaryKey não existe na fixture",
+                            line=line, column=column,
+                        )

@@ -161,6 +161,8 @@ Status: `[x]` — concluido em 21/09/2026.
 - [x] Expor perfil de nomes moderno ou legado na validacao e execucao, usando a politica do LivrePL.
 - [x] Separar a suite propria dos testes de integracao que leem `desafios-aprendizado`.
 - [x] Aceitar fixtures `.jsonc` comentados e manter leitura de `.json` estrito.
+- [x] Validar referencias a `PRIVATE` em funcoes auxiliares sem promover `LOCAL` a global, e apontar a linha efetiva de nomes ausentes.
+- [x] Rejeitar `VIEWDEF.<modulo>` desconhecido e campos ausentes em `SetPrimaryKey`, mesmo quando menu/modelo MVC nao sao executados pelo browse headless.
 - [ ] Avaliar empacotamento ou configuracao explicita do caminho do LivrePL sem quebrar o uso atual por diretorios irmaos.
 - [ ] Generalizar objetos `FWExecStatement`/`FWBrowse` no runtime, removendo a deteccao especializada quando houver cobertura equivalente.
 - [ ] Aplicar filtros da consulta simulada sobre Z04/Z05 em vez de usar resultados precomputados.

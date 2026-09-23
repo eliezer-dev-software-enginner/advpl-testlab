@@ -108,7 +108,10 @@ from lexer import LexError
 from naming import NameCollisionError
 from parser import Call, ParseError, Program, parse_source
 from preprocessor import preprocess
-from semantic import SemanticError, validate_program
+from semantic import (
+    SemanticError, mvc_field_names, private_names, validate_mvc_metadata,
+    validate_program,
+)
 
 
 class Fixture:
@@ -850,6 +853,16 @@ class FixtureInterpreter(Interpreter):
         if isinstance(obj, _MvcRuntime):
             if method == "NEW":
                 return obj
+            if method == "SETPRIMARYKEY":
+                if len(args) != 1 or not isinstance(args[0], list):
+                    raise AdvPLRuntimeError("SetPrimaryKey espera array de campos")
+                fields = mvc_field_names(self.fixture)
+                for field in args[0]:
+                    if not isinstance(field, str) or field.upper() not in fields:
+                        raise AdvPLRuntimeError(
+                            f"Campo '{field}' de SetPrimaryKey nao existe na fixture"
+                        )
+                return None
             if method == "GETMODEL":
                 if len(args) != 1:
                     raise AdvPLRuntimeError("GetModel espera identificador")
@@ -893,7 +906,7 @@ class FixtureInterpreter(Interpreter):
                 alias.position = self._mvc_grid_positions(obj)[obj.position]
                 return alias.deleted()
             if method in (
-                "SETPRIMARYKEY", "SETRELATION", "SETUNIQUELINE", "SETDESCRIPTION",
+                "SETRELATION", "SETUNIQUELINE", "SETDESCRIPTION",
                 "REMOVEFIELD", "SETMODEL", "ADDFIELD", "ADDGRID", "CREATEHORIZONTALBOX",
                 "SETOWNERVIEW", "ENABLETITLEVIEW", "ADDINCREMENTFIELD",
             ):
@@ -1718,6 +1731,11 @@ def compile_sources(source_units, fixture=None, name_profile="modern"):
                 field["nome"].upper() for field in table.get("campos", [])
                 if "nome" in field
             )
+    declared_privates = private_names(combined)
+    user_functions = {
+        function.name for function in combined.functions
+        if function.kind == "USER"
+    }
     for source_name, source, program in parsed_units:
         try:
             validate_program(
@@ -1725,6 +1743,11 @@ def compile_sources(source_units, fixture=None, name_profile="modern"):
                 source,
                 allowed_globals=allowed_globals,
                 allowed_functions=allowed_functions,
+                allowed_privates=declared_privates,
+                name_profile=name_profile,
+            )
+            validate_mvc_metadata(
+                program, source, fixture, user_functions,
                 name_profile=name_profile,
             )
         except SemanticError as exc:

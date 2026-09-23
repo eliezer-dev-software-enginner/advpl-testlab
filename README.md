@@ -131,6 +131,10 @@ Em um terminal interativo, o erro é exibido em vermelho e o processo termina co
 
 Por exemplo, `Local oStmt := Nilo` produz `SemanticError: Variável 'Nilo' não declarada`. `Nil` continua sendo reconhecido normalmente como o literal AdvPL. A atribuição direta a um nome ainda segue a semântica Clipper/AdvPL já adotada pelo LivrePL: `x := 1` pode criar uma variável `PRIVATE` implícita.
 
+Uma `PRIVATE` declarada no fonte pode ser acessada por outra funcao enquanto seu escopo dinamico estiver ativo. Por isso, `-validate` aceita o nome em funcoes auxiliares; `-run` ainda gera erro se a funcao for executada sem a `PRIVATE` ativa. Variaveis `LOCAL` continuam restritas a funcao que as declarou. O diagnostico de nome ausente aponta para a linha da leitura, nao para uma mencao anterior em comentario ou declaracao.
+
+Para fontes MVC, a validacao tambem confere acoes literais `VIEWDEF.<modulo>` de `ADD OPTION` contra as `User Function` carregadas e campos literais de `SetPrimaryKey({ ... })` contra os campos declarados na fixture. Isso ocorre mesmo que `MenuDef` ou `ModelDef` nao sejam executadas pela entrada headless. Chaves montadas dinamicamente sao conferidas quando `SetPrimaryKey` e executado. Acoes e chaves dinamicas nao podem ser comprovadas por `-validate`.
+
 Da mesma forma, `Local aArea := GetAreaTESTE()` produz `SemanticError: Função 'GetAreaTESTE' não encontrada`. São aceitas as funções declaradas no próprio fonte, os built-ins implementados pelo LivrePL/TestLab, construtores de classes e funções simuladas em `funcoes` no JSON. Para validar uma simulação declarada em outro fixture, informe `--fixture arquivo.json` também com `-validate`.
 
 Sem instalar, o mesmo fluxo pode ser executado dentro deste repositorio:
