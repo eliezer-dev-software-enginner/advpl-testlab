@@ -81,11 +81,13 @@ def discover_entry(source):
 def discover_fixture(source_path):
     source_path = Path(source_path).resolve()
     for directory in (source_path.parent, *source_path.parents):
-        candidate = directory / "advpl-testlab.json"
-        if candidate.is_file():
-            return candidate
+        for name in ("advpl-testlab.jsonc", "advpl-testlab.json"):
+            candidate = directory / name
+            if candidate.is_file():
+                return candidate
     raise FixtureError(
-        "Fixture nao encontrado. Crie 'advpl-testlab.json' no diretorio do fonte "
+        "Fixture nao encontrado. Crie 'advpl-testlab.jsonc' ou "
+        "'advpl-testlab.json' no diretorio do fonte "
         "ou em um diretorio pai, ou informe --fixture."
     )
 

@@ -12,6 +12,74 @@ class FixtureError(ValueError):
     pass
 
 
+def _jsonc_to_json(source):
+    """Remove comentarios e virgulas finais sem alterar as posicoes de linha."""
+    chars = list(source)
+    index = 0
+    in_string = False
+    escaped = False
+
+    while index < len(chars):
+        char = chars[index]
+        next_char = chars[index + 1] if index + 1 < len(chars) else ""
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            index += 1
+            continue
+        if char == '"':
+            in_string = True
+            index += 1
+            continue
+        if char == "/" and next_char == "/":
+            while index < len(chars) and chars[index] not in "\r\n":
+                chars[index] = " "
+                index += 1
+            continue
+        if char == "/" and next_char == "*":
+            start = index
+            chars[index] = chars[index + 1] = " "
+            index += 2
+            while index + 1 < len(chars) and chars[index:index + 2] != ["*", "/"]:
+                if chars[index] not in "\r\n":
+                    chars[index] = " "
+                index += 1
+            if index + 1 >= len(chars):
+                line = source.count("\n", 0, start) + 1
+                raise FixtureError(f"Comentario de bloco nao terminado na linha {line}")
+            chars[index] = chars[index + 1] = " "
+            index += 2
+            continue
+        index += 1
+
+    in_string = False
+    escaped = False
+    for index, char in enumerate(chars):
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+            continue
+        if char != ",":
+            continue
+        next_index = index + 1
+        while next_index < len(chars) and chars[next_index].isspace():
+            next_index += 1
+        if next_index < len(chars) and chars[next_index] in "]}":
+            chars[index] = " "
+    return "".join(chars)
+
+
 class SourceUnitError(Exception):
     def __init__(self, source_name, source, original):
         self.source_name = source_name
@@ -93,18 +161,24 @@ class Fixture:
         )
 
     @classmethod
-    def from_file(cls, path):
+    def read_data(cls, path):
         fixture_path = Path(path)
         try:
             with fixture_path.open(encoding="utf-8") as fixture_file:
-                data = json.load(fixture_file)
+                source = fixture_file.read()
+            if fixture_path.suffix.lower() == ".jsonc":
+                source = _jsonc_to_json(source)
+            return json.loads(source)
         except FileNotFoundError as exc:
             raise FixtureError(f"Fixture nao encontrado: '{fixture_path}'") from exc
         except json.JSONDecodeError as exc:
             raise FixtureError(
                 f"JSON invalido em '{fixture_path}', linha {exc.lineno}: {exc.msg}"
             ) from exc
-        return cls.from_dict(data)
+
+    @classmethod
+    def from_file(cls, path):
+        return cls.from_dict(cls.read_data(path))
 
     @staticmethod
     def _normalize_parameters(parameters):

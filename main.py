@@ -24,7 +24,7 @@ def main(argv=None):
         metavar="ARQUIVO.PRW",
         help="valida todo o fonte sem executar a funcao de entrada",
     )
-    parser.add_argument("--fixture", help="fixture JSON (padrao: advpl-testlab.json)")
+    parser.add_argument("--fixture", help="fixture JSON/JSONC (padrao: advpl-testlab.jsonc ou .json)")
     parser.add_argument("--entry", help="User Function de entrada")
     parser.add_argument(
         "--args-json",

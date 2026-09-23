@@ -182,6 +182,22 @@
 - **Decisao:** Mover o fixture do desafio1 para `desafio1-solicitacao-compra/advpl-testlab.json` e recomendar um fixture local por caso. A busca da CLI continua priorizando o diretorio do `.prw`.
 - **Consequencias:** Os cenarios nao se misturam; caminhos explicitos dos testes e da documentacao foram atualizados, sem alterar o executor.
 
+## ADR-023 — JSONC para fixtures comentados
+
+- **Data:** 23/09/2026
+- **Estado:** Aceita
+- **Contexto:** Os cenarios reais precisam explicar escolhas de dados sem perder a legibilidade; JSON estrito nao permite comentarios.
+- **Decisao:** Ler `.jsonc` com comentarios de linha/bloco e virgulas finais, mantendo `.json` estrito. A descoberta prefere `.jsonc` quando ambos estao no mesmo diretorio, sem mudar a prioridade do diretorio mais proximo.
+- **Consequencias:** Os cenarios podem ser comentados sem dependencias externas; fixtures JSON antigos continuam funcionando.
+
+## ADR-024 — Suite propria sem dependencias no corpus externo
+
+- **Data:** 23/09/2026
+- **Estado:** Aceita
+- **Contexto:** Testes do TestLab liam `.prw` e fixtures do projeto `desafios-aprendizado`; testes de `TRNSOL02.prw` ficavam ignorados porque o fonte nao existe no corpus atual.
+- **Decisao:** Manter testes unitarios e fixtures locais no TestLab; transferir os testes de integracao dos desafios para `desafios-aprendizado/tests` e retirar testes obsoletos que exigiam `TRNSOL02.prw`.
+- **Consequencias:** A suite do TestLab roda independentemente do projeto dos desafios; as integracoes reais continuam testaveis no projeto que possui os fontes.
+
 - Teste de aceite da CLI: saida `000007`.
 - Cinco testes automatizados executados e aprovados.
 - Nove testes automatizados executados e aprovados apos incorporar os primeiros casos reais.

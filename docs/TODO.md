@@ -50,7 +50,7 @@ Status: `[x]` — concluido em 22/09/2026.
 
 - [x] Criar a CLI `advpl-testlab -run arquivo.prw`.
 - [x] Descobrir automaticamente a primeira `User Function`.
-- [x] Descobrir `advpl-testlab.json` no projeto alvo.
+- [x] Descobrir `advpl-testlab.jsonc` ou `advpl-testlab.json` no projeto alvo.
 - [x] Criar fixture de Z04, Z05 e Z06 em `desafios-aprendizado/desafio1-solicitacao-compra`.
 - [x] Executar `TRNSOL02.prw` sem alterar o fonte.
 - [x] Simular `FWExecStatement` e renderizar `FWBrowse` no terminal.
@@ -158,6 +158,8 @@ Status: `[x]` — concluido em 21/09/2026.
 
 ## Pendencias tecnicas continuas
 
+- [x] Separar a suite propria dos testes de integracao que leem `desafios-aprendizado`.
+- [x] Aceitar fixtures `.jsonc` comentados e manter leitura de `.json` estrito.
 - [ ] Avaliar empacotamento ou configuracao explicita do caminho do LivrePL sem quebrar o uso atual por diretorios irmaos.
 - [ ] Generalizar objetos `FWExecStatement`/`FWBrowse` no runtime, removendo a deteccao especializada quando houver cobertura equivalente.
 - [ ] Aplicar filtros da consulta simulada sobre Z04/Z05 em vez de usar resultados precomputados.

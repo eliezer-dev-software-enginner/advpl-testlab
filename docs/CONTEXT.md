@@ -69,7 +69,7 @@ parser + FixtureInterpreter do LivrePL
 | `fixtures/getmv.json` | Fixture de exemplo com parametros e tabelas |
 | `fixtures/sol_mail_cfg.json` | Parametros SMTP para o primeiro caso real |
 | `tests/test_getmv.py` | Testes unitarios e ponta a ponta da Fase 1 |
-| `tests/test_real_cases.py` | Testes extraidos do desafio1-solicitacao-compra |
+| `desafios-aprendizado/tests/test_real_cases.py` | Testes de integracao do desafio1-solicitacao-compra, fora da suite propria do TestLab |
 | `docs/` | Memoria permanente e documentos de fase |
 
 ## Formato atual do fixture
@@ -134,7 +134,7 @@ parser + FixtureInterpreter do LivrePL
 - Runtime de `FWExecStatement`, alias dinamico, navegacao e `FWBrowse`.
 - Exportacao HTML simulada em arquivo virtual.
 - Cenarios de cancelamento, consulta vazia, browse e exportacao confirmada.
-- Fixture real em `desafios-aprendizado/desafio1-solicitacao-compra/advpl-testlab.json`, com metadados e registros de Z02 a Z06. Cada desafio mantem seu fixture ao lado dos fontes.
+- Fixture real em `desafios-aprendizado/desafio1-solicitacao-compra/advpl-testlab.jsonc`, com metadados e registros de Z02 a Z06. Cada desafio mantem seu fixture ao lado dos fontes.
 - Trinta e tres testes automatizados aprovados.
 
 ### UI headless e confirmacoes deterministicas
@@ -171,7 +171,7 @@ parser + FixtureInterpreter do LivrePL
 - Aliases estaticos Z02/Z03, `While`, `DbSeek`, `DbSkip`, `Eof`, `Deleted`, `Transform`, `DToC` e `MsgStop` possuem runtime headless.
 - Os eventos ENVIO, APROVACAO, REJEICAO e PROCESSAMENTO montam o HTML original e capturam o e-mail em memoria; evento desconhecido retorna falso.
 - A CLI aceita argumentos da entrada por `--args-json`, por exemplo `["ENVIO"]`.
-- Quatro novos testes elevam a suite a quarenta e oito casos; nove casos de TRNSOL02 ficam ignorados porque esse fonte nao esta presente no corpus renomeado atual.
+- Os testes do corpus real pertencem agora a `desafios-aprendizado/tests`; a suite propria do TestLab nao precisa de fontes desse outro projeto. Os testes legados de `TRNSOL02.prw`, ausente no corpus atual, foram retirados da descoberta automatica.
 
 ### TRNSOL01 headless
 
@@ -182,7 +182,7 @@ parser + FixtureInterpreter do LivrePL
 
 ### desafio0-Fat006 headless
 
-- O fixture local `desafios-aprendizado/desafio0-Fat006/advpl-testlab.json` fornece SC5, area M, `PARAMIXB`, `aHeader` e `aCols`.
+- O fixture local `desafios-aprendizado/desafio0-Fat006/advpl-testlab.jsonc` fornece SC5, area M, `PARAMIXB`, `aHeader` e `aCols`.
 - `UFATE003.prw` declara dependencia direta de `U_MSGDANFE.prw`; `A410CONS` e `PE01NFESEFAZ` sao independentes.
 - O runtime suporta busca `AScan` com bloco, indice bidimensional adaptado, metadados de alias e escrita com RecLock em memoria. `ErrorBlock` e simplificado e nao representa AppServer.
 

@@ -1,6 +1,6 @@
 # AdvPL TestLab
 
-Ambiente de simulacao e testes para executar arquivos AdvPL reais com dados de fixtures JSON, sem AppServer, licenca ou banco de dados.
+Ambiente de simulacao e testes para executar arquivos AdvPL reais com dados de fixtures JSON ou JSONC, sem AppServer, licenca ou banco de dados.
 
 O projeto e separado do `livrePL`. Ele usa o interpretador como dependencia local e acrescenta builtins do framework Protheus por heranca, sem alterar o lexer, o parser ou o interpretador original.
 
@@ -35,7 +35,7 @@ advpl-testlab/
 |-- fixtures/ui-headless.json
 |-- fixtures/sol_mail_cfg.json
 |-- tests/test_getmv.py
-|-- tests/test_real_cases.py
+|-- tests/test_jsonc.py
 `-- docs/
 ```
 
@@ -51,7 +51,7 @@ protheus/
 
 - Python 3.10 ou mais recente disponível no terminal.
 - O repositório `livrePL` em um diretório irmão deste projeto.
-- Um arquivo `advpl-testlab.json` no projeto testado, ou seu caminho informado por `--fixture`.
+- Um arquivo `advpl-testlab.jsonc` (recomendado) ou `advpl-testlab.json` no projeto testado, ou seu caminho informado por `--fixture`.
 
 Estrutura esperada:
 
@@ -60,7 +60,7 @@ protheus/
 |-- livrePL/
 |-- advpl-testlab/
 `-- meu-projeto-advpl/
-    |-- advpl-testlab.json
+    |-- advpl-testlab.jsonc
     `-- rotina.prw
 ```
 
@@ -87,11 +87,11 @@ Depois, a partir do diretorio de qualquer fonte:
 advpl-testlab -run TRNSOL02.prw
 ```
 
-O executor procura `advpl-testlab.json` no diretorio do `.prw` e nos diretorios pais. Tambem e possivel usar `--fixture caminho.json`, `--entry NomeDaFuncao` e `--args-json '[...]'`.
+O executor procura `advpl-testlab.jsonc` ou `advpl-testlab.json` no diretorio do `.prw` e nos diretorios pais. O fixture do diretorio mais proximo prevalece; se ambos os formatos existirem nesse diretorio, `.jsonc` tem prioridade. Tambem e possivel usar `--fixture caminho.jsonc`, `--entry NomeDaFuncao` e `--args-json '[...]'`.
 
 ```text
 -run ARQUIVO.PRW       fonte AdvPL alvo da execução ou simulação
---fixture ARQUIVO.JSON fixture específico; opcional com advpl-testlab.json
+--fixture ARQUIVO.JSONC fixture específico; aceita também .json
 --entry FUNCAO         entrada; opcional, usa a primeira User Function
 --args-json ARRAY       argumentos da entrada como array JSON
 ```
@@ -303,12 +303,15 @@ No `TRNSOL02`, `LRET: true` representa o botão Consultar e `false` representa C
 
 ## Testar um novo projeto
 
-1. Crie `advpl-testlab.json` na pasta dos fontes do caso de teste. Para projetos com varios desafios, use um fixture por pasta; a CLI prefere o JSON mais proximo do `.prw`.
+1. Crie `advpl-testlab.jsonc` na pasta dos fontes do caso de teste. Para projetos com varios desafios, use um fixture por pasta; a CLI prefere o fixture mais proximo do `.prw`.
    Nos fixtures versionados, mantenha sempre `parametros`, `tabelas`, `funcoes`, `ambiente`, `dialogos`, `especificidadesPrw` e `consultas`, usando `[]` para secoes vazias.
+   JSONC aceita comentarios `//` e `/* ... */` e virgulas finais; dentro de strings, esses caracteres sao preservados. Arquivos `.json` continuam aceitos, mas seguem JSON estrito, sem comentarios nem virgulas finais.
 2. Cadastre parâmetros, tabelas, funções externas e consultas usadas pelo fonte.
 3. Abra um terminal no diretório do `.prw`.
 4. Execute `advpl-testlab -run NomeDoFonte.prw`.
 5. Para validar o TestLab, execute `python -m unittest discover -s tests -v` neste repositório.
+
+A suite propria do TestLab usa apenas fontes e fixtures deste repositorio; nao depende dos `.prw` de `desafios-aprendizado`. Os testes de integracao dos casos reais ficam em `desafios-aprendizado/tests` e podem ser executados separadamente naquele repositorio.
 
 ## Cobertura atual
 
@@ -317,7 +320,7 @@ No `TRNSOL02`, `LRET: true` representa o botão Consultar e `false` representa C
 Estes recursos passam pelo parser e pelo interpretador, portanto sua lógica é executada:
 
 - descoberta automática da primeira `User Function` ou seleção explícita por `--entry`;
-- descoberta de `advpl-testlab.json` no diretório do fonte ou nos diretórios pais;
+- descoberta de `advpl-testlab.jsonc` ou `advpl-testlab.json` no diretório do fonte ou nos diretórios pais;
 - funções `Function`, `User Function` e `Static Function` dentro da cobertura do LivrePL;
 - variáveis `Local`, `Private`, `Public` e `Static`;
 - atribuições simples, `+=` e `-=`;
@@ -370,7 +373,7 @@ advpl-testlab -run TRNSOL01.prw --entry Z04PROC
 
 ### desafio0-Fat006 em modo headless
 
-Os quatro fontes da pasta `desafios-aprendizado/desafio0-Fat006` usam um fixture proprio. `U_MSGDANFE`, `A410CONS` e `PE01NFESEFAZ` sao independentes; `UFATE003` carrega `U_MSGDANFE` via `usePrw`. A suite `tests/test_fat006.py` verifica consolidacao sem duplicatas, preview, mensagem da NF-e, gravacao em SC5 e falha de bloqueio.
+Os quatro fontes da pasta `desafios-aprendizado/desafio0-Fat006` usam um fixture proprio. `U_MSGDANFE`, `A410CONS` e `PE01NFESEFAZ` sao independentes; `UFATE003` carrega `U_MSGDANFE` via `usePrw`. A suite `desafios-aprendizado/tests/test_fat006.py` verifica consolidacao sem duplicatas, preview, mensagem da NF-e, gravacao em SC5 e falha de bloqueio.
 
 - `AScan` avalia blocos de busca e a adaptacao aceita `a[linha, coluna]`;
 - `PARAMIXB`, `aHeader` e `aCols` sao valores declarados em `ambiente`; `Type`, `AClone`, `ChkFile`, `ErrorBlock` e `Break` possuem adaptadores headless;
