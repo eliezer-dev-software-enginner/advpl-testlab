@@ -1,5 +1,6 @@
 import re
 
+from naming import NamePolicy
 from parser import Assign, BlockLiteral, Call, ForLoop, Identifier, SequenceStmt, VarDecl
 
 
@@ -27,28 +28,28 @@ def _walk(node):
         yield from _walk(value)
 
 
-def _declared_names(callable_decl):
-    names = {name.upper() for name in callable_decl.params}
+def _declared_names(callable_decl, policy):
+    names = {policy.key(name) for name in callable_decl.params}
     for node in _walk(callable_decl.body):
         if isinstance(node, VarDecl):
-            names.add(node.name.upper())
+            names.add(policy.key(node.name))
         elif isinstance(node, ForLoop):
-            names.add(node.var.upper())
+            names.add(policy.key(node.var))
         elif isinstance(node, SequenceStmt) and node.recover_var:
-            names.add(node.recover_var.upper())
+            names.add(policy.key(node.recover_var))
         elif isinstance(node, BlockLiteral):
-            names.update(name.upper() for name in node.params)
+            names.update(policy.key(name) for name in node.params)
         elif isinstance(node, Assign) and isinstance(node.target, Identifier):
             # AdvPL/Clipper cria PRIVATE implicitamente em uma atribuicao.
-            names.add(node.target.name.upper())
+            names.add(policy.key(node.target.name))
     return names
 
 
-def _public_names(program):
+def _public_names(program, policy):
     names = set()
     for node in _walk(program):
         if isinstance(node, VarDecl) and node.kind.upper() == "PUBLIC":
-            names.add(node.name.upper())
+            names.add(policy.key(node.name))
     return names
 
 
@@ -66,20 +67,22 @@ def validate_program(
     source,
     allowed_globals=None,
     allowed_functions=None,
+    name_profile="modern",
 ):
-    globals_ = set(_DEFAULT_GLOBALS)
-    globals_.update(_public_names(program))
-    globals_.update(name.upper() for name in (allowed_globals or ()))
-    functions = {function.name.upper() for function in program.functions}
-    functions.update(class_.name.upper() for class_ in program.classes)
-    functions.update(name.upper() for name in (allowed_functions or ()))
+    policy = NamePolicy(name_profile)
+    globals_ = {policy.key(name) for name in _DEFAULT_GLOBALS}
+    globals_.update(_public_names(program, policy))
+    globals_.update(policy.key(name) for name in (allowed_globals or ()))
+    functions = {policy.key(function.name) for function in program.functions}
+    functions.update(policy.key(class_.name) for class_ in program.classes)
+    functions.update(policy.key(name) for name in (allowed_functions or ()))
 
     callables = list(program.functions) + list(program.methods)
     for callable_decl in callables:
-        declared = _declared_names(callable_decl) | globals_
+        declared = _declared_names(callable_decl, policy) | globals_
         for node in _walk(callable_decl.body):
             if isinstance(node, Identifier):
-                if node.name.upper() in declared:
+                if policy.key(node.name) in declared:
                     continue
                 line, column = _source_location(source, node.name)
                 raise SemanticError(
@@ -87,7 +90,7 @@ def validate_program(
                     line=line,
                     column=column,
                 )
-            if isinstance(node, Call) and node.name.upper() not in functions:
+            if isinstance(node, Call) and policy.key(node.name) not in functions:
                 line, column = _source_location(source, node.name)
                 raise SemanticError(
                     f"Função '{node.name}' não encontrada",

@@ -129,6 +129,7 @@ parser + FixtureInterpreter do LivrePL
 
 - CLI instalavel com `advpl-testlab -run arquivo.prw`.
 - Descoberta automatica da primeira `User Function` e de `advpl-testlab.json` nos diretorios pais.
+- `--name-profile modern|legacy10` seleciona a politica de nomes do LivrePL tanto em `-validate` quanto em `-run`; `modern` e o padrao.
 - Validacao das tres funcoes do fonte por `-validate`.
 - Execucao de `Z04CON`, `fAskFiltros` e `fGerarExcel` pelo interpretador.
 - Runtime de `FWExecStatement`, alias dinamico, navegacao e `FWBrowse`.

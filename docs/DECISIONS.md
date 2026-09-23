@@ -198,6 +198,14 @@
 - **Decisao:** Manter testes unitarios e fixtures locais no TestLab; transferir os testes de integracao dos desafios para `desafios-aprendizado/tests` e retirar testes obsoletos que exigiam `TRNSOL02.prw`.
 - **Consequencias:** A suite do TestLab roda independentemente do projeto dos desafios; as integracoes reais continuam testaveis no projeto que possui os fontes.
 
+## ADR-025 — Perfil de nomes delegado ao LivrePL
+
+- **Data:** 23/09/2026
+- **Estado:** Aceita
+- **Contexto:** O limite historico de dez caracteres afeta a identidade de simbolos, nao apenas a camada simulada do Protheus.
+- **Decisao:** Expor `--name-profile modern|legacy10` em validacao e execucao e delegar a politica ao LivrePL. A validacao semantica do TestLab usa a mesma chave normalizada, incluindo funcoes de fixture.
+- **Consequencias:** Nao ha regras de truncamento independentes nos dois projetos; o padrao moderno preserva a compatibilidade existente.
+
 - Teste de aceite da CLI: saida `000007`.
 - Cinco testes automatizados executados e aprovados.
 - Nove testes automatizados executados e aprovados apos incorporar os primeiros casos reais.

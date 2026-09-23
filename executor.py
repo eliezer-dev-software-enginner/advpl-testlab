@@ -92,17 +92,20 @@ def discover_fixture(source_path):
     )
 
 
-def execute_source(source, fixture, entry=None, source_name="<memoria>"):
+def execute_source(source, fixture, entry=None, source_name="<memoria>",
+                   name_profile="modern"):
     entry = entry or discover_entry(source)
     return run_source(
         source,
         fixture=fixture,
         entry=entry,
         source_name=source_name,
+        name_profile=name_profile,
     )
 
 
-def execute_file(source_path, fixture_path=None, entry=None, args=None):
+def execute_file(source_path, fixture_path=None, entry=None, args=None,
+                 name_profile="modern"):
     source_path = Path(source_path).resolve()
     if not source_path.is_file():
         raise FixtureError(f"Fonte PRW nao encontrado: '{source_path}'")
@@ -118,6 +121,7 @@ def execute_file(source_path, fixture_path=None, entry=None, args=None):
             entry=entry,
             args=args,
             source_name=source_path,
+            name_profile=name_profile,
         )
     except SourceUnitError as exc:
         raise SourceValidationError(
@@ -129,7 +133,7 @@ def execute_file(source_path, fixture_path=None, entry=None, args=None):
         raise SourceValidationError(source_path, source, exc) from exc
 
 
-def validate_file(source_path, fixture_path=None):
+def validate_file(source_path, fixture_path=None, name_profile="modern"):
     source_path = Path(source_path).resolve()
     if not source_path.is_file():
         raise FixtureError(f"Fonte PRW nao encontrado: '{source_path}'")
@@ -145,7 +149,9 @@ def validate_file(source_path, fixture_path=None):
     source_units = discover_source_units(source_path)
     source = source_units[0][1]
     try:
-        program = compile_sources(source_units, fixture=fixture)
+        program = compile_sources(
+            source_units, fixture=fixture, name_profile=name_profile
+        )
     except SourceUnitError as exc:
         raise SourceValidationError(
             exc.source_name,

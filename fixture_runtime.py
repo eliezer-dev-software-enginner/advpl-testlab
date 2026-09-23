@@ -105,6 +105,7 @@ _load_livrepl()
 
 from interpreter import AdvPLBlock, AdvPLObject, AdvPLRuntimeError, Interpreter
 from lexer import LexError
+from naming import NameCollisionError
 from parser import Call, ParseError, Program, parse_source
 from preprocessor import preprocess
 from semantic import SemanticError, validate_program
@@ -566,6 +567,7 @@ class FixtureInterpreter(Interpreter):
         fixture=None,
         source_name="<memoria>",
         entry_name="MAIN",
+        name_profile="modern",
     ):
         self.fixture = fixture or Fixture()
         self.source_name = source_name
@@ -589,15 +591,28 @@ class FixtureInterpreter(Interpreter):
         self._error_block = None
         self._current_alias = next(iter(self._aliases), None)
         self._locked_alias = None
-        super().__init__(program)
+        super().__init__(program, name_profile=name_profile)
+        self._fixture_function_symbols = {}
+        for name in self.fixture.funcoes:
+            key = self.name_policy.key(name)
+            previous = self._fixture_function_symbols.get(key)
+            if previous is not None:
+                raise NameCollisionError(
+                    f"Funcoes de fixture '{previous}' e '{name}' "
+                    f"colidem no simbolo '{key}' ({name_profile})"
+                )
+            self._fixture_function_symbols[key] = name
         self.globals["CUSERLOCAL"] = self.fixture.get_environment(
             "CUSERLOCAL", default="."
         )
         self.globals["DDATABASE"] = self.fixture.get_environment(
             "DDATABASE", default="2026-09-22"
         )
-        self.globals["MODEL_OPERATION_INSERT"] = 3
-        self.globals.update(self.fixture.ambiente)
+        self.globals[self.name_policy.key("MODEL_OPERATION_INSERT")] = 3
+        self.globals.update({
+            self.name_policy.key(name): value
+            for name, value in self.fixture.ambiente.items()
+        })
 
     def _field_alias(self, name):
         key = name.upper()
@@ -670,9 +685,12 @@ class FixtureInterpreter(Interpreter):
 
     def call_function(self, name, args):
         upper = name.upper()
-        if upper in self.fixture.funcoes and upper not in self.builtins:
-            return self.fixture.get_function_result(upper)
-        if upper.startswith("U_") and upper[2:] in self.functions:
+        configured = self._fixture_function_symbols.get(self.name_policy.key(name))
+        if configured is not None and upper not in self.builtins:
+            return self.fixture.get_function_result(configured)
+        if (upper.startswith("U_")
+                and self.name_policy.key(upper) not in self.user_functions
+                and self.name_policy.key(upper[2:]) in self.functions):
             upper = upper[2:]
         return super().call_function(upper, args)
 
@@ -1667,7 +1685,7 @@ def prepare_source(source):
     return adapt_headless_ui(preprocessed)
 
 
-def compile_sources(source_units, fixture=None):
+def compile_sources(source_units, fixture=None, name_profile="modern"):
     fixture = fixture or Fixture()
     parsed_units = []
     for source_name, source in source_units:
@@ -1682,7 +1700,9 @@ def compile_sources(source_units, fixture=None):
         [class_ for _, _, program in parsed_units for class_ in program.classes],
         [method for _, _, program in parsed_units for method in program.methods],
     )
-    supported_runtime = FixtureInterpreter(combined, fixture=fixture)
+    supported_runtime = FixtureInterpreter(
+        combined, fixture=fixture, name_profile=name_profile
+    )
     allowed_functions = set(supported_runtime.builtins) | set(fixture.funcoes)
     allowed_functions.update(
         function.name.upper() for function in combined.functions
@@ -1705,15 +1725,18 @@ def compile_sources(source_units, fixture=None):
                 source,
                 allowed_globals=allowed_globals,
                 allowed_functions=allowed_functions,
+                name_profile=name_profile,
             )
         except SemanticError as exc:
             raise SourceUnitError(source_name, source, exc) from exc
     return combined
 
 
-def compile_source(source, fixture=None):
+def compile_source(source, fixture=None, name_profile="modern"):
     try:
-        return compile_sources([("<memoria>", source)], fixture=fixture)
+        return compile_sources(
+            [("<memoria>", source)], fixture=fixture, name_profile=name_profile
+        )
     except SourceUnitError as exc:
         raise exc.original from exc
 
@@ -1723,14 +1746,16 @@ def build_interpreter(
     fixture=None,
     entry="MAIN",
     source_name="<memoria>",
+    name_profile="modern",
 ):
     fixture = fixture or Fixture()
-    program = compile_source(source, fixture=fixture)
+    program = compile_source(source, fixture=fixture, name_profile=name_profile)
     return FixtureInterpreter(
         program,
         fixture=fixture,
         source_name=source_name,
         entry_name=entry,
+        name_profile=name_profile,
     )
 
 
@@ -1739,23 +1764,29 @@ def build_interpreter_sources(
     fixture=None,
     entry="MAIN",
     source_name="<memoria>",
+    name_profile="modern",
 ):
     fixture = fixture or Fixture()
-    program = compile_sources(source_units, fixture=fixture)
+    program = compile_sources(
+        source_units, fixture=fixture, name_profile=name_profile
+    )
     return FixtureInterpreter(
         program,
         fixture=fixture,
         source_name=source_name,
         entry_name=entry,
+        name_profile=name_profile,
     )
 
 
-def run_source(source, fixture=None, entry="MAIN", args=None, source_name="<memoria>"):
+def run_source(source, fixture=None, entry="MAIN", args=None,
+               source_name="<memoria>", name_profile="modern"):
     interpreter = build_interpreter(
         source,
         fixture=fixture,
         entry=entry,
         source_name=source_name,
+        name_profile=name_profile,
     )
     return interpreter.run(entry, args)
 
@@ -1766,17 +1797,20 @@ def run_sources(
     entry="MAIN",
     args=None,
     source_name="<memoria>",
+    name_profile="modern",
 ):
     interpreter = build_interpreter_sources(
         source_units,
         fixture=fixture,
         entry=entry,
         source_name=source_name,
+        name_profile=name_profile,
     )
     return interpreter.run(entry, args)
 
 
-def run_file(source_path, fixture_path, entry="MAIN", args=None):
+def run_file(source_path, fixture_path, entry="MAIN", args=None,
+             name_profile="modern"):
     source_file = Path(source_path)
     with source_file.open(encoding="utf-8", errors="replace") as advpl_file:
         source = advpl_file.read()
@@ -1787,4 +1821,5 @@ def run_file(source_path, fixture_path, entry="MAIN", args=None):
         entry=entry,
         args=args,
         source_name=source_file,
+        name_profile=name_profile,
     )

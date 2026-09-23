@@ -94,7 +94,10 @@ O executor procura `advpl-testlab.jsonc` ou `advpl-testlab.json` no diretorio do
 --fixture ARQUIVO.JSONC fixture específico; aceita também .json
 --entry FUNCAO         entrada; opcional, usa a primeira User Function
 --args-json ARRAY       argumentos da entrada como array JSON
+--name-profile PERFIL    modern (padrao) ou legacy10 (10 caracteres historicos)
 ```
+
+O perfil de nomes e passado ao LivrePL na validacao e na execucao. Use, por exemplo, `advpl-testlab -validate rotina.prw --name-profile legacy10` para detectar colisoes de nomes historicos; o padrao `modern` mantem nomes completos. O perfil legado tambem considera `U_` mais oito caracteres para `User Function`.
 
 ### Dependencias locais com `usePrw`
 

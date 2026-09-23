@@ -7,6 +7,7 @@ from executor import execute_file, validate_file
 from fixture_runtime import FixtureError
 from interpreter import AdvPLRuntimeError
 from lexer import LexError
+from naming import NameCollisionError
 from parser import ParseError
 
 
@@ -27,6 +28,10 @@ def main(argv=None):
     parser.add_argument("--fixture", help="fixture JSON/JSONC (padrao: advpl-testlab.jsonc ou .json)")
     parser.add_argument("--entry", help="User Function de entrada")
     parser.add_argument(
+        "--name-profile", choices=("modern", "legacy10"), default="modern",
+        help="regras de identificadores (padrao: modern)",
+    )
+    parser.add_argument(
         "--args-json",
         help='argumentos da entrada como array JSON, por exemplo: ["ENVIO"]',
     )
@@ -36,6 +41,7 @@ def main(argv=None):
             function_count = validate_file(
                 args.validate_source,
                 fixture_path=args.fixture,
+                name_profile=args.name_profile,
             )
             print(
                 f"[OK] Sintaxe valida: {args.validate_source} "
@@ -57,6 +63,7 @@ def main(argv=None):
                 fixture_path=args.fixture,
                 entry=args.entry,
                 args=entry_args,
+                name_profile=args.name_profile,
             )
     except (
         FixtureError,
@@ -64,6 +71,7 @@ def main(argv=None):
         ParseError,
         LexError,
         AdvPLRuntimeError,
+        NameCollisionError,
         OSError,
     ) as exc:
         print_diagnostic(exc)

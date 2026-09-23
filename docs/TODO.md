@@ -158,6 +158,7 @@ Status: `[x]` — concluido em 21/09/2026.
 
 ## Pendencias tecnicas continuas
 
+- [x] Expor perfil de nomes moderno ou legado na validacao e execucao, usando a politica do LivrePL.
 - [x] Separar a suite propria dos testes de integracao que leem `desafios-aprendizado`.
 - [x] Aceitar fixtures `.jsonc` comentados e manter leitura de `.json` estrito.
 - [ ] Avaliar empacotamento ou configuracao explicita do caminho do LivrePL sem quebrar o uso atual por diretorios irmaos.
