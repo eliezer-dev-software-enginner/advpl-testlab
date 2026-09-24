@@ -143,6 +143,15 @@ def validate_mvc_metadata(program, source, fixture, user_functions,
     modules = {policy.key(name) for name in user_functions}
     fields = mvc_field_names(fixture)
     lines = source.splitlines()
+    model_ids = set()
+    has_dynamic_model_id = False
+    for node in _walk(program):
+        if not isinstance(node, MethodCall) or node.name.upper() not in ("ADDFIELDS", "ADDGRID"):
+            continue
+        if node.args and isinstance(node.args[0], Literal) and isinstance(node.args[0].value, str):
+            model_ids.add(node.args[0].value.upper())
+        else:
+            has_dynamic_model_id = True
     for callable_decl in (*program.functions, *program.methods):
         for node in _walk(callable_decl.body):
             line_number = getattr(node, "line", None)
@@ -179,3 +188,16 @@ def validate_mvc_metadata(program, source, fixture, user_functions,
                             f"Campo '{item.value}' de SetPrimaryKey não existe na fixture",
                             line=line, column=column,
                         )
+            if (isinstance(node, MethodCall) and node.name.upper() == "GETVALUE"
+                    and model_ids and not has_dynamic_model_id
+                    and len(node.args) == 2 and isinstance(node.args[0], Literal)
+                    and isinstance(node.args[0].value, str)):
+                model_id = node.args[0].value
+                if model_id.upper() not in model_ids:
+                    line, column = _source_location(
+                        source, model_id, getattr(node.args[0], "line", line_number)
+                    )
+                    raise SemanticError(
+                        f"GetValue referencia submodelo '{model_id}' nao declarado por AddFields/AddGrid",
+                        line=line, column=column,
+                    )

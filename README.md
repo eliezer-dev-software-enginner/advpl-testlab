@@ -51,7 +51,7 @@ protheus/
 
 - Python 3.10 ou mais recente disponível no terminal.
 - O repositório `livrePL` em um diretório irmão deste projeto.
-- Um arquivo `advpl-testlab.jsonc` (recomendado) ou `advpl-testlab.json` no projeto testado, ou seu caminho informado por `--fixture`.
+- Um arquivo `testlab.jsonc` (recomendado) ou `testlab.json` no projeto testado, ou seu caminho informado por `--fixture`.
 
 Estrutura esperada:
 
@@ -60,7 +60,7 @@ protheus/
 |-- livrePL/
 |-- advpl-testlab/
 `-- meu-projeto-advpl/
-    |-- advpl-testlab.jsonc
+    |-- testlab.jsonc
     `-- rotina.prw
 ```
 
@@ -72,6 +72,8 @@ Não são necessários AppServer, SmartClient, licença Protheus ou banco de dad
 cd advpl-testlab
 python -m pip install -e .
 ```
+
+Se a CLI ja estava instalada antes da adicao de `--persist`, rode esse comando novamente no mesmo ambiente Python para incluir o modulo de estado.
 
 A instalação editável precisa ser feita apenas uma vez por ambiente Python. No Windows, se o `pip` avisar que a pasta `Scripts` do usuário não está no `PATH`, adicione a pasta indicada e abra um terminal novo. Para descobrir a base do usuário:
 
@@ -87,7 +89,9 @@ Depois, a partir do diretorio de qualquer fonte:
 advpl-testlab -run TRNSOL02.prw
 ```
 
-O executor procura `advpl-testlab.jsonc` ou `advpl-testlab.json` no diretorio do `.prw` e nos diretorios pais. O fixture do diretorio mais proximo prevalece; se ambos os formatos existirem nesse diretorio, `.jsonc` tem prioridade. Tambem e possivel usar `--fixture caminho.jsonc`, `--entry NomeDaFuncao` e `--args-json '[...]'`.
+O executor procura `testlab.jsonc` ou `testlab.json` no diretorio do `.prw` e nos diretorios pais. O fixture do diretorio mais proximo prevalece; no mesmo diretorio, `testlab.jsonc` tem prioridade, depois `testlab.json`. Os nomes antigos `advpl-testlab.jsonc` e `advpl-testlab.json` continuam aceitos como fallback. Tambem e possivel usar `--fixture caminho.jsonc`, `--entry NomeDaFuncao` e `--args-json '[...]'`.
+
+`PREPARE ENVIRONMENT EMPRESA ... FILIAL ...` e `RESET ENVIRONMENT` sao simulados sem abrir AppServer. O corte atual aceita valores literais ou variaveis para empresa/filial; `Date()` usa `DDATABASE` de `ambiente` (formato `AAAA-MM-DD`), `xFilial()` sem argumento usa o alias corrente, e `Alert()` escreve no terminal. Sem `--persist`, a escrita via `RecLock` continua apenas em memoria; veja [fase-ex1-ambiente](docs/fase-ex1-ambiente.md).
 
 ```text
 -run ARQUIVO.PRW       fonte AdvPL alvo da execução ou simulação
@@ -96,11 +100,23 @@ O executor procura `advpl-testlab.jsonc` ou `advpl-testlab.json` no diretorio do
 --args-json ARRAY       argumentos da entrada como array JSON
 --name-profile PERFIL    modern (padrao) ou legacy10 (10 caracteres historicos)
 --mvc-case NOME          executa cenario MVC de inclusao definido no fixture
+--persist                carrega e salva registros no state.json ao lado da fixture
 ```
+
+### Persistencia opcional em `state.json`
+
+```powershell
+advpl-testlab -run EX1.prw --persist
+advpl-testlab -run EX1.prw --persist
+```
+
+O primeiro comando parte dos `registros` de `testlab.jsonc` se ainda nao houver `state.json`. Cada execucao seguinte com `--persist` carrega o estado anterior; apos uma execucao bem-sucedida que alterou registros, o TestLab substitui `state.json` por um snapshot JSON. O arquivo fica no mesmo diretorio da fixture descoberta (ou informada por `--fixture`) e e ignorado pelo Git nos projetos deste workspace. O JSONC nunca e reescrito. Sem `--persist`, a execucao ignora `state.json` e usa apenas a fixture. Estado invalido ou alias nao declarado causa erro sem sobrescrita; erro de execucao ou divergencia de expectativa MVC tambem nao grava. Nao execute duas gravacoes simultaneas no mesmo `state.json`: bloqueio de concorrencia ainda nao esta implementado.
+
+Para MVC1, use `advpl-testlab -run ZA1MVC.prw --mvc-case incluir-livro-valido --persist`. Uma inclusao aprovada fica disponivel para o proximo `-run ... --persist`; uma inclusao rejeitada nao cria nem altera o estado. Expectativas absolutas como `totalRegistros: 2` continuam sendo verificadas contra o estado carregado, portanto repetir o mesmo caso de inclusao pode falhar por ja existir um registro anterior. Para voltar ao ponto inicial, guarde ou remova conscientemente o `state.json`; isso nao altera o JSONC.
 
 ### Cenarios de inclusao MVC
 
-Defina `cenariosMvc` no `advpl-testlab.jsonc` e selecione um cenario por nome:
+Defina `cenariosMvc` no `testlab.jsonc` e selecione um cenario por nome:
 
 ```jsonc
 "cenariosMvc": [
@@ -117,7 +133,7 @@ Defina `cenariosMvc` no `advpl-testlab.jsonc` e selecione um cenario por nome:
 advpl-testlab -run ZA1MVC.prw --mvc-case incluir-preco-negativo
 ```
 
-O `Activate()` do browse chama `ModelDef` no escopo ativo da entrada, preenche o modelo com `dados`, executa o bloco de pos-validacao (`bPost`) e compara `salvou` e, se declarados, `totalRegistros` e `registro` (ultimo registro completo). Uma inclusao aprovada acrescenta o registro somente na memoria da execucao; o JSONC nao e alterado. Erro de expectativa retorna codigo `1`. A primeira versao aceita um unico `AddFields`/alias no `MPFormModel`, com campos `C` e `N` declarados na fixture; nao simula a UI, `ViewDef`, persistencia Protheus ou outras operacoes MVC. Sem `--mvc-case`, `-run` conserva o browse headless anterior.
+O `Activate()` do browse chama `ModelDef` no escopo ativo da entrada, preenche o modelo com `dados`, executa o bloco de pos-validacao (`bPost`) e compara `salvou` e, se declarados, `totalRegistros` e `registro` (ultimo registro completo). Uma inclusao aprovada acrescenta o registro ao runtime e, com `--persist`, ao `state.json`; o JSONC nao e alterado. Erro de expectativa retorna codigo `1`. A primeira versao aceita um unico `AddFields`/alias no `MPFormModel`, com campos `C` e `N` declarados na fixture; nao simula a UI, `ViewDef`, persistencia Protheus ou outras operacoes MVC. Sem `--mvc-case`, `-run` conserva o browse headless anterior.
 
 O perfil de nomes e passado ao LivrePL na validacao e na execucao. Use, por exemplo, `advpl-testlab -validate rotina.prw --name-profile legacy10` para detectar colisoes de nomes historicos; o padrao `modern` mantem nomes completos. O perfil legado tambem considera `U_` mais oito caracteres para `User Function`.
 
@@ -155,7 +171,7 @@ Por exemplo, `Local oStmt := Nilo` produz `SemanticError: Variável 'Nilo' não 
 
 Uma `PRIVATE` declarada no fonte pode ser acessada por outra funcao enquanto seu escopo dinamico estiver ativo. Por isso, `-validate` aceita o nome em funcoes auxiliares; `-run` ainda gera erro se a funcao for executada sem a `PRIVATE` ativa. Variaveis `LOCAL` continuam restritas a funcao que as declarou. O diagnostico de nome ausente aponta para a linha da leitura, nao para uma mencao anterior em comentario ou declaracao.
 
-Para fontes MVC, a validacao tambem confere acoes literais `VIEWDEF.<modulo>` de `ADD OPTION` contra as `User Function` carregadas e campos literais de `SetPrimaryKey({ ... })` contra os campos declarados na fixture. Isso ocorre mesmo que `MenuDef` ou `ModelDef` nao sejam executadas pela entrada headless. Chaves montadas dinamicamente sao conferidas quando `SetPrimaryKey` e executado. Acoes e chaves dinamicas nao podem ser comprovadas por `-validate`.
+Para fontes MVC, a validacao tambem confere acoes literais `VIEWDEF.<modulo>` de `ADD OPTION` contra as `User Function` carregadas, campos literais de `SetPrimaryKey({ ... })` contra os campos declarados na fixture e IDs literais de `GetValue('SUBMODELO', 'CAMPO')` contra os IDs declarados por `AddFields`/`AddGrid` no mesmo fonte. Isso ocorre mesmo que as funcoes MVC nao sejam executadas pela entrada headless. IDs montados dinamicamente sao conferidos quando `GetValue` e executado; a validacao estatica os deixa para o runtime. Por exemplo, `ZA1MASTE` em vez de `ZA1MASTER` agora falha tanto em `-validate` quanto em `-run`.
 
 Da mesma forma, `Local aArea := GetAreaTESTE()` produz `SemanticError: Função 'GetAreaTESTE' não encontrada`. São aceitas as funções declaradas no próprio fonte, os built-ins implementados pelo LivrePL/TestLab, construtores de classes e funções simuladas em `funcoes` no JSON. Para validar uma simulação declarada em outro fixture, informe `--fixture arquivo.json` também com `-validate`.
 
@@ -332,7 +348,7 @@ No `TRNSOL02`, `LRET: true` representa o botão Consultar e `false` representa C
 
 ## Testar um novo projeto
 
-1. Crie `advpl-testlab.jsonc` na pasta dos fontes do caso de teste. Para projetos com varios desafios, use um fixture por pasta; a CLI prefere o fixture mais proximo do `.prw`.
+1. Crie `testlab.jsonc` na pasta dos fontes do caso de teste. Para projetos com varios desafios, use um fixture por pasta; a CLI prefere o fixture mais proximo do `.prw`.
    Nos fixtures versionados, mantenha sempre `parametros`, `tabelas`, `funcoes`, `ambiente`, `dialogos`, `especificidadesPrw` e `consultas`, usando `[]` para secoes vazias.
    JSONC aceita comentarios `//` e `/* ... */` e virgulas finais; dentro de strings, esses caracteres sao preservados. Arquivos `.json` continuam aceitos, mas seguem JSON estrito, sem comentarios nem virgulas finais.
 2. Cadastre parâmetros, tabelas, funções externas e consultas usadas pelo fonte.
@@ -349,7 +365,7 @@ A suite propria do TestLab usa apenas fontes e fixtures deste repositorio; nao d
 Estes recursos passam pelo parser e pelo interpretador, portanto sua lógica é executada:
 
 - descoberta automática da primeira `User Function` ou seleção explícita por `--entry`;
-- descoberta de `advpl-testlab.jsonc` ou `advpl-testlab.json` no diretório do fonte ou nos diretórios pais;
+- descoberta de `testlab.jsonc` ou `testlab.json` no diretório do fonte ou nos diretórios pais, com fallback para os nomes antigos;
 - funções `Function`, `User Function` e `Static Function` dentro da cobertura do LivrePL;
 - variáveis `Local`, `Private`, `Public` e `Static`;
 - atribuições simples, `+=` e `-=`;
@@ -399,6 +415,16 @@ advpl-testlab -run TRNSOL01.prw --entry Z04PROC
 - as notificacoes passam pelo codigo real de `NOTIFSOL`/`ENVEMAIL`, mas o envio fica somente em memoria, sem SMTP.
 
 `-run` valida todas as funcoes carregadas, mas executa apenas a entrada escolhida e os ramos que ela chamar. As acoes de menu nao sao clicadas automaticamente. Os adaptadores de controles `@` ignoram callbacks de UI, portanto a validacao headless nao comprova a sintaxe interna desses callbacks, nem substitui compilacao e testes no AppServer/DBAccess.
+
+### Primitivas de banco simuladas
+
+O runtime headless reconhece `DbSelectArea`, `DbSetOrder`, `DbRLock`, `DbCloseArea`, `DbCommit`, `DbCommitAll`, `DbDelete`, `DbGoTo`, `DbGoTop`, `DbGoBottom`, `DbRLockList`, `DbSeek`, `MsSeek`, `DbSkip`, `DbSetFilter`, `DbOrderNickname`, `DbUnlock`, `DbUnlockAll`, `DbUseArea`, `MsUnlock`, `RecLock`, `RLock`, `Select`, `SoftLock` e `Unlock`. `DbGoBotton` (grafia da pergunta) tambem e aceito como alias de `DbGoBottom` na simulacao.
+
+- `Select(cAlias)` apenas informa o numero da area; `DbSelectArea(cAlias|nArea)` a seleciona. `DbUseArea` so reabre aliases declarados em `tabelas`; nao acessa um SGBD real.
+- `DbSetOrder(n)` usa `indices`. Para `DbOrderNickname(cApelido)`, declare tambem `"apelidosIndices": {"CODIGO": 1}` na tabela, associando o apelido a uma ordem existente.
+- `DbSeek`/`MsSeek` pesquisam pela chave do indice atual; `lSoft` opcional posiciona no proximo registro visivel se nao houver correspondencia. `DbSetFilter({|| ...}, cExpressao)` avalia o bloco na navegacao; a expressao textual e apenas descritiva. `DbSetFilter()` limpa o filtro.
+- `DbRLock`, `RLock`, `RecLock` e `SoftLock(cAlias)` simulam bloqueios locais ao processo; `DbRLockList` lista recnos bloqueados. `DbDelete` exige bloqueio e marca `D_E_L_E_T_`, sem remover fisicamente o registro. `DbUnlock`/`Unlock`, `DbUnlockAll` e `MsUnlock` liberam os bloqueios simulados.
+- `DbCommit` e `DbCommitAll` validam a chamada, mas nao fazem flush intermediario: com `--persist`, o snapshot e gravado apenas ao fim de uma execucao bem-sucedida. Concorrencia, RDD, transacoes do DBAccess e tempos de espera por lock nao sao reproduzidos.
 
 ### desafio0-Fat006 em modo headless
 

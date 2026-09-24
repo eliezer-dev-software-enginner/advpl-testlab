@@ -81,13 +81,16 @@ def discover_entry(source):
 def discover_fixture(source_path):
     source_path = Path(source_path).resolve()
     for directory in (source_path.parent, *source_path.parents):
-        for name in ("advpl-testlab.jsonc", "advpl-testlab.json"):
+        for name in (
+            "testlab.jsonc", "testlab.json",
+            "advpl-testlab.jsonc", "advpl-testlab.json",
+        ):
             candidate = directory / name
             if candidate.is_file():
                 return candidate
     raise FixtureError(
-        "Fixture nao encontrado. Crie 'advpl-testlab.jsonc' ou "
-        "'advpl-testlab.json' no diretorio do fonte "
+        "Fixture nao encontrado. Crie 'testlab.jsonc' ou "
+        "'testlab.json' no diretorio do fonte "
         "ou em um diretorio pai, ou informe --fixture."
     )
 
@@ -105,7 +108,7 @@ def execute_source(source, fixture, entry=None, source_name="<memoria>",
 
 
 def execute_file(source_path, fixture_path=None, entry=None, args=None,
-                 name_profile="modern", mvc_case=None):
+                 name_profile="modern", mvc_case=None, persist=False):
     source_path = Path(source_path).resolve()
     if not source_path.is_file():
         raise FixtureError(f"Fonte PRW nao encontrado: '{source_path}'")
@@ -123,6 +126,7 @@ def execute_file(source_path, fixture_path=None, entry=None, args=None,
             source_name=source_path,
             name_profile=name_profile,
             mvc_case=mvc_case,
+            state_path=fixture_path.parent / "state.json" if persist else None,
         )
     except SourceUnitError as exc:
         raise SourceValidationError(

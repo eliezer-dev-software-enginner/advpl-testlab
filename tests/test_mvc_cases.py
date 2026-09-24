@@ -1,7 +1,8 @@
 import unittest
 
-from fixture_runtime import Fixture, FixtureError, run_sources
+from fixture_runtime import Fixture, FixtureError, compile_source, run_source, run_sources
 from interpreter import AdvPLRuntimeError
+from semantic import SemanticError
 
 
 SOURCE = """User Function DemoMvc()
@@ -104,6 +105,38 @@ class MvcCaseTests(unittest.TestCase):
             Fixture.from_dict({"cenariosMvc": [{"nome": "x", "operacao": "incluir",
                                                   "dados": {"M": {}},
                                                   "esperado": {"salvou": 1}}]})
+
+    def test_literal_unknown_submodel_fails_without_mvc_case(self):
+        source = SOURCE.replace("GetValue('ZA1MASTER'", "GetValue('ZA1MASTE'")
+        with self.assertRaisesRegex(SemanticError, "ZA1MASTE") as error:
+            compile_source(source, fixture=make_fixture())
+        self.assertEqual(18, error.exception.line)
+        with self.assertRaisesRegex(SemanticError, "ZA1MASTE"):
+            run_source(source, fixture=make_fixture(), entry="DemoMvc")
+
+    def test_literal_known_submodel_is_case_insensitive(self):
+        source = SOURCE.replace("GetValue('ZA1MASTER'", "GetValue('za1master'")
+        compile_source(source, fixture=make_fixture())
+
+    def test_dynamic_submodel_id_is_checked_at_runtime(self):
+        source = SOURCE.replace(
+            "Local nPreco := oModel:GetValue('ZA1MASTER', 'ZA1_PRECO')",
+            "Local cId := 'ZA1MASTE'\nLocal nPreco := oModel:GetValue(cId, 'ZA1_PRECO')",
+        )
+        compile_source(source, fixture=make_fixture())
+        with self.assertRaisesRegex(AdvPLRuntimeError, "ZA1MASTE"):
+            run_sources([("demo.prw", source)], fixture=make_fixture(),
+                        entry="DemoMvc", mvc_case="valido")
+
+    def test_dynamic_addfields_id_does_not_cause_static_false_positive(self):
+        source = SOURCE.replace(
+            "oModel:AddFields('ZA1MASTER', , oStruct)",
+            "Local cSub := 'ZA1MASTER'\noModel:AddFields(cSub, , oStruct)",
+        ).replace("GetValue('ZA1MASTER'", "GetValue('ZA1MASTE'")
+        compile_source(source, fixture=make_fixture())
+        with self.assertRaisesRegex(AdvPLRuntimeError, "ZA1MASTE"):
+            run_sources([("demo.prw", source)], fixture=make_fixture(),
+                        entry="DemoMvc", mvc_case="valido")
 
 
 if __name__ == "__main__":

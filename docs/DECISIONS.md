@@ -230,6 +230,46 @@
 - **Decisao:** Adicionar `cenariosMvc` a fixture JSONC e `--mvc-case` ao `-run`. Ao ativar o browse, chamar `ModelDef` no escopo da entrada, aplicar `dados` a um unico `AddFields`, executar o `bPost`, incluir somente em memoria quando ele aprovar e conferir `esperado.salvou`, `totalRegistros` e `registro` quando informados.
 - **Consequencias:** Cada invocacao comeca dos registros originais. Nao ha escrita no fixture nem simulacao de UI, `ViewDef`, grid ou AppServer. Ausencia de `bPost`, modelo/campo desconhecido e divergencia de expectativa produzem falha explicita.
 
+## ADR-029 — Validacao antecipada de IDs de submodelo MVC
+
+- **Data:** 24/09/2026
+- **Estado:** Aceita
+- **Contexto:** `-run` sem cenario apenas abre o browse e nao chama `ModelDef`/`bPost`; um `GetValue('ZA1MASTE', ...)` incorreto passava, embora falhasse com `--mvc-case`.
+- **Decisao:** Quando um fonte declara IDs literais em `AddFields`/`AddGrid`, conferir os primeiros argumentos literais de `GetValue` com dois argumentos contra esses IDs na analise semantica. Se houver declaracao de ID dinamico, nao presumir que o conjunto literal seja completo. Manter verificacao runtime para IDs dinamicos e fontes separados.
+- **Consequencias:** `-validate` e `-run` apontam o typo na linha do `GetValue`, mesmo sem executar a pos-validacao. A analise estatica nao tenta inferir fluxos de dados nem IDs formados em tempo de execucao.
+
+## ADR-030 — Ambiente headless e direcao para persistencia
+
+- **Data:** 24/09/2026
+- **Estado:** Aceita para ambiente; persistencia proposta, nao implementada
+- **Contexto:** `EX1.prw` usa `PREPARE ENVIRONMENT`, inclui em ZA2 por `RecLock` e chama `Date()`, `xFilial()` e `Alert()`. O usuario tambem perguntou sobre guardar registros entre execucoes.
+- **Decisao:** Adaptar os comandos de ambiente a builtins do TestLab, sem alterar o LivrePL. Empresa/filial vivem apenas no runtime; `Date()` le `DDATABASE` e `xFilial()` sem alias usa a area corrente. Para persistencia futura, preferir opt-in por arquivo de estado JSON separado, mantendo `advpl-testlab.jsonc` como fixture versionada imutavel.
+- **Consequencias:** O EX1 executa e insere em memoria. Persistir diretamente em `registros` do JSONC nao e o padrao recomendado: alteraria a entrada do teste, seus comentarios/formatacao e a repetibilidade. A proposta de arquivo separado precisa definir carregamento, gravacao atomica, recuperacao de falhas e concorrencia antes de ser implementada.
+
+## ADR-031 — Nome padrao do fixture `testlab.jsonc`
+
+- **Data:** 24/09/2026
+- **Estado:** Aceita
+- **Contexto:** O nome `advpl-testlab.jsonc` repete o prefixo do projeto e o usuario pediu removê-lo.
+- **Decisao:** Usar `testlab.jsonc` como nome canonico. Na descoberta automatica, preferir `testlab.jsonc` e `testlab.json` no diretorio mais proximo do fonte; manter `advpl-testlab.jsonc` e `advpl-testlab.json` como fallback legado.
+- **Consequencias:** Fixtures versionados passam a usar o nome curto; comandos antigos com `--fixture` explicito continuam possiveis enquanto o arquivo existir. A compatibilidade de leitura nao implica manter copias duplicadas de fixtures.
+
+## ADR-032 — Snapshot persistente opt-in em `state.json`
+
+- **Data:** 24/09/2026
+- **Estado:** Aceita
+- **Contexto:** O usuario aprovou a separacao entre fixture e estado mutavel e escolheu o nome `state.json`. Inclusoes por `RecLock` e MVC1 devem sobreviver a outra execucao quando solicitadas.
+- **Decisao:** `--persist` carrega `state.json` no diretorio da fixture, sobrepondo apenas os registros dos aliases declarados. Depois de execucao bem-sucedida, se os registros mudaram, grava snapshot versionado por arquivo temporario seguido de substituicao atomica. Sem a opcao, ignora o estado e preserva o comportamento deterministico anterior.
+- **Consequencias:** `testlab.jsonc` nao muda; falha de parse/runtime ou expectativa MVC nao grava. Aliases desconhecidos e arquivo de estado invalido geram erro explicito. Gravacoes concorrentes no mesmo estado nao possuem lock nesta fase; executar em serie.
+
+## ADR-033 — Primitivas ISAM em memoria
+
+- **Data:** 24/09/2026
+- **Estado:** Aceita
+- **Contexto:** O usuario pediu suporte a navegacao, bloqueios, filtros, exclusao e commit para testar fontes AdvPL reais.
+- **Decisao:** Implementar as chamadas sobre aliases do fixture, com recnos baseados em 1, exclusao logica e bloqueios locais ao interpretador. `DbOrderNickname(cApelido)` resolve `apelidosIndices` do fixture; `Select()` nao troca a area corrente. `DbCommit` e `DbCommitAll` nao gravam estado no meio da execucao; `--persist` continua fazendo snapshot somente apos sucesso.
+- **Consequencias:** Os fluxos podem ser testados deterministicamente sem DBAccess. Nao se promete equivalencia de RDD, concorrencia, soft locks reais, SQL ou flush intermediario; essas limitacoes devem permanecer explicitas no README.
+
 - Teste de aceite da CLI: saida `000007`.
 - Cinco testes automatizados executados e aprovados.
 - Nove testes automatizados executados e aprovados apos incorporar os primeiros casos reais.

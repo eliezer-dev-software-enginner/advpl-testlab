@@ -19,8 +19,12 @@ class JsoncFixtureTests(unittest.TestCase):
 
     def test_discovers_jsonc_before_json_in_same_directory(self):
         source = self.FIXTURES / "rotina.prw"
-        jsonc = self.FIXTURES / "advpl-testlab.jsonc"
+        jsonc = self.FIXTURES / "testlab.jsonc"
         self.assertEqual(jsonc, discover_fixture(source))
+
+    def test_legacy_name_remains_discoverable(self):
+        source = self.FIXTURES / "legacy" / "rotina.prw"
+        self.assertEqual(source.parent / "advpl-testlab.jsonc", discover_fixture(source))
 
     def test_unterminated_block_comment_is_reported(self):
         with self.assertRaisesRegex(FixtureError, "Comentario de bloco nao terminado"):

@@ -50,7 +50,7 @@ Status: `[x]` — concluido em 22/09/2026.
 
 - [x] Criar a CLI `advpl-testlab -run arquivo.prw`.
 - [x] Descobrir automaticamente a primeira `User Function`.
-- [x] Descobrir `advpl-testlab.jsonc` ou `advpl-testlab.json` no projeto alvo.
+- [x] Descobrir `testlab.jsonc` ou `testlab.json` no projeto alvo, com fallback para os nomes antigos.
 - [x] Criar fixture de Z04, Z05 e Z06 em `desafios-aprendizado/desafio1-solicitacao-compra`.
 - [x] Executar `TRNSOL02.prw` sem alterar o fonte.
 - [x] Simular `FWExecStatement` e renderizar `FWBrowse` no terminal.
@@ -166,6 +166,12 @@ Status: `[x]` — concluido em 21/09/2026.
 - [x] Aceitar fixtures `.jsonc` comentados e manter leitura de `.json` estrito.
 - [x] Validar referencias a `PRIVATE` em funcoes auxiliares sem promover `LOCAL` a global, e apontar a linha efetiva de nomes ausentes.
 - [x] Rejeitar `VIEWDEF.<modulo>` desconhecido e campos ausentes em `SetPrimaryKey`, mesmo quando menu/modelo MVC nao sao executados pelo browse headless.
+- [x] Rejeitar IDs literais desconhecidos em `GetValue` quando `AddFields`/`AddGrid` declaram os submodelos no mesmo fonte.
+- [x] Interpretar `PREPARE ENVIRONMENT`/`RESET ENVIRONMENT` para o EX1 com empresa/filial simuladas.
+- [x] Implementar `--persist` opcional em `state.json`, com gravacao atomica, recarga e testes de falha/MVC1.
+- [x] Cobrir as primitivas ISAM solicitadas em memoria, incluindo filtros, bloqueios, navegacao, exclusao logica e apelidos de indice.
+- [ ] Refinar a fidelidade de `SoftLock`, RDDs e commits intermediarios para cenarios que dependam do DBAccess real.
+- [ ] Definir bloqueio de concorrencia para gravacoes simultaneas no mesmo `state.json`.
 - [ ] Avaliar empacotamento ou configuracao explicita do caminho do LivrePL sem quebrar o uso atual por diretorios irmaos.
 - [ ] Generalizar objetos `FWExecStatement`/`FWBrowse` no runtime, removendo a deteccao especializada quando houver cobertura equivalente.
 - [ ] Aplicar filtros da consulta simulada sobre Z04/Z05 em vez de usar resultados precomputados.

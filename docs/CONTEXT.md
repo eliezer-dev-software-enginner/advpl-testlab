@@ -56,9 +56,13 @@ parser + FixtureInterpreter do LivrePL
 
 `FixtureInterpreter` herda de `Interpreter` e estende `_build_builtins()`. A decisao evita mudancas no lexer, parser e runtime central quando o recurso pode ser expresso como funcao de framework.
 
+O adaptador de comandos suporta `PREPARE ENVIRONMENT EMPRESA ... FILIAL ...` e `RESET ENVIRONMENT` com estado local ao runtime. No EX1 de banco, `Date()` consulta `DDATABASE` deterministico e `xFilial()` pode usar a area corrente. `--persist` carrega e salva os registros em `state.json`, separado do fixture imutavel `testlab.jsonc`; inclui escritas por `RecLock` e MVC1. Sem a opcao, tudo continua somente em memoria (ADR-032).
+
 Na validacao semantica, nomes `PRIVATE` declarados nos fontes carregados sao considerados potencialmente visiveis entre funcoes; `LOCAL` continua restrito a sua funcao. A disponibilidade efetiva de `PRIVATE` e resolvida no runtime pela pilha dinamica. Erros de identificador usam a linha da AST para apontar a leitura que falhou.
 
 Fontes MVC recebem verificacao adicional: `ADD OPTION` com `VIEWDEF.<modulo>` literal deve apontar para uma `User Function` carregada, e `SetPrimaryKey` literal deve usar campos da fixture. O runtime tambem verifica chaves calculadas dinamicamente quando o metodo e chamado.
+
+IDs literais de `GetValue('SUBMODELO', 'CAMPO')` tambem sao comparados aos IDs declarados por `AddFields`/`AddGrid` no mesmo fonte, antes da execucao. Isso detecta typos no `bPost` mesmo quando o browse nao aciona um cenario MVC. IDs dinamicos continuam sujeitos a verificacao runtime. Ver ADR-029.
 
 ## Arquivos do projeto
 
@@ -134,14 +138,14 @@ Fontes MVC recebem verificacao adicional: `ADD OPTION` com `VIEWDEF.<modulo>` li
 ### Executor integral do TRNSOL02
 
 - CLI instalavel com `advpl-testlab -run arquivo.prw`.
-- Descoberta automatica da primeira `User Function` e de `advpl-testlab.json` nos diretorios pais.
+- Descoberta automatica da primeira `User Function` e de `testlab.jsonc`/`testlab.json` nos diretorios pais, com fallback para o nome antigo.
 - `--name-profile modern|legacy10` seleciona a politica de nomes do LivrePL tanto em `-validate` quanto em `-run`; `modern` e o padrao.
 - Validacao das tres funcoes do fonte por `-validate`.
 - Execucao de `Z04CON`, `fAskFiltros` e `fGerarExcel` pelo interpretador.
 - Runtime de `FWExecStatement`, alias dinamico, navegacao e `FWBrowse`.
 - Exportacao HTML simulada em arquivo virtual.
 - Cenarios de cancelamento, consulta vazia, browse e exportacao confirmada.
-- Fixture real em `desafios-aprendizado/desafio1-solicitacao-compra/advpl-testlab.jsonc`, com metadados e registros de Z02 a Z06. Cada desafio mantem seu fixture ao lado dos fontes.
+- Fixture real em `desafios-aprendizado/desafio1-solicitacao-compra/testlab.jsonc`, com metadados e registros de Z02 a Z06. Cada desafio mantem seu fixture ao lado dos fontes.
 - Trinta e tres testes automatizados aprovados.
 
 ### UI headless e confirmacoes deterministicas
@@ -189,7 +193,7 @@ Fontes MVC recebem verificacao adicional: `ADD OPTION` com `VIEWDEF.<modulo>` li
 
 ### desafio0-Fat006 headless
 
-- O fixture local `desafios-aprendizado/desafio0-Fat006/advpl-testlab.jsonc` fornece SC5, area M, `PARAMIXB`, `aHeader` e `aCols`.
+- O fixture local `desafios-aprendizado/desafio0-Fat006/testlab.jsonc` fornece SC5, area M, `PARAMIXB`, `aHeader` e `aCols`.
 - `UFATE003.prw` declara dependencia direta de `U_MSGDANFE.prw`; `A410CONS` e `PE01NFESEFAZ` sao independentes.
 - O runtime suporta busca `AScan` com bloco, indice bidimensional adaptado, metadados de alias e escrita com RecLock em memoria. `ErrorBlock` e simplificado e nao representa AppServer.
 

@@ -112,6 +112,7 @@ from semantic import (
     SemanticError, mvc_field_names, private_names, validate_mvc_metadata,
     validate_program,
 )
+from state_store import load_state, save_state
 
 
 class Fixture:
@@ -299,6 +300,17 @@ class Fixture:
                         raise FixtureError(
                             f"Indice {order} de '{alias}' deve listar campos declarados"
                         )
+            if isinstance(table, dict) and "apelidosIndices" in table:
+                nicknames = table["apelidosIndices"]
+                indices = table.get("indices", {})
+                if not isinstance(nicknames, dict) or any(
+                    not isinstance(nickname, str) or not nickname
+                    or str(order) not in indices
+                    for nickname, order in nicknames.items()
+                ):
+                    raise FixtureError(
+                        f"Apelidos de indices de '{alias}' devem apontar para ordens declaradas"
+                    )
             normalized[key] = table
         return normalized
 
@@ -502,7 +514,7 @@ class Fixture:
 
 
 class _AliasRuntime:
-    def __init__(self, records, indices=None):
+    def __init__(self, records, indices=None, nicknames=None):
         self.records = [
             {str(field).upper(): value for field, value in record.items()}
             for record in records
@@ -511,13 +523,18 @@ class _AliasRuntime:
             int(order): tuple(str(field).upper() for field in fields)
             for order, fields in (indices or {}).items()
         }
+        self.nicknames = {
+            str(nickname).upper(): int(order)
+            for nickname, order in (nicknames or {}).items()
+        }
         self.order = None
         self.position = 0
         self.closed = False
+        self.filter_block = None
 
     def set_order(self, order):
         number = int(order)
-        if self.indices and number not in self.indices:
+        if self.indices and number != 0 and number not in self.indices:
             raise AdvPLRuntimeError(f"Indice {number} nao definido no fixture")
         current = self.records[self.position] if not self.eof() else None
         self.order = number
@@ -539,6 +556,14 @@ class _AliasRuntime:
 
     def skip(self):
         self.position += 1
+
+    def go_bottom(self):
+        self.position = len(self.records) - 1 if self.records else 0
+
+    def go_to(self, recno):
+        if isinstance(recno, bool) or not isinstance(recno, int) or recno < 1:
+            raise AdvPLRuntimeError("DbGoTo espera numero de registro positivo")
+        self.position = min(recno - 1, len(self.records))
 
     def seek(self, key):
         sought = str(key)
@@ -623,6 +648,7 @@ class FixtureInterpreter(Interpreter):
             alias: _AliasRuntime(
                 table.get("registros", []) if isinstance(table, dict) else table,
                 table.get("indices", {}) if isinstance(table, dict) else None,
+                table.get("apelidosIndices", {}) if isinstance(table, dict) else None,
             )
             for alias, table in self.fixture.tabelas.items()
         }
@@ -637,6 +663,9 @@ class FixtureInterpreter(Interpreter):
         self._error_block = None
         self._current_alias = next(iter(self._aliases), None)
         self._locked_alias = None
+        self._record_locks = {}
+        self._prepared_company = None
+        self._prepared_branch = None
         self.mvc_case = None
         self.mvc_result = None
         super().__init__(program, name_profile=name_profile)
@@ -693,7 +722,7 @@ class FixtureInterpreter(Interpreter):
     def assign_existing(self, name, value):
         if self._field_alias(name):
             alias = self._get_alias(self._current_alias)
-            if self._locked_alias != self._current_alias:
+            if alias.position + 1 not in self._record_locks.get(self._current_alias, set()):
                 raise AdvPLRuntimeError(
                     f"Campo '{name}' requer RecLock no alias '{self._current_alias}'"
                 )
@@ -710,7 +739,7 @@ class FixtureInterpreter(Interpreter):
             alias_name = str(self.eval(target.args[0])).upper()
             field_name = str(self.eval(target.args[1])).upper()
             alias = self._get_alias(alias_name)
-            if self._locked_alias != alias_name or alias.eof():
+            if alias.eof() or alias.position + 1 not in self._record_locks.get(alias_name, set()):
                 raise AdvPLRuntimeError(f"Campo '{field_name}' requer RecLock em '{alias_name}'")
             alias.records[alias.position][field_name] = value
             return
@@ -1294,17 +1323,23 @@ class FixtureInterpreter(Interpreter):
             return None
 
         def b_select(args):
-            require_count("Select", args, 1)
-            name = str(args[0]).upper()
-            if name not in self._aliases:
+            if len(args) > 1:
+                raise AdvPLRuntimeError("Select espera zero ou um alias")
+            name = str(args[0]).upper() if args else self._current_alias
+            if name not in self._aliases or self._aliases[name].closed:
                 return 0
-            self._current_alias = name
             return list(self._aliases).index(name) + 1
 
         def b_dbselectarea(args):
             require_count("DbSelectArea", args, 1)
-            if b_select(args) == 0:
-                raise AdvPLRuntimeError(f"DbSelectArea: alias '{args[0]}' inexistente")
+            name = args[0]
+            if isinstance(name, int) and not isinstance(name, bool):
+                names = list(self._aliases)
+                name = names[name - 1] if 1 <= name <= len(names) else name
+            name = str(name).upper()
+            self._get_alias(name)
+            self._current_alias = name
+            return None
 
         def b_dbsetorder(args):
             require_count("DbSetOrder", args, 1)
@@ -1312,16 +1347,55 @@ class FixtureInterpreter(Interpreter):
             return None
 
         def b_dbseek(args):
-            require_count("DbSeek", args, 1)
-            return self._get_alias(self._current_alias).seek(args[0])
+            if not 1 <= len(args) <= 2 or (len(args) == 2 and not isinstance(args[1], bool)):
+                raise AdvPLRuntimeError("DbSeek espera chave e lSoft opcional")
+            alias = self._get_alias(self._current_alias)
+            sought = str(args[0])
+            fields = alias.indices.get(alias.order)
+            soft_position = None
+            for index, record in enumerate(alias.records):
+                key = ("".join(str(record.get(field, "")) for field in fields)
+                       if fields else "".join(str(value) for field, value in record.items()
+                                              if field != "D_E_L_E_T_"))
+                alias.position = index
+                if not visible(alias):
+                    continue
+                if key.startswith(sought):
+                    return True
+                if len(args) == 2 and args[1] and soft_position is None and key >= sought:
+                    soft_position = index
+            alias.position = soft_position if soft_position is not None else len(alias.records)
+            return False
+
+        def visible(alias):
+            if alias.eof() or alias.deleted():
+                return False
+            if alias.filter_block is None:
+                return True
+            result = self.invoke_block(alias.filter_block, [])
+            if not isinstance(result, bool):
+                raise AdvPLRuntimeError("DbSetFilter: bloco deve retornar logico")
+            return result
+
+        def advance(alias, direction):
+            alias.position += direction
+            while 0 <= alias.position < len(alias.records) and not visible(alias):
+                alias.position += direction
+            if alias.position < 0:
+                alias.position = 0
 
         def b_eof(args):
             require_count("Eof", args, 0)
             return self._get_alias(self._current_alias).eof()
 
         def b_dbskip(args):
-            require_count("DbSkip", args, 0)
-            self._get_alias(self._current_alias).skip()
+            if len(args) > 1 or (args and (isinstance(args[0], bool) or not isinstance(args[0], int))):
+                raise AdvPLRuntimeError("DbSkip espera deslocamento inteiro opcional")
+            alias = self._get_alias(self._current_alias)
+            count = args[0] if args else 1
+            for _ in range(abs(count)):
+                advance(alias, 1 if count >= 0 else -1)
+            return None
 
         def b_reclock(args):
             if len(args) != 2 or not isinstance(args[1], bool):
@@ -1340,11 +1414,155 @@ class FixtureInterpreter(Interpreter):
             elif alias.eof():
                 return False
             self._locked_alias = name
+            self._record_locks.setdefault(name, set()).add(alias.position + 1)
             return True
 
         def b_msunlock(args):
             require_count("MsUnlock", args, 0)
+            if self._locked_alias is not None:
+                self._record_locks.pop(self._locked_alias, None)
             self._locked_alias = None
+            return None
+
+        def b_dbgoto(args):
+            require_count("DbGoTo", args, 1)
+            self._get_alias(self._current_alias).go_to(args[0])
+            return None
+
+        def b_dbgotop(args):
+            require_count("DbGoTop", args, 0)
+            alias = self._get_alias(self._current_alias)
+            alias.go_top()
+            while not alias.eof() and not visible(alias):
+                alias.position += 1
+            return None
+
+        def b_dbgobottom(args):
+            require_count("DbGoBottom", args, 0)
+            alias = self._get_alias(self._current_alias)
+            alias.go_bottom()
+            while alias.records and not visible(alias) and alias.position > 0:
+                alias.position -= 1
+            if alias.records and not visible(alias):
+                alias.position = len(alias.records)
+            return None
+
+        def b_dbclosearea(args):
+            require_count("DbCloseArea", args, 0)
+            alias = self._get_alias(self._current_alias)
+            alias.closed = True
+            self._record_locks.pop(self._current_alias, None)
+            if self._locked_alias == self._current_alias:
+                self._locked_alias = None
+            self._current_alias = None
+            return None
+
+        def b_dbcommit(args):
+            require_count("DbCommit", args, 0)
+            self._get_alias(self._current_alias)
+            return None
+
+        def b_dbcommitall(args):
+            require_count("DbCommitAll", args, 0)
+            return None
+
+        def b_dbdelete(args):
+            require_count("DbDelete", args, 0)
+            alias = self._get_alias(self._current_alias)
+            if alias.eof():
+                raise AdvPLRuntimeError("DbDelete sem registro corrente")
+            if alias.position + 1 not in self._record_locks.get(self._current_alias, set()):
+                raise AdvPLRuntimeError("DbDelete requer bloqueio do registro corrente")
+            alias.records[alias.position]["D_E_L_E_T_"] = "*"
+            return None
+
+        def b_dbrlock(args):
+            if len(args) > 1:
+                raise AdvPLRuntimeError("DbRLock espera recno opcional")
+            alias = self._get_alias(self._current_alias)
+            recno = args[0] if args else alias.position + 1
+            if isinstance(recno, bool) or not isinstance(recno, int):
+                raise AdvPLRuntimeError("DbRLock espera recno inteiro")
+            if not 1 <= recno <= len(alias.records):
+                return False
+            permitted = self.fixture.get_environment(f"RECLOCK_{self._current_alias}", default=True)
+            if not isinstance(permitted, bool):
+                raise AdvPLRuntimeError(f"Ambiente RECLOCK_{self._current_alias} deve ser logico")
+            if not permitted:
+                return False
+            self._record_locks.setdefault(self._current_alias, set()).add(recno)
+            self._locked_alias = self._current_alias
+            return True
+
+        def b_dbrlocklist(args):
+            require_count("DbRLockList", args, 0)
+            self._get_alias(self._current_alias)
+            return sorted(self._record_locks.get(self._current_alias, set()))
+
+        def b_dbunlock(args):
+            require_count("DbUnlock", args, 0)
+            self._get_alias(self._current_alias)
+            self._record_locks.pop(self._current_alias, None)
+            if self._locked_alias == self._current_alias:
+                self._locked_alias = None
+            return None
+
+        def b_dbunlockall(args):
+            require_count("DbUnlockAll", args, 0)
+            self._record_locks.clear()
+            self._locked_alias = None
+            return None
+
+        def b_dbsetfilter(args):
+            if len(args) > 2 or (args and args[0] is not None and not isinstance(args[0], AdvPLBlock)):
+                raise AdvPLRuntimeError("DbSetFilter espera bloco e expressao textual opcional")
+            if len(args) == 2 and not isinstance(args[1], str):
+                raise AdvPLRuntimeError("DbSetFilter: expressao deve ser texto")
+            self._get_alias(self._current_alias).filter_block = args[0] if args else None
+            return None
+
+        def b_dbordernickname(args):
+            require_count("DbOrderNickname", args, 1)
+            alias = self._get_alias(self._current_alias)
+            nickname = str(args[0]).upper()
+            if nickname not in alias.nicknames:
+                raise AdvPLRuntimeError(
+                    f"DbOrderNickname: apelido '{args[0]}' nao configurado no fixture"
+                )
+            alias.set_order(alias.nicknames[nickname])
+            return None
+
+        def b_softlock(args):
+            require_count("SoftLock", args, 1)
+            name = str(args[0]).upper()
+            alias = self._get_alias(name)
+            if alias.eof():
+                return False
+            previous = self._current_alias
+            self._current_alias = name
+            try:
+                return b_dbrlock([])
+            finally:
+                self._current_alias = previous
+
+        def b_dbusearea(args):
+            if not 3 <= len(args) <= 6:
+                raise AdvPLRuntimeError("DbUseArea espera lNew, cDriver, cName, cAlias e opcoes")
+            name = args[3] if len(args) >= 4 and args[3] else args[2]
+            if not isinstance(name, str) or not name:
+                raise AdvPLRuntimeError("DbUseArea espera alias textual")
+            name = name.upper()
+            if name not in self._aliases:
+                raise AdvPLRuntimeError(f"DbUseArea: alias '{name}' nao configurado no fixture")
+            if not isinstance(args[0], bool):
+                raise AdvPLRuntimeError("DbUseArea espera lNew logico")
+            alias = self._aliases[name]
+            if not args[0] and self._current_alias in self._aliases and self._current_alias != name:
+                b_dbclosearea([])
+            alias.closed = False
+            alias.go_top()
+            self._current_alias = name
+            return None
 
         def b_ctod(args):
             require_count("CToD", args, 1)
@@ -1357,14 +1575,42 @@ class FixtureInterpreter(Interpreter):
             return str(args[0])
 
         def b_xfilial(args):
-            require_count("xFilial", args, 1)
-            alias = str(args[0]).upper()
+            if len(args) > 1:
+                raise AdvPLRuntimeError("xFilial espera zero ou um alias")
+            alias = str(args[0]).upper() if args else self._current_alias
+            if not alias:
+                raise AdvPLRuntimeError("xFilial sem alias e sem area corrente")
             table = self.fixture.tabelas.get(alias, {})
             records = table.get("registros", []) if isinstance(table, dict) else table
             field = f"{alias}_FILIAL"
             if records and field in records[0]:
                 return records[0][field]
-            return "01"
+            return self._prepared_branch or "01"
+
+        def b_prepare_environment(args):
+            if len(args) != 2 or not all(isinstance(value, str) and value for value in args):
+                raise AdvPLRuntimeError("PREPARE ENVIRONMENT espera EMPRESA e FILIAL como texto nao vazio")
+            self._prepared_company, self._prepared_branch = args
+            return None
+
+        def b_reset_environment(args):
+            require_count("RESET ENVIRONMENT", args, 0)
+            self._prepared_company = None
+            self._prepared_branch = None
+            return None
+
+        def b_alert(args):
+            if len(args) != 1 or not isinstance(args[0], str):
+                raise AdvPLRuntimeError("Alert espera uma mensagem de texto")
+            print(f"[ALERTA] {args[0]}")
+            return None
+
+        def b_date(args):
+            require_count("Date", args, 0)
+            value = self.globals["DDATABASE"]
+            if not isinstance(value, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
+                raise AdvPLRuntimeError("DDATABASE deve estar em formato AAAA-MM-DD")
+            return value
 
         def b_changequery(args):
             require_count("ChangeQuery", args, 1)
@@ -1427,19 +1673,17 @@ class FixtureInterpreter(Interpreter):
 
         def b_alias_call(args):
             require_count("TestLabAliasCall", args, 2)
-            alias = self._get_alias(args[0])
+            name = str(args[0]).upper()
+            self._get_alias(name)
             method = str(args[1]).upper()
-            if method == "DBGOTOP":
-                alias.go_top()
-                return None
-            if method == "EOF":
-                return alias.eof()
-            if method == "DBSKIP":
-                alias.skip()
-                return None
-            if method == "DBCLOSEAREA":
-                alias.closed = True
-                return None
+            if method in builtins:
+                previous = self._current_alias
+                self._current_alias = name
+                try:
+                    return builtins[method]([])
+                finally:
+                    if method != "DBCLOSEAREA" or previous != name:
+                        self._current_alias = previous
             raise AdvPLRuntimeError(f"Metodo de alias '{args[1]}' nao suportado")
 
         def b_alias_field(args):
@@ -1454,6 +1698,17 @@ class FixtureInterpreter(Interpreter):
             alias = self._get_alias(args[0])
             method = str(args[1]).upper()
             method_args = args[2:]
+            if method in {"DBGOTO", "DBGOTOP", "DBGOBOTTOM", "DBGOBOTTON",
+                          "DBSEEK", "MSSEEK", "DBSKIP", "DBSETORDER", "DBSETFILTER",
+                          "DBDELETE", "DBRLOCK", "DBRLOCKLIST", "DBUNLOCK",
+                          "DBCOMMIT", "DBORDERNICKNAME", "DBCLOSEAREA", "EOF"}:
+                previous = self._current_alias
+                self._current_alias = str(args[0]).upper()
+                try:
+                    return builtins[method](method_args)
+                finally:
+                    if method != "DBCLOSEAREA" or previous != str(args[0]).upper():
+                        self._current_alias = previous
             table = self.fixture.tabelas.get(str(args[0]).upper(), {})
             fields = table.get("campos", []) if isinstance(table, dict) else []
             if method == "FIELDPOS":
@@ -1588,13 +1843,36 @@ class FixtureInterpreter(Interpreter):
         builtins["DBSELECTAREA"] = b_dbselectarea
         builtins["DBSETORDER"] = b_dbsetorder
         builtins["DBSEEK"] = b_dbseek
+        builtins["MSSEEK"] = b_dbseek
         builtins["EOF"] = b_eof
         builtins["DBSKIP"] = b_dbskip
+        builtins["DBGOTO"] = b_dbgoto
+        builtins["DBGOTOP"] = b_dbgotop
+        builtins["DBGOBOTTOM"] = b_dbgobottom
+        builtins["DBGOBOTTON"] = b_dbgobottom
+        builtins["DBCLOSEAREA"] = b_dbclosearea
+        builtins["DBCOMMIT"] = b_dbcommit
+        builtins["DBCOMMITALL"] = b_dbcommitall
+        builtins["DBDELETE"] = b_dbdelete
+        builtins["DBRLOCK"] = b_dbrlock
+        builtins["RLOCK"] = b_dbrlock
+        builtins["SOFTLOCK"] = b_softlock
+        builtins["DBRLOCKLIST"] = b_dbrlocklist
+        builtins["DBUNLOCK"] = b_dbunlock
+        builtins["UNLOCK"] = b_dbunlock
+        builtins["DBUNLOCKALL"] = b_dbunlockall
+        builtins["DBSETFILTER"] = b_dbsetfilter
+        builtins["DBORDERNICKNAME"] = b_dbordernickname
+        builtins["DBUSEAREA"] = b_dbusearea
         builtins["RECLOCK"] = b_reclock
         builtins["MSUNLOCK"] = b_msunlock
         builtins["CTOD"] = b_ctod
         builtins["RETSQLNAME"] = b_retsqlname
         builtins["XFILIAL"] = b_xfilial
+        builtins["TESTLABPREPAREENVIRONMENT"] = b_prepare_environment
+        builtins["TESTLABRESETENVIRONMENT"] = b_reset_environment
+        builtins["ALERT"] = b_alert
+        builtins["DATE"] = b_date
         builtins["CHANGEQUERY"] = b_changequery
         builtins["GETNEXTALIAS"] = b_getnextalias
         builtins["FWEXECSTATEMENT"] = b_fwexecstatement
@@ -1648,6 +1926,13 @@ _TMULTIGET_ASSIGN = re.compile(
 )
 _BEGIN_TRANSACTION = re.compile(r"^\s*BEGIN\s+TRANSACTION\s*$", re.IGNORECASE)
 _END_TRANSACTION = re.compile(r"^\s*END\s+TRANSACTION\s*$", re.IGNORECASE)
+_PREPARE_ENVIRONMENT = re.compile(
+    r"^(?P<indent>\s*)PREPARE\s+ENVIRONMENT\s+EMPRESA\s+"
+    r"(?P<company>'(?:[^']|'')*'|\"(?:[^\"]|\"\")*\"|[A-Za-z_]\w*)\s+"
+    r"FILIAL\s+(?P<branch>'(?:[^']|'')*'|\"(?:[^\"]|\"\")*\"|[A-Za-z_]\w*)\s*$",
+    re.IGNORECASE,
+)
+_RESET_ENVIRONMENT = re.compile(r"^\s*RESET\s+ENVIRONMENT\s*$", re.IGNORECASE)
 _ADD_OPTION = re.compile(
     r"^(?P<indent>\s*)ADD\s+OPTION\s+(?P<menu>\w+)\s+"
     r"TITLE\s+(?P<title>'(?:[^']|'')*')\s+"
@@ -1814,6 +2099,13 @@ def adapt_headless_ui(source):
             lines.append(f"{line[:len(line) - len(line.lstrip())]}TestLabBeginTransaction()")
         elif _END_TRANSACTION.match(line):
             lines.append(f"{line[:len(line) - len(line.lstrip())]}TestLabEndTransaction()")
+        elif environment := _PREPARE_ENVIRONMENT.match(line):
+            lines.append(
+                f"{environment.group('indent')}TestLabPrepareEnvironment("
+                f"{environment.group('company')}, {environment.group('branch')})"
+            )
+        elif _RESET_ENVIRONMENT.match(line):
+            lines.append(f"{line[:len(line) - len(line.lstrip())]}TestLabResetEnvironment()")
         else:
             lines.append(_adapt_advpl_line(line))
         index += 1
@@ -1954,6 +2246,7 @@ def run_sources(
     source_name="<memoria>",
     name_profile="modern",
     mvc_case=None,
+    state_path=None,
 ):
     interpreter = build_interpreter_sources(
         source_units,
@@ -1962,6 +2255,14 @@ def run_sources(
         source_name=source_name,
         name_profile=name_profile,
     )
+    if state_path is not None:
+        for alias, records in load_state(state_path, interpreter.fixture.tabelas).items():
+            interpreter._aliases[alias].records = copy.deepcopy(records)
+            interpreter._aliases[alias].position = 0
+        initial_records = {
+            alias: copy.deepcopy(interpreter._aliases[alias].records)
+            for alias in interpreter.fixture.tabelas
+        }
     if mvc_case is not None:
         if mvc_case not in interpreter.fixture.cenarios_mvc:
             raise FixtureError(f"Cenario MVC '{mvc_case}' nao encontrado na fixture")
@@ -1970,7 +2271,14 @@ def run_sources(
     if mvc_case is not None:
         if interpreter.mvc_result is None:
             raise FixtureError(f"Cenario MVC '{mvc_case}' nao foi executado: entrada nao ativou browse")
-        return interpreter.mvc_result
+        result = interpreter.mvc_result
+    if state_path is not None:
+        final_records = {
+            alias: interpreter._aliases[alias].records
+            for alias in interpreter.fixture.tabelas
+        }
+        if final_records != initial_records:
+            save_state(state_path, final_records)
     return result
 
 

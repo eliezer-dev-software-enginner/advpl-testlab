@@ -9,6 +9,7 @@ from interpreter import AdvPLRuntimeError
 from lexer import LexError
 from naming import NameCollisionError
 from parser import ParseError
+from state_store import StateError
 
 
 def main(argv=None):
@@ -25,9 +26,11 @@ def main(argv=None):
         metavar="ARQUIVO.PRW",
         help="valida todo o fonte sem executar a funcao de entrada",
     )
-    parser.add_argument("--fixture", help="fixture JSON/JSONC (padrao: advpl-testlab.jsonc ou .json)")
+    parser.add_argument("--fixture", help="fixture JSON/JSONC (padrao: testlab.jsonc ou .json)")
     parser.add_argument("--entry", help="User Function de entrada")
     parser.add_argument("--mvc-case", help="cenario MVC nomeado na fixture JSONC (somente -run)")
+    parser.add_argument("--persist", action="store_true",
+                        help="carrega e salva registros em state.json junto da fixture (somente -run)")
     parser.add_argument(
         "--name-profile", choices=("modern", "legacy10"), default="modern",
         help="regras de identificadores (padrao: modern)",
@@ -41,6 +44,8 @@ def main(argv=None):
         if args.validate_source:
             if args.mvc_case:
                 raise FixtureError("--mvc-case requer -run")
+            if args.persist:
+                raise FixtureError("--persist requer -run")
             function_count = validate_file(
                 args.validate_source,
                 fixture_path=args.fixture,
@@ -68,9 +73,11 @@ def main(argv=None):
                 args=entry_args,
                 name_profile=args.name_profile,
                 mvc_case=args.mvc_case,
+                persist=args.persist,
             )
     except (
         FixtureError,
+        StateError,
         SourceValidationError,
         ParseError,
         LexError,
