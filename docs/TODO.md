@@ -170,6 +170,8 @@ Status: `[x]` — concluido em 21/09/2026.
 - [x] Interpretar `PREPARE ENVIRONMENT`/`RESET ENVIRONMENT` para o EX1 com empresa/filial simuladas.
 - [x] Implementar `--persist` opcional em `state.json`, com gravacao atomica, recarga e testes de falha/MVC1.
 - [x] Cobrir as primitivas ISAM solicitadas em memoria, incluindo filtros, bloqueios, navegacao, exclusao logica e apelidos de indice.
+- [x] Simular `GetSXENum(cAlias, cCampo)` com regra de numeracao por campo e continuidade via `state.json`.
+- [ ] Avaliar reservas confirmadas/canceladas por `ConfirmSX8` e `RollbackSX8` sem fingir equivalencia ao servidor de numeracao.
 - [ ] Refinar a fidelidade de `SoftLock`, RDDs e commits intermediarios para cenarios que dependam do DBAccess real.
 - [ ] Definir bloqueio de concorrencia para gravacoes simultaneas no mesmo `state.json`.
 - [ ] Avaliar empacotamento ou configuracao explicita do caminho do LivrePL sem quebrar o uso atual por diretorios irmaos.

@@ -311,6 +311,26 @@ class Fixture:
                     raise FixtureError(
                         f"Apelidos de indices de '{alias}' devem apontar para ordens declaradas"
                     )
+            if isinstance(table, dict) and "numeracao" in table:
+                numbering = table["numeracao"]
+                fields = {
+                    str(field.get("nome", "")).upper()
+                    for field in table.get("campos", []) if isinstance(field, dict)
+                }
+                if not isinstance(numbering, dict):
+                    raise FixtureError(f"Numeracao de '{alias}' deve ser um objeto")
+                for field, config in numbering.items():
+                    if str(field).upper() not in fields or not isinstance(config, dict):
+                        raise FixtureError(
+                            f"Numeracao de '{alias}.{field}' exige campo declarado e configuracao"
+                        )
+                    if (type(config.get("digitos")) is not int
+                            or config["digitos"] < 1
+                            or type(config.get("inicio", 1)) is not int
+                            or config.get("inicio", 1) < 0):
+                        raise FixtureError(
+                            f"Numeracao de '{alias}.{field}' exige digitos positivos e inicio valido"
+                        )
             normalized[key] = table
         return normalized
 
@@ -664,6 +684,7 @@ class FixtureInterpreter(Interpreter):
         self._current_alias = next(iter(self._aliases), None)
         self._locked_alias = None
         self._record_locks = {}
+        self._number_reservations = {}
         self._prepared_company = None
         self._prepared_branch = None
         self.mvc_case = None
@@ -1417,6 +1438,44 @@ class FixtureInterpreter(Interpreter):
             self._record_locks.setdefault(name, set()).add(alias.position + 1)
             return True
 
+        def b_getsxenum(args):
+            if len(args) != 2 or not all(isinstance(value, str) and value for value in args):
+                raise AdvPLRuntimeError("GetSXENum espera alias e campo como textos")
+            name, field = (value.upper() for value in args)
+            alias = self._get_alias(name)
+            table = self.fixture.tabelas.get(name, {})
+            numbering = table.get("numeracao", {}) if isinstance(table, dict) else {}
+            config = next(
+                (value for key, value in numbering.items() if key.upper() == field),
+                None,
+            )
+            if config is None:
+                raise AdvPLRuntimeError(
+                    f"GetSXENum: configure numeracao para '{name}.{field}' no fixture"
+                )
+            width = config["digitos"]
+            values = []
+            for record in alias.records:
+                value = record.get(field)
+                if value is None or value == "":
+                    continue
+                if isinstance(value, bool) or not str(value).isdigit():
+                    raise AdvPLRuntimeError(
+                        f"GetSXENum: valor nao numerico em '{name}.{field}': {value!r}"
+                    )
+                values.append(int(value))
+            key = (name, field)
+            next_value = max(
+                [config.get("inicio", 1) - 1, *values,
+                 self._number_reservations.get(key, 0)]
+            ) + 1
+            if next_value >= 10 ** width:
+                raise AdvPLRuntimeError(
+                    f"GetSXENum: numeracao de '{name}.{field}' excede {width} digitos"
+                )
+            self._number_reservations[key] = next_value
+            return str(next_value).zfill(width)
+
         def b_msunlock(args):
             require_count("MsUnlock", args, 0)
             if self._locked_alias is not None:
@@ -1865,6 +1924,7 @@ class FixtureInterpreter(Interpreter):
         builtins["DBORDERNICKNAME"] = b_dbordernickname
         builtins["DBUSEAREA"] = b_dbusearea
         builtins["RECLOCK"] = b_reclock
+        builtins["GETSXENUM"] = b_getsxenum
         builtins["MSUNLOCK"] = b_msunlock
         builtins["CTOD"] = b_ctod
         builtins["RETSQLNAME"] = b_retsqlname

@@ -114,6 +114,8 @@ O primeiro comando parte dos `registros` de `testlab.jsonc` se ainda nao houver 
 
 Para MVC1, use `advpl-testlab -run ZA1MVC.prw --mvc-case incluir-livro-valido --persist`. Uma inclusao aprovada fica disponivel para o proximo `-run ... --persist`; uma inclusao rejeitada nao cria nem altera o estado. Expectativas absolutas como `totalRegistros: 2` continuam sendo verificadas contra o estado carregado, portanto repetir o mesmo caso de inclusao pode falhar por ja existir um registro anterior. Para voltar ao ponto inicial, guarde ou remova conscientemente o `state.json`; isso nao altera o JSONC.
 
+Para `GetSXENum(cAlias, cCampo)`, declare a regra na tabela do fixture: `"numeracao": {"ZA2_COD": {"digitos": 6, "inicio": 1}}`. O runtime verifica que o campo existe, calcula o maior codigo numerico dos registros carregados e reserva o proximo valor preenchido com zeros. Chamadas repetidas na mesma execucao nao repetem numero; com `--persist`, os registros de `state.json` entram no calculo da execucao seguinte. Registros sem codigo sao ignorados; valores nao numericos, estouro de largura e ausencia da regra geram erro explicito. Isto simula o caso de dois argumentos, nao o servico SXE/SXF/License Server nem a semantica completa de `ConfirmSX8`/`RollbackSX8`.
+
 ### Cenarios de inclusao MVC
 
 Defina `cenariosMvc` no `testlab.jsonc` e selecione um cenario por nome:

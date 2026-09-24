@@ -71,7 +71,8 @@ Para toda mudanca de comportamento:
 ## 7. Git
 
 - Nunca executar `git push` sem autorizacao explicita do usuario.
-- Fazer commit somente quando solicitado.
+- Ao finalizar uma tarefa que altere arquivos, fazer commit das alteracoes da tarefa apos a validacao, sem aguardar um novo pedido de commit.
+- Em tarefas apenas de leitura ou resposta, sem alteracoes de arquivos, nao criar commit vazio.
 - Antes do commit, revisar `git status`, `git diff` e, quando existir historico, `git log --oneline -10`.
 - Adicionar apenas arquivos pertencentes ao escopo.
 - Nao commitar segredos, credenciais, ambientes virtuais ou caches.

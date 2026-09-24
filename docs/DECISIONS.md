@@ -270,6 +270,14 @@
 - **Decisao:** Implementar as chamadas sobre aliases do fixture, com recnos baseados em 1, exclusao logica e bloqueios locais ao interpretador. `DbOrderNickname(cApelido)` resolve `apelidosIndices` do fixture; `Select()` nao troca a area corrente. `DbCommit` e `DbCommitAll` nao gravam estado no meio da execucao; `--persist` continua fazendo snapshot somente apos sucesso.
 - **Consequencias:** Os fluxos podem ser testados deterministicamente sem DBAccess. Nao se promete equivalencia de RDD, concorrencia, soft locks reais, SQL ou flush intermediario; essas limitacoes devem permanecer explicitas no README.
 
+## ADR-034 — Numeracao deterministica de `GetSXENum`
+
+- **Data:** 24/09/2026
+- **Estado:** Aceita
+- **Contexto:** `EX1.prw` passou a usar `GetSXENum("ZA2", "ZA2_COD")` e o fixture nao declara o tamanho do campo. Com `--persist`, o codigo precisa avancar entre execucoes.
+- **Decisao:** Configurar `numeracao` por tabela e campo com `digitos` e `inicio`. Derivar o proximo codigo do maior valor numerico dos registros carregados, incluindo `state.json`, e reservar chamadas adicionais na mesma execucao.
+- **Consequencias:** O caso de dois argumentos e deterministico e dispensa SXE/SXF. O simulador nao implementa reserva distribuida, `ConfirmSX8` ou `RollbackSX8`; sem registro salvo, o numero pode ser reutilizado na proxima execucao.
+
 - Teste de aceite da CLI: saida `000007`.
 - Cinco testes automatizados executados e aprovados.
 - Nove testes automatizados executados e aprovados apos incorporar os primeiros casos reais.
