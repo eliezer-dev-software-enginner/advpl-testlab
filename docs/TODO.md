@@ -171,6 +171,7 @@ Status: `[x]` — concluido em 21/09/2026.
 - [x] Implementar `--persist` opcional em `state.json`, com gravacao atomica, recarga e testes de falha/MVC1.
 - [x] Cobrir as primitivas ISAM solicitadas em memoria, incluindo filtros, bloqueios, navegacao, exclusao logica e apelidos de indice.
 - [x] Simular `GetSXENum(cAlias, cCampo)` com regra de numeracao por campo e continuidade via `state.json`.
+- [x] Documentar no README um bloco copiavel com as chaves comuns de `ambiente` e distinguir globais especificas de cada fonte.
 - [ ] Avaliar reservas confirmadas/canceladas por `ConfirmSX8` e `RollbackSX8` sem fingir equivalencia ao servidor de numeracao.
 - [ ] Refinar a fidelidade de `SoftLock`, RDDs e commits intermediarios para cenarios que dependam do DBAccess real.
 - [ ] Definir bloqueio de concorrencia para gravacoes simultaneas no mesmo `state.json`.

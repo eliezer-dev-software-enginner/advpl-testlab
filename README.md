@@ -93,6 +93,34 @@ O executor procura `testlab.jsonc` ou `testlab.json` no diretorio do `.prw` e no
 
 `PREPARE ENVIRONMENT EMPRESA ... FILIAL ...` e `RESET ENVIRONMENT` sao simulados sem abrir AppServer. O corte atual aceita valores literais ou variaveis para empresa/filial; `Date()` usa `DDATABASE` de `ambiente` (formato `AAAA-MM-DD`), `xFilial()` sem argumento usa o alias corrente, e `Alert()` escreve no terminal. Sem `--persist`, a escrita via `RecLock` continua apenas em memoria; veja [fase-ex1-ambiente](docs/fase-ex1-ambiente.md).
 
+### `ambiente`: bloco pronto para `testlab.jsonc`
+
+Copie a propriedade abaixo para a raiz do seu fixture e ajuste os valores. Este bloco reune todas as chaves de ambiente com significado proprio no runtime atual; as de e-mail so afetam fontes que usam `TMailManager`/`TMailMessage`. `0` significa sucesso simulado nesses resultados.
+
+```jsonc
+"ambiente": [
+  {"DDATABASE": "2026-09-25"},
+  {"TIME": "12:34:56"},
+  {"CUSERLOCAL": "C:\\testlab"},
+  {"MODEL_OPERATION": 2},
+  {"MAIL_INIT_RESULT": 0},
+  {"MAIL_TIMEOUT_RESULT": 0},
+  {"MAIL_CONNECT_RESULT": 0},
+  {"MAIL_AUTH_RESULT": 0},
+  {"MAIL_SEND_RESULT": 0},
+  // Opcionais por fonte: descomente e ajuste antes de usar.
+  // {"RECLOCK_ZA2": false},
+  // {"PARAMIXB": []},
+  // {"AHEADER": []},
+  // {"ACOLS": []},
+  {"MAIL_ERROR_MESSAGE": "Falha SMTP simulada"}
+]
+```
+
+`DDATABASE` alimenta `Date()`/`dDataBase`; `TIME` alimenta `Time()`; `CUSERLOCAL` e um caminho simulado, nao um diretorio criado pelo TestLab. `MODEL_OPERATION` controla `GetOperation()` fora de `--mvc-case` (padrao `2`; durante um cenario de inclusao, o TestLab usa `3`). Altere um resultado `MAIL_*_RESULT` para um numero diferente de zero para simular falha; `MAIL_ERROR_MESSAGE` e usado quando o fonte chama `GetErrorString()`.
+
+Ha ainda entradas que dependem do fonte, sem valor universal para copiar: `RECLOCK_<ALIAS>` (por exemplo, `{"RECLOCK_ZA2": false}`) faz `RecLock`/`DbRLock` falhar nesse alias; sem a entrada, o bloqueio e permitido. `PARAMIXB`, `AHEADER` e `ACOLS` podem ser declarados como valores/arrays globais, mas precisam ter a estrutura e os indices esperados pelo `.prw` testado. Outros nomes em `ambiente` tambem viram globais do interpretador; isso nao cria automaticamente uma funcao ou uma integracao Protheus. Parametros lidos por `GetMV` pertencem a `parametros`, nao a `ambiente`.
+
 ```text
 -run ARQUIVO.PRW       fonte AdvPL alvo da execução ou simulação
 --fixture ARQUIVO.JSONC fixture específico; aceita também .json
@@ -224,18 +252,7 @@ A suíte inclui fontes `.prw` propositalmente inválidos em `tests/fixtures` par
 
 O `ENVEMAIL.prw` real e validado e executado pela suite. `TMailManager` e `TMailMessage` sao objetos somente em memoria: nenhuma conexao SMTP e aberta e `Send()` nunca envia uma mensagem real. Um envio aceito e armazenado em `FixtureInterpreter.sent_emails` sem senha, permitindo conferir remetente, destinatario, assunto, tipo e corpo.
 
-Os retornos usam valores numericos em `ambiente`; quando ausentes, o padrao e sucesso (`0`):
-
-```json
-"ambiente": [
-  {"MAIL_INIT_RESULT": 0},
-  {"MAIL_TIMEOUT_RESULT": 0},
-  {"MAIL_CONNECT_RESULT": 0},
-  {"MAIL_AUTH_RESULT": 0},
-  {"MAIL_SEND_RESULT": 0},
-  {"MAIL_ERROR_MESSAGE": "Falha SMTP simulada"}
-]
-```
+Os retornos usam valores numericos em `ambiente`; quando ausentes, o padrao e sucesso (`0`). O bloco completo para copiar esta na secao `ambiente` acima.
 
 Para exercitar o tratamento de erro de `Send()`, configure `MAIL_SEND_RESULT` com valor diferente de zero. `MAIL_ERROR_MESSAGE` sera devolvida por `GetErrorString()`. Tambem possuem suporte headless as funcoes `At`, `Left`, `EncodeUTF8` e `FreeObj`; `EncodeUTF8` preserva a string Python porque nao ha transporte de bytes real.
 
