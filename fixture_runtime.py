@@ -2205,9 +2205,11 @@ def compile_sources(source_units, fixture=None, name_profile="modern"):
     allowed_functions = set(supported_runtime.builtins) | set(fixture.funcoes)
     allowed_functions.update(
         function.name.upper() for function in combined.functions
+        if function.kind != "STATIC"
     )
     allowed_functions.update(
         f"U_{function.name.upper()}" for function in combined.functions
+        if function.kind == "USER"
     )
     allowed_functions.update(class_.name.upper() for class_ in combined.classes)
     allowed_globals = set(supported_runtime.globals)
@@ -2223,6 +2225,13 @@ def compile_sources(source_units, fixture=None, name_profile="modern"):
         if function.kind == "USER"
     }
     for source_name, source, program in parsed_units:
+        inaccessible_statics = {
+            supported_runtime.name_policy.key(function.name): Path(other_name).name
+            for other_name, _, other_program in parsed_units
+            if other_name != source_name
+            for function in other_program.functions
+            if function.kind == "STATIC"
+        }
         try:
             validate_program(
                 program,
@@ -2230,6 +2239,7 @@ def compile_sources(source_units, fixture=None, name_profile="modern"):
                 allowed_globals=allowed_globals,
                 allowed_functions=allowed_functions,
                 allowed_privates=declared_privates,
+                inaccessible_statics=inaccessible_statics,
                 name_profile=name_profile,
             )
             validate_mvc_metadata(

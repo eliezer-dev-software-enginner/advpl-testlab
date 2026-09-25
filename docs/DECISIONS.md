@@ -328,4 +328,11 @@
 - **Decisao:** Verificar acoes literais `U_<nome>` e `U_<nome>()` de `ADD OPTION` contra `User Function` carregadas por fonte/`usePrw` ou declaradas explicitamente em `funcoes` do fixture. Exigir tipo `USER`, nao aceitar apenas `Static Function` homonima. Usar a politica de nomes moderna/legada e apontar a linha da acao.
 - **Consequencias:** `-validate` e `-run` falham cedo para referencias quebradas, mesmo que o menu nao seja aberto na execucao headless. Acoes montadas dinamicamente continuam fora da verificacao estatica. O fonte alterado do usuario nao e restaurado pelo TestLab.
 
+## ADR-039 — Respeitar escopo de funcoes estaticas no grafo usePrw
+
+- **Data:** 25/09/2026
+- **Contexto:** O executor ja percorria `//usePrw` recursivamente, mas `compile_sources` oferecia todas as funcoes carregadas como simbolos globais. Assim `TRNSOL01.prw` passava mesmo chamando `fMostraErros()` declarada como `Static Function` em `UTILS.prw`. A [documentacao TOTVS de FUNCTION](https://tdn.totvs.com/display/framework/FUNCTION) limita a visibilidade estatica ao mesmo `.prw`.
+- **Decisao:** Na validacao de cada unidade, expor de outros fontes somente `Function` publica e `User Function`; manter `Static Function` visivel apenas no arquivo que a declara. Quando uma chamada encontra uma `Static` em outro arquivo, apontar o chamador e informar o arquivo de origem. Preservar a descoberta recursiva, o acesso a `PRIVATE` dinamica e os testes de depuracao usando um auxiliar publico entre arquivos.
+- **Consequencias:** A raiz falha ao validar uma dependencia com chamada estaticamente inacessivel, mesmo se sua entrada nao percorrer aquele ramo. Fontes existentes que dependiam do falso positivo precisam mover o auxiliar ao mesmo `.prw` ou expor uma interface publica explicita. O TestLab nao altera automaticamente os fontes do usuario.
+
 *Ultima atualizacao: 25/09/2026*

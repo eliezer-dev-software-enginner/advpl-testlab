@@ -15,8 +15,8 @@ class PrivateSemanticTests(unittest.TestCase):
 
     def test_private_name_can_be_declared_in_other_source(self):
         sources = [
-            ("main.prw", "User Function Main()\nPrivate cCadastro := 'Livros'\nReturn ModelDef()\n"),
-            ("model.prw", "Static Function ModelDef()\nReturn cCadastro\n"),
+            ("main.prw", "User Function Main()\nPrivate cCadastro := 'Livros'\nReturn U_ModelDef()\n"),
+            ("model.prw", "User Function ModelDef()\nReturn cCadastro\n"),
         ]
         self.assertEqual("Livros", run_sources(sources, entry="Main"))
 

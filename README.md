@@ -224,7 +224,7 @@ Um fonte pode declarar dependencias locais pela convencao:
 
 Cada declaracao deve ocupar sua propria linha. O caminho e relativo ao arquivo que contem o comentario, deve terminar em `.prw` e permanecer dentro do diretorio do fonte principal. O TestLab carrega as dependencias recursivamente, evita duplicacao/ciclos e gera erro claro quando o arquivo nao existe.
 
-As funcoes dos arquivos carregados participam da validacao semantica e da execucao. Uma `User Function EnviarEmailSolicitacao()` pode ser chamada por outro fonte como `U_EnviarEmailSolicitacao()`, conforme a convencao do AdvPL. O comentario continua inofensivo para o compilador Protheus e tambem serve como mapa direto para pessoas e agentes localizarem o codigo relacionado.
+As funcoes dos arquivos carregados participam da validacao semantica e da execucao. Uma `User Function EnviarEmailSolicitacao()` pode ser chamada por outro fonte como `U_EnviarEmailSolicitacao()`, conforme a convencao do AdvPL. `Function` publica tambem pode ser chamada de outro `.prw`; `Static Function` fica restrita ao proprio fonte, conforme a [documentacao da TOTVS](https://tdn.totvs.com/display/framework/FUNCTION). Assim, `//usePrw('UTILS.prw')` carrega e valida `UTILS.prw`, mas nao torna suas funcoes estaticas acessiveis de `TRNSOL01.prw` ou `OUACOES.prw`. O comentario continua inofensivo para o compilador Protheus e serve como mapa direto para pessoas e agentes localizarem o codigo relacionado.
 
 Para validar todas as funções do arquivo sem executar nenhuma delas:
 
@@ -467,7 +467,7 @@ O fonte real e sua dependencia `ENVEMAIL.prw` passam juntos por lexer, parser, v
 
 ### TRNSOL01.prw em modo headless
 
-O fonte real e as dependencias declaradas com `//usePrw` passam por lexer, parser e validacao semantica. A suite executa a entrada `TRNSOL01`, menu, modelo/view e os fluxos de envio, aprovacao, rejeicao, processamento e cancelamento, incluindo erro de item e rollback por falha de bloqueio.
+O fonte real e as dependencias declaradas com `//usePrw` passam por lexer, parser e validacao semantica. Depois da refatoracao em `OUACOES.prw`/`UTILS.prw`, a validacao do projeto alvo pode apontar funcoes `Static` chamadas de outro `.prw`; por exemplo, `fMostraErros()` em `TRNSOL01.prw`. Corrija o escopo dos auxiliares antes de executar o fluxo. Os testes de integracao no projeto alvo cobrem entrada, menu, modelo/view e fluxos de status, mas nao substituem essa validacao.
 
 ```powershell
 advpl-testlab -validate TRNSOL01.prw

@@ -40,6 +40,7 @@ Estado: fluxos de negocio cobertos em memoria; integracao Protheus permanece ext
 - [x] Rejeitar leituras de identificadores nao declarados em `-validate` e `-run`.
 - [x] Rejeitar chamadas de funcoes inexistentes e aceitar funcoes simuladas no fixture.
 - [x] Carregar dependencias locais declaradas por `//usePrw('arquivo.prw')`.
+- [x] Validar o grafo `usePrw` respeitando escopo de `Static Function` por arquivo; raiz deve falhar se um dependente chamar auxiliar estatico de outro `.prw`.
 - [x] Validar e executar `ENVEMAIL.prw` com SMTP e envio simulados em memoria.
 - [x] Validar e executar integralmente `NOTIFSOL.prw` nos eventos ENVIO, APROVACAO, REJEICAO e PROCESSAMENTO.
 - [x] Aceitar argumentos da funcao de entrada pela CLI com `--args-json`.

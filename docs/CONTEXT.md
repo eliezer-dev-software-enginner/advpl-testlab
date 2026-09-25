@@ -178,7 +178,7 @@ IDs literais de `GetValue('SUBMODELO', 'CAMPO')` tambem sao comparados aos IDs d
 ### Dependencias `usePrw` e ENVEMAIL
 
 - `//usePrw('arquivo.prw')` declara uma dependencia local relativa ao fonte atual.
-- O executor carrega o grafo recursivamente, rejeita arquivo ausente/fora da raiz e disponibiliza as funcoes para validacao e execucao, incluindo chamadas `U_Nome()`.
+- O executor carrega o grafo recursivamente, rejeita arquivo ausente/fora da raiz e valida todos os fontes alcancados, incluindo chamadas `U_Nome()`. Funcoes `Static` de um `.prw` nao ficam visiveis em outro; `Function` publica e `User Function` (via `U_`) podem servir de interface entre fontes. Chamadas a `Static` de outro arquivo recebem erro com o nome do arquivo que a declara.
 - O `ENVEMAIL.prw` real passa por lexer, parser, validacao semantica e execucao automatizada de suas validacoes de entrada.
 - `TMailManager`/`TMailMessage` sao simulados em memoria; `Send()` nunca acessa a rede e os dados nao sensiveis do envio ficam em `sent_emails`.
 - Resultados SMTP podem ser controlados por `MAIL_INIT_RESULT`, `MAIL_TIMEOUT_RESULT`, `MAIL_CONNECT_RESULT`, `MAIL_AUTH_RESULT`, `MAIL_SEND_RESULT` e `MAIL_ERROR_MESSAGE` em `ambiente`.

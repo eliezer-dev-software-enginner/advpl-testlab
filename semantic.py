@@ -139,6 +139,7 @@ def validate_program(
     allowed_globals=None,
     allowed_functions=None,
     allowed_privates=None,
+    inaccessible_statics=None,
     name_profile="modern",
 ):
     policy = NamePolicy(name_profile)
@@ -167,6 +168,14 @@ def validate_program(
                 )
             if isinstance(node, Call) and policy.key(node.name) not in functions:
                 line, column = _source_location(source, node.name, getattr(node, "line", None))
+                static_owner = (inaccessible_statics or {}).get(policy.key(node.name))
+                if static_owner:
+                    raise SemanticError(
+                        f"Funcao '{node.name}' e STATIC em '{static_owner}' "
+                        "e nao pode ser chamada de outro PRW",
+                        line=line,
+                        column=column,
+                    )
                 raise SemanticError(
                     f"Função '{node.name}' não encontrada",
                     line=line,
