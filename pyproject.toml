@@ -10,6 +10,7 @@ requires-python = ">=3.10"
 
 [project.scripts]
 advpl-testlab = "main:main"
+advpl-testlab-dap = "debug_adapter:main"
 
 [tool.setuptools]
-py-modules = ["diagnostics", "executor", "fixture_runtime", "main", "semantic", "state_store"]
+py-modules = ["debug_adapter", "debug_runtime", "diagnostics", "executor", "fixture_runtime", "main", "semantic", "state_store"]

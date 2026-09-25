@@ -91,6 +91,36 @@ advpl-testlab -run TRNSOL02.prw
 
 O executor procura `testlab.jsonc` ou `testlab.json` no diretorio do `.prw` e nos diretorios pais. O fixture do diretorio mais proximo prevalece; no mesmo diretorio, `testlab.jsonc` tem prioridade, depois `testlab.json`. Os nomes antigos `advpl-testlab.jsonc` e `advpl-testlab.json` continuam aceitos como fallback. Tambem e possivel usar `--fixture caminho.jsonc`, `--entry NomeDaFuncao` e `--args-json '[...]'`.
 
+### Depuracao inicial no VS Code (extensao em desenvolvimento)
+
+Esta primeira versao permite breakpoints em instrucoes `.prw`, continuar, entrar/sair/avancar passos, ver pilha e inspecionar variaveis locais, privadas e globais. Ela depura o codigo AdvPL simulado, nao o Python do TestLab nem um AppServer real.
+
+1. No Python que o VS Code usara, execute `python -m pip install -e .` na pasta `advpl-testlab`.
+2. Abra a pasta `advpl-testlab/vscode-extension` no VS Code e pressione `F5` para iniciar o **Extension Development Host**. Ainda nao ha VSIX publicada ou instalada permanentemente.
+3. Na nova janela, abra a pasta que contem seu `.prw` e crie `.vscode/launch.json`:
+
+```jsonc
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "advpl-testlab",
+      "request": "launch",
+      "name": "Depurar PRW (TestLab)",
+      "program": "${file}",
+      "entry": "EX1",
+      "stopOnEntry": true,
+      "persist": false,
+      "pythonPath": "python"
+    }
+  ]
+}
+```
+
+Selecione o `.prw`, marque um breakpoint em uma linha executavel e inicie `Depurar PRW (TestLab)`. Se o TestLab foi instalado em outro ambiente Python, ajuste `pythonPath` para o `python.exe` desse ambiente. `fixture` e opcional (a descoberta e a mesma da CLI); tambem sao aceitos `args` (array JSON), `mvcCase`, `nameProfile` e `persist`. Com `persist: true`, o estado so e salvo apos execucao bem-sucedida; encerrar a depuracao durante uma pausa nao grava.
+
+Limitacoes do MVP: breakpoints so sao confirmados em instrucoes que o parser associa a uma linha executavel (por exemplo, uma declaracao sem inicializador pode nao ter ponto de parada). Linhas de controles de UI adaptadas, breakpoints condicionais, avaliacao de expressoes no console/Watch, edicao de variaveis e pausa na excecao ainda nao estao implementados. `//usePrw` e suportado: a pilha e o breakpoint apontam para o arquivo dependente correto. Ver [fase-debug-vscode](docs/fase-debug-vscode.md).
+
 `PREPARE ENVIRONMENT EMPRESA ... FILIAL ...` e `RESET ENVIRONMENT` sao simulados sem abrir AppServer. O corte atual aceita valores literais ou variaveis para empresa/filial; `Date()` usa `DDATABASE` de `ambiente` (formato `AAAA-MM-DD`), `xFilial()` sem argumento usa o alias corrente, e `Alert()` escreve no terminal. Sem `--persist`, a escrita via `RecLock` continua apenas em memoria; veja [fase-ex1-ambiente](docs/fase-ex1-ambiente.md).
 
 ### `ambiente`: bloco pronto para `testlab.jsonc`

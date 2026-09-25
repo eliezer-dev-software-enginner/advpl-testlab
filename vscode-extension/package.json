@@ -1,0 +1,53 @@
+{
+  "name": "advpl-testlab-debug",
+  "displayName": "AdvPL TestLab Debug",
+  "description": "Depuracao headless de fontes PRW pelo AdvPL TestLab",
+  "version": "0.1.0",
+  "publisher": "local",
+  "private": true,
+  "engines": { "vscode": "^1.80.0" },
+  "categories": ["Debuggers"],
+  "main": "./extension.js",
+  "activationEvents": ["onDebug:advpl-testlab"],
+  "contributes": {
+    "languages": [
+      { "id": "advpl-testlab", "aliases": ["AdvPL TestLab"], "extensions": [".prw"] }
+    ],
+    "breakpoints": [
+      { "language": "advpl-testlab" },
+      { "language": "advpl" }
+    ],
+    "debuggers": [
+      {
+        "type": "advpl-testlab",
+        "label": "AdvPL TestLab",
+        "languages": ["advpl-testlab", "advpl"],
+        "configurationAttributes": {
+          "launch": {
+            "required": ["program"],
+            "properties": {
+              "program": { "type": "string", "description": "Arquivo .prw principal" },
+              "fixture": { "type": "string", "description": "Fixture testlab.jsonc opcional" },
+              "entry": { "type": "string", "description": "User Function de entrada" },
+              "args": { "type": "array", "description": "Argumentos da entrada", "default": [] },
+              "mvcCase": { "type": "string", "description": "Cenario MVC opcional" },
+              "persist": { "type": "boolean", "default": false },
+              "stopOnEntry": { "type": "boolean", "default": false },
+              "nameProfile": { "type": "string", "enum": ["modern", "legacy10"], "default": "modern" },
+              "pythonPath": { "type": "string", "description": "Python com advpl-testlab instalado", "default": "python" }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "advpl-testlab",
+            "request": "launch",
+            "name": "Depurar PRW (TestLab)",
+            "program": "${file}",
+            "stopOnEntry": true
+          }
+        ]
+      }
+    ]
+  }
+}

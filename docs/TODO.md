@@ -172,6 +172,10 @@ Status: `[x]` — concluido em 21/09/2026.
 - [x] Cobrir as primitivas ISAM solicitadas em memoria, incluindo filtros, bloqueios, navegacao, exclusao logica e apelidos de indice.
 - [x] Simular `GetSXENum(cAlias, cCampo)` com regra de numeracao por campo e continuidade via `state.json`.
 - [x] Documentar no README um bloco copiavel com as chaves comuns de `ambiente` e distinguir globais especificas de cada fonte.
+- [x] Iniciar debug VS Code via DAP com breakpoints, passos, pilha e variaveis em fontes `.prw` e `//usePrw`.
+- [ ] Testar a extensao visualmente no Extension Development Host e preparar distribuicao VSIX.
+- [ ] Ampliar coordenadas do parser para instrucoes sem expressao e controles adaptados; depois avaliar ganchos reutilizaveis no LivrePL.
+- [ ] Adicionar breakpoints condicionais, avaliacao de expressoes e parada em excecoes ao depurador.
 - [ ] Avaliar reservas confirmadas/canceladas por `ConfirmSX8` e `RollbackSX8` sem fingir equivalencia ao servidor de numeracao.
 - [ ] Refinar a fidelidade de `SoftLock`, RDDs e commits intermediarios para cenarios que dependam do DBAccess real.
 - [ ] Definir bloqueio de concorrencia para gravacoes simultaneas no mesmo `state.json`.

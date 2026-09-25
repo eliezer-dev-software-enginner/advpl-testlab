@@ -2190,6 +2190,8 @@ def compile_sources(source_units, fixture=None, name_profile="modern"):
             program = parse_source(prepare_source(source))
         except (ParseError, LexError) as exc:
             raise SourceUnitError(source_name, source, exc) from exc
+        for declaration in (*program.functions, *program.methods):
+            declaration.source_path = str(source_name)
         parsed_units.append((source_name, source, program))
 
     combined = Program(

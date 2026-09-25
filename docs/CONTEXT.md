@@ -21,6 +21,7 @@
 | `docs/fase-trnsol02-integral.md` | Validacao e execucao integral do primeiro fonte real |
 | `docs/fix-private-semantics.md` | Escopo dinamico de `PRIVATE` e localizacao de erros semanticos |
 | `docs/fase-mvc-validacao.md` | Validacao de acoes de menu e chaves primarias MVC |
+| `docs/fase-debug-vscode.md` | Depuracao DAP inicial de fontes PRW no VS Code |
 
 ## O que e o projeto
 
@@ -56,6 +57,8 @@ parser + FixtureInterpreter do LivrePL
 
 `FixtureInterpreter` herda de `Interpreter` e estende `_build_builtins()`. A decisao evita mudancas no lexer, parser e runtime central quando o recurso pode ser expresso como funcao de framework.
 
+A depuracao inicial usa `DebugFixtureInterpreter` sobre `FixtureInterpreter` e um adaptador DAP em processo separado. A extensao VS Code em `vscode-extension/` inicia esse processo no Python com o TestLab instalado. Breakpoints/stack usam o caminho da declaracao carregada por `compile_sources`, inclusive dependencias `//usePrw`; o escopo e headless e ainda nao cobre toda linha, expressao Watch ou excecao pausavel.
+
 O adaptador de comandos suporta `PREPARE ENVIRONMENT EMPRESA ... FILIAL ...` e `RESET ENVIRONMENT` com estado local ao runtime. No EX1 de banco, `Date()` consulta `DDATABASE` deterministico e `xFilial()` pode usar a area corrente. `--persist` carrega e salva os registros em `state.json`, separado do fixture imutavel `testlab.jsonc`; inclui escritas por `RecLock` e MVC1. Sem a opcao, tudo continua somente em memoria (ADR-032).
 
 Na validacao semantica, nomes `PRIVATE` declarados nos fontes carregados sao considerados potencialmente visiveis entre funcoes; `LOCAL` continua restrito a sua funcao. A disponibilidade efetiva de `PRIVATE` e resolvida no runtime pela pilha dinamica. Erros de identificador usam a linha da AST para apontar a leitura que falhou.
@@ -73,6 +76,9 @@ IDs literais de `GetValue('SUBMODELO', 'CAMPO')` tambem sao comparados aos IDs d
 | `executor.py` | Descobre entrada/fixture, valida e executa pelo interpretador |
 | `main.py` | CLI `advpl-testlab -run` e `-validate` |
 | `pyproject.toml` | Empacotamento e comando instalavel |
+| `debug_runtime.py` | Ganchos de pausa, breakpoints e estados da pilha sem modificar o LivrePL |
+| `debug_adapter.py` | Protocolo DAP por stdio para o VS Code |
+| `vscode-extension/` | Extensao local em desenvolvimento para iniciar o adaptador |
 | `examples/getmv.prw` | Exemplo de codigo AdvPL real usando `GetMV` |
 | `examples/ui-headless.prw` | Exemplo executavel de dialogo e mensagens sem UI |
 | `examples/real-cases/sol_mail_cfg.prw` | Funcoes isoladas de `NOTIFSOL.prw` |

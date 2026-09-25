@@ -278,6 +278,14 @@
 - **Decisao:** Configurar `numeracao` por tabela e campo com `digitos` e `inicio`. Derivar o proximo codigo do maior valor numerico dos registros carregados, incluindo `state.json`, e reservar chamadas adicionais na mesma execucao.
 - **Consequencias:** O caso de dois argumentos e deterministico e dispensa SXE/SXF. O simulador nao implementa reserva distribuida, `ConfirmSX8` ou `RollbackSX8`; sem registro salvo, o numero pode ser reutilizado na proxima execucao.
 
+## ADR-035 — Depurador DAP externo ao LivrePL no primeiro corte
+
+- **Data:** 25/09/2026
+- **Estado:** Aceita para MVP
+- **Contexto:** O usuario pediu debug de `.prw` no VS Code e autorizou alterar o LivrePL se necessario.
+- **Decisao:** Instrumentar `FixtureInterpreter.exec_stmt` por subclasse, mapear declaracoes compiladas a fonte e expor pausas por um adaptador DAP Python iniciado por extensao VS Code local. Nao alterar o LivrePL enquanto a cobertura inicial puder ser entregue pela camada TestLab.
+- **Consequencias:** Breakpoints em linhas executaveis de fontes e dependencias, passos, pilha e variaveis funcionam em testes automatizados. VSIX, parada em excecoes, Watch e coordenadas de instrucoes sem expressao ficam para fases seguintes; quando exigirem mudanca na base, ela sera feita no LivrePL com testes proprios.
+
 - Teste de aceite da CLI: saida `000007`.
 - Cinco testes automatizados executados e aprovados.
 - Nove testes automatizados executados e aprovados apos incorporar os primeiros casos reais.
