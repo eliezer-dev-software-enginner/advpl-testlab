@@ -65,7 +65,7 @@ Na validacao semantica, nomes `PRIVATE` declarados nos fontes carregados sao con
 
 O TestLab valida uma convencao estrita de declaracoes por funcao/metodo: `LOCAL`/`STATIC`, `PRIVATE`, `PUBLIC`, sempre antes de comandos executaveis. O LivrePL apenas anota a linha de `VarDecl`; a restricao nao altera a gramatica base, pois a documentacao TOTVS permite declaracoes fora do inicio.
 
-Fontes MVC recebem verificacao adicional: `ADD OPTION` com `VIEWDEF.<modulo>` literal deve apontar para uma `User Function` carregada, e `SetPrimaryKey` literal deve usar campos da fixture. O runtime tambem verifica chaves calculadas dinamicamente quando o metodo e chamado.
+Fontes MVC recebem verificacao adicional: `ADD OPTION` com `VIEWDEF.<modulo>` ou `U_<nome>` literal deve apontar para uma `User Function` carregada; respostas explicitas em `funcoes` tambem atendem acoes `U_`. `SetPrimaryKey` literal deve usar campos da fixture. O runtime tambem verifica chaves calculadas dinamicamente quando o metodo e chamado.
 
 IDs literais de `GetValue('SUBMODELO', 'CAMPO')` tambem sao comparados aos IDs declarados por `AddFields`/`AddGrid` no mesmo fonte, antes da execucao. Isso detecta typos no `bPost` mesmo quando o browse nao aciona um cenario MVC. IDs dinamicos continuam sujeitos a verificacao runtime. Ver ADR-029.
 

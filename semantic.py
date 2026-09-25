@@ -178,6 +178,8 @@ def validate_mvc_metadata(program, source, fixture, user_functions,
                           name_profile="modern"):
     policy = NamePolicy(name_profile)
     modules = {policy.key(name) for name in user_functions}
+    user_actions = {policy.user_symbol(name) for name in user_functions}
+    user_actions.update(policy.key(name) for name in fixture.funcoes)
     fields = mvc_field_names(fixture)
     lines = source.splitlines()
     model_ids = set()
@@ -202,13 +204,25 @@ def validate_mvc_metadata(program, source, fixture, user_functions,
                 if len(items) < 2 or not isinstance(items[1], Literal):
                     continue
                 action = items[1].value
-                if not isinstance(action, str) or not action.upper().startswith("VIEWDEF."):
+                if not isinstance(action, str):
                     continue
-                module = action.split(".", 1)[1]
-                if policy.key(module) not in modules:
+                if action.upper().startswith("VIEWDEF."):
+                    module = action.split(".", 1)[1]
+                    if policy.key(module) in modules:
+                        continue
                     line, column = _source_location(source, action, line_number)
                     raise SemanticError(
                         f"Ação MVC '{action}' referencia User Function '{module}' inexistente",
+                        line=line, column=column,
+                    )
+                user_action = re.fullmatch(
+                    r"(U_[A-Za-z_][A-Za-z_0-9]*)(?:\(\))?", action.strip(), re.IGNORECASE
+                )
+                if user_action and policy.key(user_action.group(1)) not in user_actions:
+                    line, column = _source_location(source, user_action.group(1), line_number)
+                    raise SemanticError(
+                        f"Acao de menu '{action}' referencia User Function "
+                        f"'{user_action.group(1)[2:]}' inexistente",
                         line=line, column=column,
                     )
             if isinstance(node, MethodCall) and node.name.upper() == "SETPRIMARYKEY":

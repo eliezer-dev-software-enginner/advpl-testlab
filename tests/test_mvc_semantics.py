@@ -1,6 +1,6 @@
 import unittest
 
-from fixture_runtime import Fixture, compile_source, run_source
+from fixture_runtime import Fixture, compile_source, compile_sources, run_source
 from interpreter import AdvPLRuntimeError
 from semantic import SemanticError
 
@@ -45,6 +45,52 @@ class MvcSemanticTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(SemanticError, "VIEWDEF.ZA1ABC"):
             run_source(source, fixture=mvc_fixture(), entry="ZA1MVC")
+
+    def test_menu_rejects_missing_user_function_action(self):
+        source = (
+            "User Function ZA1MVC()\nReturn NIL\n"
+            "Static Function MenuDef()\nLocal aRotina := {}\n"
+            "ADD OPTION aRotina TITLE 'Cancelar' ACTION 'U_Z04CAN' "
+            "OPERATION 9 ACCESS 0\nReturn aRotina\n"
+        )
+        with self.assertRaises(SemanticError) as captured:
+            compile_source(source, fixture=mvc_fixture())
+        self.assertIn("U_Z04CAN", str(captured.exception))
+        self.assertEqual(5, captured.exception.line)
+
+    def test_menu_accepts_user_function_action_from_loaded_source(self):
+        menu_source = (
+            "User Function ZA1MVC()\nReturn NIL\n"
+            "Static Function MenuDef()\nLocal aRotina := {}\n"
+            "ADD OPTION aRotina TITLE 'Cancelar' ACTION 'U_Z04CAN' "
+            "OPERATION 9 ACCESS 0\nReturn aRotina\n"
+        )
+        action_source = "User Function Z04CAN()\nReturn NIL\n"
+        compile_sources(
+            [("ZA1MVC.prw", menu_source), ("Z04CAN.prw", action_source)],
+            fixture=mvc_fixture(),
+        )
+
+    def test_menu_accepts_explicitly_simulated_user_action(self):
+        source = (
+            "User Function ZA1MVC()\nReturn NIL\n"
+            "Static Function MenuDef()\nLocal aRotina := {}\n"
+            "ADD OPTION aRotina TITLE 'Cancelar' ACTION 'U_Z04CAN' "
+            "OPERATION 9 ACCESS 0\nReturn aRotina\n"
+        )
+        fixture = Fixture.from_dict({"funcoes": [{"U_Z04CAN": None}]})
+        compile_source(source, fixture=fixture)
+
+    def test_menu_rejects_static_function_with_user_action(self):
+        source = (
+            "User Function ZA1MVC()\nReturn NIL\n"
+            "Static Function MenuDef()\nLocal aRotina := {}\n"
+            "ADD OPTION aRotina TITLE 'Cancelar' ACTION 'U_Z04CAN()' "
+            "OPERATION 9 ACCESS 0\nReturn aRotina\n"
+            "Static Function Z04CAN()\nReturn NIL\n"
+        )
+        with self.assertRaisesRegex(SemanticError, "U_Z04CAN"):
+            compile_source(source, fixture=mvc_fixture())
 
     def test_primary_key_rejects_unknown_fixture_field(self):
         source = (

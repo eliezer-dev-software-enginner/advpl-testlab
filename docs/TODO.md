@@ -167,6 +167,7 @@ Status: `[x]` — concluido em 21/09/2026.
 - [x] Aceitar fixtures `.jsonc` comentados e manter leitura de `.json` estrito.
 - [x] Validar referencias a `PRIVATE` em funcoes auxiliares sem promover `LOCAL` a global, e apontar a linha efetiva de nomes ausentes.
 - [x] Rejeitar `VIEWDEF.<modulo>` desconhecido e campos ausentes em `SetPrimaryKey`, mesmo quando menu/modelo MVC nao sao executados pelo browse headless.
+- [x] Rejeitar `ADD OPTION ACTION 'U_<nome>'` sem `User Function` carregada, inclusive quando o menu nao e executado; reproduz a remocao de `Z04CAN` em `TRNSOL01.prw`.
 - [x] Rejeitar IDs literais desconhecidos em `GetValue` quando `AddFields`/`AddGrid` declaram os submodelos no mesmo fonte.
 - [x] Interpretar `PREPARE ENVIRONMENT`/`RESET ENVIRONMENT` para o EX1 com empresa/filial simuladas.
 - [x] Implementar `--persist` opcional em `state.json`, com gravacao atomica, recarga e testes de falha/MVC1.

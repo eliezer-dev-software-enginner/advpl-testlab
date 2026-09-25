@@ -321,4 +321,11 @@
 
 ---
 
-*Ultima atualizacao: 22/09/2026*
+## ADR-038 — Validar funcoes de usuario referenciadas por menus
+
+- **Data:** 25/09/2026
+- **Contexto:** Remover `User Function Z04CAN()` do projeto real deixava `ADD OPTION ... ACTION 'U_Z04CAN'` sem destino, mas `-validate` aceitava o fonte porque a acao e uma string e a verificacao de menu cobria apenas `VIEWDEF.*`.
+- **Decisao:** Verificar acoes literais `U_<nome>` e `U_<nome>()` de `ADD OPTION` contra `User Function` carregadas por fonte/`usePrw` ou declaradas explicitamente em `funcoes` do fixture. Exigir tipo `USER`, nao aceitar apenas `Static Function` homonima. Usar a politica de nomes moderna/legada e apontar a linha da acao.
+- **Consequencias:** `-validate` e `-run` falham cedo para referencias quebradas, mesmo que o menu nao seja aberto na execucao headless. Acoes montadas dinamicamente continuam fora da verificacao estatica. O fonte alterado do usuario nao e restaurado pelo TestLab.
+
+*Ultima atualizacao: 25/09/2026*
