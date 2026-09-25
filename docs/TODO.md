@@ -161,6 +161,7 @@ Status: `[x]` — concluido em 21/09/2026.
 
 ## Pendencias tecnicas continuas
 
+- [x] Validar a convencao estrita de ordem de declaracoes (`LOCAL`/`STATIC`, `PRIVATE`, `PUBLIC`) no inicio de cada rotina, com erro localizado.
 - [x] Expor perfil de nomes moderno ou legado na validacao e execucao, usando a politica do LivrePL.
 - [x] Separar a suite propria dos testes de integracao que leem `desafios-aprendizado`.
 - [x] Aceitar fixtures `.jsonc` comentados e manter leitura de `.json` estrito.
@@ -173,6 +174,7 @@ Status: `[x]` — concluido em 21/09/2026.
 - [x] Simular `GetSXENum(cAlias, cCampo)` com regra de numeracao por campo e continuidade via `state.json`.
 - [x] Documentar no README um bloco copiavel com as chaves comuns de `ambiente` e distinguir globais especificas de cada fonte.
 - [x] Iniciar debug VS Code via DAP com breakpoints, passos, pilha e variaveis em fontes `.prw` e `//usePrw`.
+- [x] Documentar FAQ passo a passo para iniciar o Extension Development Host e depurar um `.prw`.
 - [ ] Testar a extensao visualmente no Extension Development Host e preparar distribuicao VSIX.
 - [ ] Ampliar coordenadas do parser para instrucoes sem expressao e controles adaptados; depois avaliar ganchos reutilizaveis no LivrePL.
 - [ ] Adicionar breakpoints condicionais, avaliacao de expressoes e parada em excecoes ao depurador.

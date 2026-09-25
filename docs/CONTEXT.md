@@ -63,6 +63,8 @@ O adaptador de comandos suporta `PREPARE ENVIRONMENT EMPRESA ... FILIAL ...` e `
 
 Na validacao semantica, nomes `PRIVATE` declarados nos fontes carregados sao considerados potencialmente visiveis entre funcoes; `LOCAL` continua restrito a sua funcao. A disponibilidade efetiva de `PRIVATE` e resolvida no runtime pela pilha dinamica. Erros de identificador usam a linha da AST para apontar a leitura que falhou.
 
+O TestLab valida uma convencao estrita de declaracoes por funcao/metodo: `LOCAL`/`STATIC`, `PRIVATE`, `PUBLIC`, sempre antes de comandos executaveis. O LivrePL apenas anota a linha de `VarDecl`; a restricao nao altera a gramatica base, pois a documentacao TOTVS permite declaracoes fora do inicio.
+
 Fontes MVC recebem verificacao adicional: `ADD OPTION` com `VIEWDEF.<modulo>` literal deve apontar para uma `User Function` carregada, e `SetPrimaryKey` literal deve usar campos da fixture. O runtime tambem verifica chaves calculadas dinamicamente quando o metodo e chamado.
 
 IDs literais de `GetValue('SUBMODELO', 'CAMPO')` tambem sao comparados aos IDs declarados por `AddFields`/`AddGrid` no mesmo fonte, antes da execucao. Isso detecta typos no `bPost` mesmo quando o browse nao aciona um cenario MVC. IDs dinamicos continuam sujeitos a verificacao runtime. Ver ADR-029.

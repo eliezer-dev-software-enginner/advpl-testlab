@@ -5,5 +5,8 @@ __pycache__/
 .venv/
 venv/
 .vscode/
+!vscode-extension/.vscode/
+vscode-extension/.vscode/*
+!vscode-extension/.vscode/launch.json
 state.json
 tests/fixtures/state/state-*.json

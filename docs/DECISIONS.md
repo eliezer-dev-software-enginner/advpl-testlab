@@ -286,6 +286,22 @@
 - **Decisao:** Instrumentar `FixtureInterpreter.exec_stmt` por subclasse, mapear declaracoes compiladas a fonte e expor pausas por um adaptador DAP Python iniciado por extensao VS Code local. Nao alterar o LivrePL enquanto a cobertura inicial puder ser entregue pela camada TestLab.
 - **Consequencias:** Breakpoints em linhas executaveis de fontes e dependencias, passos, pilha e variaveis funcionam em testes automatizados. VSIX, parada em excecoes, Watch e coordenadas de instrucoes sem expressao ficam para fases seguintes; quando exigirem mudanca na base, ela sera feita no LivrePL com testes proprios.
 
+## ADR-036 — Ordem estrita de declaracoes no TestLab
+
+- **Data:** 25/09/2026
+- **Estado:** Aceita
+- **Contexto:** O usuario quer detectar `LOCAL` declarado no meio da funcao e seguir a ordem `LOCAL`, `PRIVATE`, `PUBLIC`. A documentacao oficial da TOTVS informa que AdvPL nao exige declaracoes no inicio; portanto, a ordem solicitada e uma convencao de projeto, nao sintaxe universal.
+- **Decisao:** Validar por funcao/metodo que `LOCAL`/`STATIC`, `PRIVATE` e `PUBLIC` aparecam nessa sequencia, somente antes do primeiro comando executavel. O LivrePL preserva a linha dos nos `VarDecl`, mas nao impoe essa restricao ao seu parser geral.
+- **Consequencias:** `-validate` e `-run` do TestLab rejeitam declaracoes tardias ou invertidas com `SemanticError` localizado. Um teste de integracao com `LOCAL` tardio foi atualizado sem alterar a logica. Suítes: TestLab 94, LivrePL 55, desafios-aprendizado 33 casos aprovados. A CLI `-validate tests/fixtures/declaration_out_of_order.prw` retorna erro na linha 3, coluna 5.
+
+## ADR-037 — FAQ de debug e configuracao de desenvolvimento versionada
+
+- **Data:** 25/09/2026
+- **Estado:** Aceita
+- **Contexto:** O usuario pediu um roteiro reproduzivel para abrir e executar o debug no VS Code. O `launch.json` da extensao existia localmente, mas estava oculto pela regra generica `.vscode/` do Git.
+- **Decisao:** Versionar apenas `vscode-extension/.vscode/launch.json` como excecao ao ignore e acrescentar FAQ no README com instalacao, duas janelas, configuracao do projeto alvo, comandos de passo e diagnosticos comuns.
+- **Consequencias:** Um clone novo consegue iniciar o Extension Development Host com `F5` sem criar manualmente a configuracao da extensao. O usuario ainda precisa criar seu proprio `.vscode/launch.json` no projeto alvo; a extensao permanece em desenvolvimento, sem VSIX publicada.
+
 - Teste de aceite da CLI: saida `000007`.
 - Cinco testes automatizados executados e aprovados.
 - Nove testes automatizados executados e aprovados apos incorporar os primeiros casos reais.

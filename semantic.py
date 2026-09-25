@@ -97,6 +97,42 @@ def _source_location(source, name, line_hint=None):
     return None, None
 
 
+def _validate_declaration_order(callable_decl, source):
+    rank = {"LOCAL": 0, "STATIC": 0, "PRIVATE": 1, "PUBLIC": 2}
+    current_rank = 0
+    executable_started = False
+    for statement in callable_decl.body:
+        declarations = statement if isinstance(statement, list) else [statement]
+        if not declarations or not all(isinstance(item, VarDecl) for item in declarations):
+            executable_started = True
+            for node in _walk(statement):
+                if isinstance(node, VarDecl):
+                    line, column = _source_location(source, node.kind, node.line)
+                    raise SemanticError(
+                        f"Declaração {node.kind} deve ficar no início da função, "
+                        "antes dos comandos executáveis",
+                        line=line, column=column,
+                    )
+            continue
+        for declaration in declarations:
+            line, column = _source_location(
+                source, declaration.kind, declaration.line
+            )
+            if executable_started:
+                raise SemanticError(
+                    f"Declaração {declaration.kind} deve ficar no início da função, "
+                    "antes dos comandos executáveis",
+                    line=line, column=column,
+                )
+            if rank[declaration.kind] < current_rank:
+                raise SemanticError(
+                    f"Declaração {declaration.kind} fora de ordem: use "
+                    "LOCAL/STATIC, depois PRIVATE, depois PUBLIC",
+                    line=line, column=column,
+                )
+            current_rank = rank[declaration.kind]
+
+
 def validate_program(
     program,
     source,
@@ -117,6 +153,7 @@ def validate_program(
 
     callables = list(program.functions) + list(program.methods)
     for callable_decl in callables:
+        _validate_declaration_order(callable_decl, source)
         declared = _declared_names(callable_decl, policy) | globals_
         for node in _walk(callable_decl.body):
             if isinstance(node, Identifier):
