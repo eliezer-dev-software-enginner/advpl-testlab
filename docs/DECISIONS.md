@@ -302,6 +302,10 @@
 - **Decisao:** Versionar apenas `vscode-extension/.vscode/launch.json` como excecao ao ignore e acrescentar FAQ no README com instalacao, duas janelas, configuracao do projeto alvo, comandos de passo e diagnosticos comuns.
 - **Consequencias:** Um clone novo consegue iniciar o Extension Development Host com `F5` sem criar manualmente a configuracao da extensao. O usuario ainda precisa criar seu proprio `.vscode/launch.json` no projeto alvo; a extensao permanece em desenvolvimento, sem VSIX publicada.
 
+### Esclarecimento de uso (25/09/2026)
+
+- A raiz `advpl-testlab` pode ter um `launch.json` local com `TOTVS Language Debug`. Nesse caso, `F5` na raiz abre o depurador TOTVS, nao o Extension Development Host. O FAQ agora exige abrir `vscode-extension` como pasta da primeira janela e selecionar explicitamente a configuracao de extensao; na janela alvo, selecionar `Depurar PRW (TestLab)` sem remover a configuracao TOTVS.
+
 - Teste de aceite da CLI: saida `000007`.
 - Cinco testes automatizados executados e aprovados.
 - Nove testes automatizados executados e aprovados apos incorporar os primeiros casos reais.
