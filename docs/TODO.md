@@ -162,6 +162,8 @@ Status: `[x]` — concluido em 21/09/2026.
 
 ## Pendencias tecnicas continuas
 
+- [x] Integrar compilacao real opt-in via TDS-CLI com plano recursivo `//usePrw`, `--dry-run`, ordem explicita e credenciais fora do repositorio (27/09/2026).
+- [ ] Testar `-compile` contra AppServer/RPO de desenvolvimento com configuracao privada fornecida pelo usuario; testes locais apenas simularam o processo externo.
 - [x] Validar a convencao estrita de ordem de declaracoes (`LOCAL`/`STATIC`, `PRIVATE`, `PUBLIC`) no inicio de cada rotina, com erro localizado.
 - [x] Expor perfil de nomes moderno ou legado na validacao e execucao, usando a politica do LivrePL.
 - [x] Separar a suite propria dos testes de integracao que leem `desafios-aprendizado`.

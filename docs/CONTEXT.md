@@ -236,7 +236,7 @@ python -m unittest discover -s tests -v
 ## Fora do escopo
 
 - Banco de dados real ou DBAccess.
-- AppServer, licenciamento e SmartClient.
+- Simulacao de AppServer, licenciamento e SmartClient. A compilacao real e opcional e delegada ao TDS-CLI oficial; ver `fase-compilacao-rpo.md`.
 - MVC completo, REST e telas do framework.
 - Persistencia de escrita no fixture nesta fase.
 - Engenharia reversa de componentes TOTVS.

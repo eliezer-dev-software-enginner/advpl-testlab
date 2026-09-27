@@ -16,6 +16,7 @@ O projeto e separado do `livrePL`. Ele usa o interpretador como dependencia loca
 - `parametros` e `tabelas` usam listas de objetos no formato canonico.
 - Cada tabela possui `campos` opcionais e `registros`.
 - CLI instalavel `advpl-testlab -run arquivo.prw` com descoberta automatica da primeira `User Function` e do fixture.
+- Compilacao real opcional no RPO via `advpl-testlab -compile arquivo.prw`, usando o TDS-CLI oficial, conexao fornecida pelo usuario e descoberta recursiva de `//usePrw`.
 - Validacao semantica rejeita variaveis nao declaradas e funcoes inexistentes antes da execucao.
 - Primeiro fonte real executado pelo parser e interpretador completos: `TRNSOL02.prw`, incluindo diálogo headless, statement, alias, browse e exportação virtual.
 
@@ -224,7 +225,47 @@ Um fonte pode declarar dependencias locais pela convencao:
 
 Cada declaracao deve ocupar sua propria linha. O caminho e relativo ao arquivo que contem o comentario, deve terminar em `.prw` e permanecer dentro do diretorio do fonte principal. O TestLab carrega as dependencias recursivamente, evita duplicacao/ciclos e gera erro claro quando o arquivo nao existe.
 
-As funcoes dos arquivos carregados participam da validacao semantica e da execucao. Uma `User Function EnviarEmailSolicitacao()` pode ser chamada por outro fonte como `U_EnviarEmailSolicitacao()`, conforme a convencao do AdvPL. `Function` publica tambem pode ser chamada de outro `.prw`; `Static Function` fica restrita ao proprio fonte, conforme a [documentacao da TOTVS](https://tdn.totvs.com/display/framework/FUNCTION). Assim, `//usePrw('UTILS.prw')` carrega e valida `UTILS.prw`, mas nao torna suas funcoes estaticas acessiveis de `TRNSOL01.prw` ou `OUACOES.prw`. O comentario continua inofensivo para o compilador Protheus e serve como mapa direto para pessoas e agentes localizarem o codigo relacionado.
+As funcoes dos arquivos carregados participam da validacao semantica e da execucao. Uma `User Function EnviarEmailSolicitacao()` pode ser chamada por outro fonte como `U_EnviarEmailSolicitacao()`, conforme a convencao do AdvPL. `Static Function` fica restrita ao proprio fonte, conforme a [documentacao da TOTVS](https://tdn.totvs.com/display/framework/FUNCTION). O TestLab ainda aceita `Function` publica entre fontes na simulacao, mas o compilador Protheus usado em `desafio1-solicitacao-compra` rejeitou `Function` simples no fonte customizado; para auxiliares compartilhados nesse ambiente, use `User Function` e chamadas `U_...`. O comentario `//usePrw` e inofensivo para o compilador Protheus e serve como mapa para pessoas, TestLab e compilacao recursiva.
+
+### Compilacao real recursiva no RPO (opcional)
+
+`-validate` e `-run` continuam **locais e headless**. Para recompilar no RPO conectado ao AppServer, use `-compile`. Essa opcao chama o `advpls.exe` do [TDS-CLI oficial](https://github.com/totvs/tds-ls/blob/master/TDS-CLi.md); ela nao simula a tecla Ctrl+F9 e nunca roda implicitamente. O TestLab procura o executavel no `PATH` ou na extensao TOTVS do VS Code; se necessario, informe `--tds-cli`.
+
+Primeiro confira o plano, sem conexao nem escrita no RPO:
+
+```powershell
+advpl-testlab -compile TRNSOL01.prw --dry-run
+```
+
+Para compilar, crie **fora do repositorio** um arquivo privado `tds-auth.ini` em CP1252 com sua conexao real (nao compartilhe nem versione usuario, senha ou token):
+
+```ini
+[authentication]
+action=authentication
+server=SEU_APPSERVER
+port=PORTA_TDS
+secure=0
+build=AUTO
+environment=SEU_AMBIENTE
+user=SEU_USUARIO
+psw=SUA_SENHA
+```
+
+Se sua instalacao exigir token de compilacao, acrescente uma secao `[authorization]` com `action=authorization` e o token conforme a [documentacao TOTVS](https://github.com/totvs/tds-ls/blob/master/TDS-cli-script.md). O TestLab aceita nesse arquivo somente `[user]`, `[authentication]` e `[authorization]`, criando sozinho a acao de compilacao. Informe ao menos uma pasta de includes existente:
+
+```powershell
+advpl-testlab -compile TRNSOL01.prw --tds-config 'C:\caminho-privado\tds-auth.ini' --include 'C:\caminho\includes'
+```
+
+O TestLab gera uma lista temporaria em CP1252 com cada `.prw` do grafo `//usePrw` uma vez, por padrao com dependencias antes dos chamadores, e manda o TDS-CLI recompilar os cinco fontes de `TRNSOL01.prw` em uma invocacao. A lista e o script temporarios sao removidos ao final; o arquivo privado original nao e modificado. Isso exige acesso ao AppServer, autenticacao, includes corretos e permissao de compilacao/acesso exclusivo ao RPO, conforme a [documentacao TDS-VSCode](https://github.com/totvs/tds-vscode/blob/master/docs/compilation.md). Nao reutiliza automaticamente a sessao autenticada do VS Code.
+
+Quando funcoes foram movidas entre fontes e o RPO ainda guarda os simbolos antigos, informe a ordem completa explicitamente. Por exemplo, para liberar as antigas `U_Z04*` de `TRNSOL01.prw` antes de compilar `OUACOES.prw`:
+
+```powershell
+advpl-testlab -compile TRNSOL01.prw --dry-run --compile-order 'ENVEMAIL.prw,NOTIFSOL.prw,UTILS.prw,TRNSOL01.prw,OUACOES.prw'
+```
+
+Repita com `--tds-config` e `--include` sem `--dry-run` para compilar nessa ordem. A ordem deve listar todos os fontes descobertos exatamente uma vez. Erros do TDS-CLI retornam codigo de saida nao zero; o TestLab nao exclui objetos do RPO automaticamente. A integracao real com o seu AppServer ainda nao foi testada aqui, apenas o plano e a chamada simulada ao TDS-CLI.
 
 Para validar todas as funções do arquivo sem executar nenhuma delas:
 

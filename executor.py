@@ -1,4 +1,8 @@
+import os
 import re
+import shutil
+import subprocess
+import tempfile
 from pathlib import Path
 
 from diagnostics import SourceValidationError
@@ -31,7 +35,7 @@ def _read_source(source_path):
         return raw.decode("cp1252")
 
 
-def discover_source_units(source_path):
+def discover_source_units(source_path, dependencies_first=False):
     root_source = Path(source_path).resolve()
     root_directory = root_source.parent
     units = []
@@ -45,7 +49,8 @@ def discover_source_units(source_path):
             raise FixtureError(f"Fonte PRW nao encontrado: '{resolved}'")
         visited.add(resolved)
         source = _read_source(resolved)
-        units.append((resolved, source))
+        if not dependencies_first:
+            units.append((resolved, source))
 
         for match in _USE_PRW.finditer(source):
             reference = match.group(2)
@@ -66,6 +71,9 @@ def discover_source_units(source_path):
                     f"'{reference}'"
                 )
             visit(dependency)
+
+        if dependencies_first:
+            units.append((resolved, source))
 
     visit(root_source)
     return units
@@ -166,3 +174,119 @@ def validate_file(source_path, fixture_path=None, name_profile="modern"):
     except (ParseError, LexError, SemanticError) as exc:
         raise SourceValidationError(source_path, source, exc) from exc
     return len(program.functions)
+
+
+class CompileError(Exception):
+    pass
+
+
+def ordered_sources(source_path, compile_order=None):
+    source_path = Path(source_path).resolve()
+    units = discover_source_units(source_path, dependencies_first=True)
+    paths = [path for path, _ in units]
+    if compile_order is None:
+        return paths
+
+    root_directory = source_path.parent
+    by_relative_name = {
+        path.relative_to(root_directory).as_posix().casefold(): path
+        for path in paths
+    }
+    names = [name.strip().replace("\\", "/").casefold()
+             for name in compile_order.split(",")]
+    if not names or any(not name for name in names):
+        raise CompileError("--compile-order deve listar todos os arquivos .prw")
+    if len(names) != len(set(names)) or set(names) != set(by_relative_name):
+        raise CompileError(
+            "--compile-order deve listar cada fonte do grafo usePrw "
+            "exatamente uma vez: " + ", ".join(by_relative_name)
+        )
+    return [by_relative_name[name] for name in names]
+
+
+def find_tds_cli(explicit_path=None):
+    if explicit_path:
+        candidate = Path(explicit_path).resolve()
+        if not candidate.is_file():
+            raise CompileError(f"TDS-CLI nao encontrado: '{candidate}'")
+        return candidate
+
+    executable = "advpls.exe" if os.name == "nt" else "advpls"
+    on_path = shutil.which(executable)
+    if on_path:
+        return Path(on_path).resolve()
+
+    extension_roots = (
+        Path.home() / ".vscode" / "extensions",
+        Path.home() / ".vscode-insiders" / "extensions",
+    )
+    candidates = []
+    for extension_root in extension_roots:
+        if extension_root.is_dir():
+            candidates.extend(extension_root.glob(
+                f"totvs.tds-vscode-*/node_modules/@totvs/tds-ls/bin/windows/{executable}"
+            ))
+    if candidates:
+        return sorted(candidates)[-1].resolve()
+    raise CompileError(
+        "TDS-CLI nao encontrado. Informe --tds-cli com o caminho do advpls.exe."
+    )
+
+
+def _read_authentication(config_path):
+    path = Path(config_path).resolve()
+    if not path.is_file():
+        raise CompileError(f"Configuracao TDS-CLI nao encontrada: '{path}'")
+    content = path.read_text(encoding="cp1252")
+    sections = re.findall(r"(?im)^\s*\[([^]]+)\]\s*$", content)
+    section_names = [section.casefold() for section in sections]
+    if "authentication" not in section_names:
+        raise CompileError("--tds-config precisa conter [authentication]")
+    if any(section not in {"user", "authentication", "authorization"}
+           for section in section_names):
+        raise CompileError(
+            "--tds-config aceita somente [user], [authentication] e [authorization]"
+        )
+    actions = re.findall(r"(?im)^\s*action\s*=\s*(\S+)\s*$", content)
+    if any(action.casefold() not in {"authentication", "authorization"}
+           for action in actions):
+        raise CompileError("--tds-config contem uma acao nao permitida")
+    if not re.search(r"(?im)^\s*action\s*=\s*authentication\s*$", content):
+        raise CompileError("--tds-config precisa definir action=authentication")
+    return content.rstrip() + "\r\n"
+
+
+def compile_source_tree(source_path, *, config_path, includes, cli_path=None,
+                        compile_order=None):
+    paths = ordered_sources(source_path, compile_order)
+    include_paths = [Path(item).resolve() for item in includes]
+    if not include_paths:
+        raise CompileError("Informe ao menos um diretorio com --include")
+    for include_path in include_paths:
+        if not include_path.is_dir():
+            raise CompileError(f"Diretorio de includes nao encontrado: '{include_path}'")
+        if ";" in str(include_path) or "\n" in str(include_path):
+            raise CompileError(f"Caminho de include invalido: '{include_path}'")
+
+    cli = find_tds_cli(cli_path)
+    authentication = _read_authentication(config_path)
+    with tempfile.TemporaryDirectory(prefix="advpl-testlab-compile-") as temp_dir:
+        directory = Path(temp_dir)
+        program_list = directory / "programs.txt"
+        script = directory / "compile.ini"
+        program_list.write_bytes(
+            ("\r\n".join(path.as_posix() for path in paths) + "\r\n").encode("cp1252")
+        )
+        script_text = (
+            "showConsoleOutput=true\r\n" + authentication
+            + "\r\n[compile]\r\n"
+            + "action=compile\r\n"
+            + f"programList={program_list.as_posix()}\r\n"
+            + "recompile=T\r\n"
+            + "includes=" + ";".join(path.as_posix() for path in include_paths) + "\r\n"
+        )
+        script.write_bytes(script_text.encode("cp1252"))
+        result = subprocess.run([str(cli), "cli", str(script)], check=False)
+    if result.returncode:
+        raise CompileError(f"TDS-CLI falhou (codigo {result.returncode})")
+    return paths

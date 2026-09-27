@@ -335,4 +335,11 @@
 - **Decisao:** Na validacao de cada unidade, expor de outros fontes somente `Function` publica e `User Function`; manter `Static Function` visivel apenas no arquivo que a declara. Quando uma chamada encontra uma `Static` em outro arquivo, apontar o chamador e informar o arquivo de origem. Preservar a descoberta recursiva, o acesso a `PRIVATE` dinamica e os testes de depuracao usando um auxiliar publico entre arquivos.
 - **Consequencias:** A raiz falha ao validar uma dependencia com chamada estaticamente inacessivel, mesmo se sua entrada nao percorrer aquele ramo. Fontes existentes que dependiam do falso positivo precisam mover o auxiliar ao mesmo `.prw` ou expor uma interface publica explicita. O TestLab nao altera automaticamente os fontes do usuario.
 
-*Ultima atualizacao: 25/09/2026*
+## ADR-040 — Compilar o grafo usePrw por TDS-CLI, sob comando explicito
+
+- **Data:** 27/09/2026
+- **Contexto:** `-validate` percorre dependencias localmente, mas nao altera o RPO. O usuario precisava recompilar varios `.prw` com Ctrl+F9 no VS Code. A TOTVS oferece `advpls.exe cli` com `action=compile` e `programList`.
+- **Decisao:** Adicionar `-compile` separado de `-run`/`-validate`, com ordem recursiva dependencias-primeiro, `--dry-run` e `--compile-order` para migracoes em RPO antigo. Exigir arquivo privado de autenticacao e pastas de include; usar script/lista temporarios CP1252 e o TDS-CLI oficial. Nao acessar configuracao secreta do VS Code nem remover objetos do RPO.
+- **Consequencias:** A compilacao passa a ser possivel em uma unica chamada, sem tentar simular o compilador TOTVS. A integracao no AppServer real depende de configuracao/permissoes do usuario e ainda precisa de teste externo. Ver `fase-compilacao-rpo.md`.
+
+*Ultima atualizacao: 27/09/2026*
