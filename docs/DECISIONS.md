@@ -278,14 +278,6 @@
 - **Decisao:** Configurar `numeracao` por tabela e campo com `digitos` e `inicio`. Derivar o proximo codigo do maior valor numerico dos registros carregados, incluindo `state.json`, e reservar chamadas adicionais na mesma execucao.
 - **Consequencias:** O caso de dois argumentos e deterministico e dispensa SXE/SXF. O simulador nao implementa reserva distribuida, `ConfirmSX8` ou `RollbackSX8`; sem registro salvo, o numero pode ser reutilizado na proxima execucao.
 
-## ADR-035 — Depurador DAP externo ao LivrePL no primeiro corte
-
-- **Data:** 25/09/2026
-- **Estado:** Aceita para MVP
-- **Contexto:** O usuario pediu debug de `.prw` no VS Code e autorizou alterar o LivrePL se necessario.
-- **Decisao:** Instrumentar `FixtureInterpreter.exec_stmt` por subclasse, mapear declaracoes compiladas a fonte e expor pausas por um adaptador DAP Python iniciado por extensao VS Code local. Nao alterar o LivrePL enquanto a cobertura inicial puder ser entregue pela camada TestLab.
-- **Consequencias:** Breakpoints em linhas executaveis de fontes e dependencias, passos, pilha e variaveis funcionam em testes automatizados. VSIX, parada em excecoes, Watch e coordenadas de instrucoes sem expressao ficam para fases seguintes; quando exigirem mudanca na base, ela sera feita no LivrePL com testes proprios.
-
 ## ADR-036 — Ordem estrita de declaracoes no TestLab
 
 - **Data:** 25/09/2026
@@ -293,18 +285,6 @@
 - **Contexto:** O usuario quer detectar `LOCAL` declarado no meio da funcao e seguir a ordem `LOCAL`, `PRIVATE`, `PUBLIC`. A documentacao oficial da TOTVS informa que AdvPL nao exige declaracoes no inicio; portanto, a ordem solicitada e uma convencao de projeto, nao sintaxe universal.
 - **Decisao:** Validar por funcao/metodo que `LOCAL`/`STATIC`, `PRIVATE` e `PUBLIC` aparecam nessa sequencia, somente antes do primeiro comando executavel. O LivrePL preserva a linha dos nos `VarDecl`, mas nao impoe essa restricao ao seu parser geral.
 - **Consequencias:** `-validate` e `-run` do TestLab rejeitam declaracoes tardias ou invertidas com `SemanticError` localizado. Um teste de integracao com `LOCAL` tardio foi atualizado sem alterar a logica. Suítes: TestLab 94, LivrePL 55, desafios-aprendizado 33 casos aprovados. A CLI `-validate tests/fixtures/declaration_out_of_order.prw` retorna erro na linha 3, coluna 5.
-
-## ADR-037 — FAQ de debug e configuracao de desenvolvimento versionada
-
-- **Data:** 25/09/2026
-- **Estado:** Aceita
-- **Contexto:** O usuario pediu um roteiro reproduzivel para abrir e executar o debug no VS Code. O `launch.json` da extensao existia localmente, mas estava oculto pela regra generica `.vscode/` do Git.
-- **Decisao:** Versionar apenas `vscode-extension/.vscode/launch.json` como excecao ao ignore e acrescentar FAQ no README com instalacao, duas janelas, configuracao do projeto alvo, comandos de passo e diagnosticos comuns.
-- **Consequencias:** Um clone novo consegue iniciar o Extension Development Host com `F5` sem criar manualmente a configuracao da extensao. O usuario ainda precisa criar seu proprio `.vscode/launch.json` no projeto alvo; a extensao permanece em desenvolvimento, sem VSIX publicada.
-
-### Esclarecimento de uso (25/09/2026)
-
-- A raiz `advpl-testlab` pode ter um `launch.json` local com `TOTVS Language Debug`. Nesse caso, `F5` na raiz abre o depurador TOTVS, nao o Extension Development Host. O FAQ agora exige abrir `vscode-extension` como pasta da primeira janela e selecionar explicitamente a configuracao de extensao; na janela alvo, selecionar `Depurar PRW (TestLab)` sem remover a configuracao TOTVS.
 
 - Teste de aceite da CLI: saida `000007`.
 - Cinco testes automatizados executados e aprovados.
@@ -332,7 +312,7 @@
 
 - **Data:** 25/09/2026
 - **Contexto:** O executor ja percorria `//usePrw` recursivamente, mas `compile_sources` oferecia todas as funcoes carregadas como simbolos globais. Assim `TRNSOL01.prw` passava mesmo chamando `fMostraErros()` declarada como `Static Function` em `UTILS.prw`. A [documentacao TOTVS de FUNCTION](https://tdn.totvs.com/display/framework/FUNCTION) limita a visibilidade estatica ao mesmo `.prw`.
-- **Decisao:** Na validacao de cada unidade, expor de outros fontes somente `Function` publica e `User Function`; manter `Static Function` visivel apenas no arquivo que a declara. Quando uma chamada encontra uma `Static` em outro arquivo, apontar o chamador e informar o arquivo de origem. Preservar a descoberta recursiva, o acesso a `PRIVATE` dinamica e os testes de depuracao usando um auxiliar publico entre arquivos.
+- **Decisao:** Na validacao de cada unidade, expor de outros fontes somente `Function` publica e `User Function`; manter `Static Function` visivel apenas no arquivo que a declara. Quando uma chamada encontra uma `Static` em outro arquivo, apontar o chamador e informar o arquivo de origem. Preservar a descoberta recursiva e o acesso a `PRIVATE` dinamica.
 - **Consequencias:** A raiz falha ao validar uma dependencia com chamada estaticamente inacessivel, mesmo se sua entrada nao percorrer aquele ramo. Fontes existentes que dependiam do falso positivo precisam mover o auxiliar ao mesmo `.prw` ou expor uma interface publica explicita. O TestLab nao altera automaticamente os fontes do usuario.
 
 ## ADR-040 — Compilar o grafo usePrw por TDS-CLI, sob comando explicito
@@ -341,5 +321,13 @@
 - **Contexto:** `-validate` percorre dependencias localmente, mas nao altera o RPO. O usuario precisava recompilar varios `.prw` com Ctrl+F9 no VS Code. A TOTVS oferece `advpls.exe cli` com `action=compile` e `programList`.
 - **Decisao:** Adicionar `-compile` separado de `-run`/`-validate`, com ordem recursiva dependencias-primeiro, `--dry-run` e `--compile-order` para migracoes em RPO antigo. Exigir arquivo privado de autenticacao e pastas de include; usar script/lista temporarios CP1252 e o TDS-CLI oficial. Nao acessar configuracao secreta do VS Code nem remover objetos do RPO.
 - **Consequencias:** A compilacao passa a ser possivel em uma unica chamada, sem tentar simular o compilador TOTVS. A integracao no AppServer real depende de configuracao/permissoes do usuario e ainda precisa de teste externo. Ver `fase-compilacao-rpo.md`.
+
+## ADR-041 — Remover o suporte de depuracao DAP/VS Code
+
+- **Data:** 27/09/2026
+- **Estado:** Aceita
+- **Contexto:** O depurador DAP e a extensao local do VS Code deixaram de ser necessarios ao fluxo do projeto.
+- **Decisao:** Remover o adaptador DAP, o runtime de pausa, a extensao, as fixtures e testes exclusivos de depuracao, bem como a FAQ e a documentacao da fase.
+- **Consequencias:** O TestLab mantem somente as interfaces suportadas de execucao, validacao e compilacao recursiva para RPO. Integracoes futuras de depuracao deverao ser propostas como nova fase, com implementacao e documentacao proprias.
 
 *Ultima atualizacao: 27/09/2026*

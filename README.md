@@ -92,52 +92,6 @@ advpl-testlab -run TRNSOL02.prw
 
 O executor procura `testlab.jsonc` ou `testlab.json` no diretorio do `.prw` e nos diretorios pais. O fixture do diretorio mais proximo prevalece; no mesmo diretorio, `testlab.jsonc` tem prioridade, depois `testlab.json`. Os nomes antigos `advpl-testlab.jsonc` e `advpl-testlab.json` continuam aceitos como fallback. Tambem e possivel usar `--fixture caminho.jsonc`, `--entry NomeDaFuncao` e `--args-json '[...]'`.
 
-### Depuracao inicial no VS Code (extensao em desenvolvimento)
-
-Esta primeira versao permite breakpoints em instrucoes `.prw`, continuar, entrar/sair/avancar passos, ver pilha e inspecionar variaveis locais, privadas e globais. Ela depura o codigo AdvPL simulado, nao o Python do TestLab nem um AppServer real.
-
-1. No Python que o VS Code usara, execute `python -m pip install -e .` na pasta `advpl-testlab`.
-2. Abra a pasta `advpl-testlab/vscode-extension` no VS Code e pressione `F5` para iniciar o **Extension Development Host**. Ainda nao ha VSIX publicada ou instalada permanentemente.
-3. Na nova janela, abra a pasta que contem seu `.prw` e crie `.vscode/launch.json`:
-
-```jsonc
-{
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "type": "advpl-testlab",
-      "request": "launch",
-      "name": "Depurar PRW (TestLab)",
-      "program": "${file}",
-      "entry": "EX1",
-      "stopOnEntry": true,
-      "persist": false,
-      "pythonPath": "python"
-    }
-  ]
-}
-```
-
-Selecione o `.prw`, marque um breakpoint em uma linha executavel e inicie `Depurar PRW (TestLab)`. Se o TestLab foi instalado em outro ambiente Python, ajuste `pythonPath` para o `python.exe` desse ambiente. `fixture` e opcional (a descoberta e a mesma da CLI); tambem sao aceitos `args` (array JSON), `mvcCase`, `nameProfile` e `persist`. Com `persist: true`, o estado so e salvo apos execucao bem-sucedida; encerrar a depuracao durante uma pausa nao grava.
-
-Limitacoes do MVP: breakpoints so sao confirmados em instrucoes que o parser associa a uma linha executavel. Linhas de controles de UI adaptadas, breakpoints condicionais, avaliacao de expressoes no console/Watch, edicao de variaveis e pausa na excecao ainda nao estao implementados. `//usePrw` e suportado: a pilha e o breakpoint apontam para o arquivo dependente correto. Ver [fase-debug-vscode](docs/fase-debug-vscode.md).
-
-#### FAQ: como rodar em debug?
-
-**Preciso instalar alguma extensao?** Por enquanto, use **Arquivo > Abrir Pasta** para abrir exatamente `advpl-testlab/vscode-extension` no VS Code (nao a raiz `advpl-testlab`). Em **Executar e Depurar**, selecione `Executar extensão de debug` e pressione `F5`. Isso abre uma segunda janela, o **Extension Development Host**, com a extensao temporariamente ativa. A configuracao de desenvolvimento da extensao esta versionada em `vscode-extension/.vscode/launch.json`; nao ha VSIX publicada.
-
-**O que preparo antes de apertar F5?** Na raiz de `advpl-testlab`, rode `python -m pip install -e .` no mesmo Python que sera usado para depurar. No projeto alvo, mantenha o `testlab.jsonc` acessivel ao `.prw` (ou informe `fixture` no `launch.json`). A partir da pasta alvo, `python -c "import debug_adapter; print(debug_adapter.__file__)"` deve localizar o modulo instalado.
-
-**Onde crio o `launch.json` da rotina?** Na *segunda* janela, abra a pasta do projeto que contem os fontes, crie `.vscode/launch.json` com o exemplo acima e ajuste `entry` para a funcao de entrada do seu arquivo. Se ja existir um `launch.json` com `TOTVS Language Debug`, acrescente a configuracao `advpl-testlab` ao array `configurations` e selecione `Depurar PRW (TestLab)` no menu de **Executar e Depurar**; nao precisa apagar a configuracao TOTVS. `program: "${file}"` usa o `.prw` aberto na guia ativa; para depurar sempre o mesmo fonte, use o caminho absoluto dele. Se `python` nao for o Python em que o TestLab foi instalado, use o caminho absoluto do respectivo `python.exe` em `pythonPath`.
-
-**Como paro e examino o codigo?** Abra o `.prw` na segunda janela, clique a esquerda do numero de uma linha executavel para criar um breakpoint, escolha `Depurar PRW (TestLab)` em **Executar e Depurar** e pressione `F5`. `stopOnEntry: true` para na primeira instrucao mesmo sem breakpoint. Use `F10` para avancar sem entrar na chamada, `F11` para entrar, `Shift+F11` para sair e `F5` para continuar. As abas **Variaveis**, **Pilha de Chamadas** e **Console de Depuracao** mostram o estado simulado.
-
-**Como passo argumentos ou testo MVC?** Inclua `"args": ["ENVIO"]` para argumentos da entrada. Para um cenario declarado em `cenariosMvc` no fixture, use `"mvcCase": "nome-do-cenario"`. `"persist": true` carrega e salva `state.json` apos sucesso; deixe `false` para uma depuracao repetivel que nao altera o estado.
-
-**Por que o breakpoint nao para ou a sessao falha ao iniciar?** Confira se o `.prw` aberto e o `program` sao o mesmo arquivo, se a linha possui instrucao executavel, se `entry` existe, se o fixture foi encontrado e se `pythonPath` aponta para o Python com `debug_adapter` instalado. Se o arquivo falhar em `advpl-testlab -validate arquivo.prw`, corrija primeiro o diagnostico: o depurador valida o fonte antes de iniciar. Breakpoints em arquivos `//usePrw` funcionam quando eles sao carregados pela entrada.
-
-**Por que `F5` abre o depurador da TOTVS?** Voce esta na janela/pasta errada ou a configuracao selecionada ainda e `TOTVS Language Debug`. Na primeira janela, abra somente `advpl-testlab/vscode-extension` e selecione `Executar extensão de debug`; na segunda janela, abra o projeto dos `.prw` e selecione `Depurar PRW (TestLab)`. O `launch.json` da raiz `advpl-testlab` pode conter a configuracao TOTVS e nao e usado para iniciar esta extensao.
-
 `PREPARE ENVIRONMENT EMPRESA ... FILIAL ...` e `RESET ENVIRONMENT` sao simulados sem abrir AppServer. O corte atual aceita valores literais ou variaveis para empresa/filial; `Date()` usa `DDATABASE` de `ambiente` (formato `AAAA-MM-DD`), `xFilial()` sem argumento usa o alias corrente, e `Alert()` escreve no terminal. Sem `--persist`, a escrita via `RecLock` continua apenas em memoria; veja [fase-ex1-ambiente](docs/fase-ex1-ambiente.md).
 
 ### `ambiente`: bloco pronto para `testlab.jsonc`
