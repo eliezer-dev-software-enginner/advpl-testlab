@@ -1664,6 +1664,12 @@ class FixtureInterpreter(Interpreter):
             print(f"[ALERTA] {args[0]}")
             return None
 
+        def b_conout(args):
+            if len(args) != 1:
+                raise AdvPLRuntimeError("ConOut espera uma mensagem")
+            print(str(args[0]))
+            return None
+
         def b_date(args):
             require_count("Date", args, 0)
             value = self.globals["DDATABASE"]
@@ -1932,6 +1938,7 @@ class FixtureInterpreter(Interpreter):
         builtins["TESTLABPREPAREENVIRONMENT"] = b_prepare_environment
         builtins["TESTLABRESETENVIRONMENT"] = b_reset_environment
         builtins["ALERT"] = b_alert
+        builtins["CONOUT"] = b_conout
         builtins["DATE"] = b_date
         builtins["CHANGEQUERY"] = b_changequery
         builtins["GETNEXTALIAS"] = b_getnextalias

@@ -146,7 +146,7 @@ Status: `[x]` — concluido em 21/09/2026.
 
 - [ ] Implementar `RecLock` e desbloqueio em memoria.
 - [ ] Implementar atribuicao de campo no registro corrente.
-- [x] Definir `MsgAlert` como saida textual; `ConOut` continua pendente.
+- [x] Definir `MsgAlert` como saida textual e implementar `ConOut` como log no terminal sem UI.
 - [ ] Garantir que o fixture de entrada no disco nao seja alterado involuntariamente.
 - [x] Confirmar por teste que cenarios MVC nao alteram a fixture de origem.
 

@@ -330,4 +330,12 @@
 - **Decisao:** Remover o adaptador DAP, o runtime de pausa, a extensao, as fixtures e testes exclusivos de depuracao, bem como a FAQ e a documentacao da fase.
 - **Consequencias:** O TestLab mantem somente as interfaces suportadas de execucao, validacao e compilacao recursiva para RPO. Integracoes futuras de depuracao deverao ser propostas como nova fase, com implementacao e documentacao proprias.
 
-*Ultima atualizacao: 27/09/2026*
+## ADR-042 — `ConOut` como saida textual headless
+
+- **Data:** 28/09/2026
+- **Estado:** Aceita
+- **Contexto:** `EX2.prw` usa `ConOut("Apagou")` depois da exclusao logica do registro, mas a validacao semantica rejeitava a chamada por nao haver builtin correspondente.
+- **Decisao:** Registrar `ConOut` na camada do TestLab. A funcao exige um argumento, converte seu valor para texto, escreve uma linha no `stdout` e retorna `NIL`.
+- **Consequencias:** Fontes que usam o log simples validam e executam sem AppServer. A simulacao nao reproduz console remoto, arquivo de log ou niveis de rastreamento do Protheus.
+
+*Ultima atualizacao: 28/09/2026*

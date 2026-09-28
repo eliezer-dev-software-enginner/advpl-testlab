@@ -21,6 +21,7 @@
 | `docs/fase-trnsol02-integral.md` | Validacao e execucao integral do primeiro fonte real |
 | `docs/fix-private-semantics.md` | Escopo dinamico de `PRIVATE` e localizacao de erros semanticos |
 | `docs/fase-mvc-validacao.md` | Validacao de acoes de menu e chaves primarias MVC |
+| `docs/fase-conout.md` | Saida de log headless com `ConOut` |
 
 ## O que e o projeto
 
@@ -154,6 +155,7 @@ IDs literais de `GetValue('SUBMODELO', 'CAMPO')` tambem sao comparados aos IDs d
 
 - `Define MSDialog` produz uma linha `[MSDIALOG]` com o titulo; controles `@` e `Activate Dialog` nao abrem interface.
 - `MsgAlert` e `MsgInfo` produzem texto no terminal e retornam `NIL`.
+- `ConOut` escreve uma mensagem no terminal e retorna `NIL`, sem AppServer ou SmartClient.
 - `MsgYesNo` nao produz texto e resolve `true` ou `false` por `fonte` + `nome` + `conteudo` em `especificidadesPrw`.
 - Ausencia de resposta deterministica para `MsgYesNo` gera erro explicito.
 - O retorno global legado em `funcoes` permanece aceito como fallback.
@@ -237,4 +239,4 @@ python -m unittest discover -s tests -v
 
 ---
 
-*Ultima atualizacao: 22/09/2026*
+*Ultima atualizacao: 28/09/2026*

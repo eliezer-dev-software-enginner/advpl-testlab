@@ -92,7 +92,7 @@ advpl-testlab -run TRNSOL02.prw
 
 O executor procura `testlab.jsonc` ou `testlab.json` no diretorio do `.prw` e nos diretorios pais. O fixture do diretorio mais proximo prevalece; no mesmo diretorio, `testlab.jsonc` tem prioridade, depois `testlab.json`. Os nomes antigos `advpl-testlab.jsonc` e `advpl-testlab.json` continuam aceitos como fallback. Tambem e possivel usar `--fixture caminho.jsonc`, `--entry NomeDaFuncao` e `--args-json '[...]'`.
 
-`PREPARE ENVIRONMENT EMPRESA ... FILIAL ...` e `RESET ENVIRONMENT` sao simulados sem abrir AppServer. O corte atual aceita valores literais ou variaveis para empresa/filial; `Date()` usa `DDATABASE` de `ambiente` (formato `AAAA-MM-DD`), `xFilial()` sem argumento usa o alias corrente, e `Alert()` escreve no terminal. Sem `--persist`, a escrita via `RecLock` continua apenas em memoria; veja [fase-ex1-ambiente](docs/fase-ex1-ambiente.md).
+`PREPARE ENVIRONMENT EMPRESA ... FILIAL ...` e `RESET ENVIRONMENT` sao simulados sem abrir AppServer. O corte atual aceita valores literais ou variaveis para empresa/filial; `Date()` usa `DDATABASE` de `ambiente` (formato `AAAA-MM-DD`), `xFilial()` sem argumento usa o alias corrente, `Alert()` escreve `[ALERTA]` no terminal e `ConOut()` escreve sua mensagem sem UI. Sem `--persist`, a escrita via `RecLock` continua apenas em memoria; veja [fase-ex1-ambiente](docs/fase-ex1-ambiente.md).
 
 ### `ambiente`: bloco pronto para `testlab.jsonc`
 

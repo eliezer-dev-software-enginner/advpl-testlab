@@ -59,6 +59,27 @@ Return Nil
             output.getvalue(),
         )
 
+    def test_conout_prints_message_without_ui(self):
+        source = """
+User Function Registra()
+    ConOut('Apagou')
+Return Nil
+"""
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            result = run_source(source, fixture=Fixture(), entry="Registra")
+
+        self.assertIsNone(result)
+        self.assertEqual("Apagou\n", output.getvalue())
+
+    def test_conout_requires_exactly_one_argument(self):
+        source = """
+User Function Registra()
+Return ConOut()
+"""
+        with self.assertRaisesRegex(AdvPLRuntimeError, "ConOut espera uma mensagem"):
+            run_source(source, fixture=Fixture(), entry="Registra")
+
     def test_msgyesno_uses_source_and_content_to_select_result(self):
         source = """
 User Function Confirma()
