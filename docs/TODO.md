@@ -17,6 +17,8 @@
 
 ### TRNSOL01 headless
 
+- [x] Suportar `SetFields` com colunas calculadas e preservar area/posicao na renderizacao (05/10/2026).
+
 - [x] Validar o fonte real e as dependencias locais.
 - [x] Executar browse, menu, modelo/view, envio, aprovacao, rejeicao, processamento e cancelamento.
 - [x] Cobrir erro de item, transacao com rollback e grid filtrado pela solicitacao corrente.

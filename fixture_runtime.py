@@ -627,6 +627,7 @@ class _BrowseRuntime:
         self.alias = ""
         self.description = "Resultado AdvPL"
         self.columns = []
+        self.calculated_fields = []
         self.legends = []
 
 
@@ -937,6 +938,18 @@ class FixtureInterpreter(Interpreter):
                     )
                 obj.columns.append((str(args[0]).upper(), str(args[1])))
                 return None
+            if method == "SETFIELDS":
+                if len(args) != 1 or not isinstance(args[0], list):
+                    raise AdvPLRuntimeError("FWBrowse:SetFields espera array de colunas")
+                for field in args[0]:
+                    if (not isinstance(field, list) or len(field) < 2
+                            or not isinstance(field[0], str)
+                            or not isinstance(field[1], AdvPLBlock)):
+                        raise AdvPLRuntimeError(
+                            "FWBrowse:SetFields espera titulo e bloco em cada coluna"
+                        )
+                obj.calculated_fields = list(args[0])
+                return None
             if method == "ADDLEGEND":
                 obj.legends.append(tuple(args))
                 return None
@@ -1050,25 +1063,38 @@ class FixtureInterpreter(Interpreter):
         columns = browse.columns or [
             (field, field) for field in alias.records[0]
         ]
+        titles = [title for _, title in columns]
+        titles.extend(field[0] for field in browse.calculated_fields)
+        rows = []
+        previous_alias = self._current_alias
+        previous_position = alias.position
+        try:
+            self._current_alias = browse.alias
+            for position, record in enumerate(alias.records):
+                alias.position = position
+                row = [str(record.get(field, "")) for field, _ in columns]
+                row.extend(str(self.invoke_block(field[1], []))
+                           for field in browse.calculated_fields)
+                rows.append(row)
+        finally:
+            alias.position = previous_position
+            self._current_alias = previous_alias
         widths = [
-            max(
-                len(title),
-                *(len(str(record.get(field, ""))) for record in alias.records),
-            )
-            for field, title in columns
+            max(len(title), *(len(row[index]) for row in rows))
+            for index, title in enumerate(titles)
         ]
         print(
             " | ".join(
                 title.ljust(width)
-                for (_, title), width in zip(columns, widths)
+                for title, width in zip(titles, widths)
             )
         )
         print("-+-".join("-" * width for width in widths))
-        for record in alias.records:
+        for row in rows:
             print(
                 " | ".join(
-                    str(record.get(field, "")).ljust(width)
-                    for (field, _), width in zip(columns, widths)
+                    value.ljust(width)
+                    for value, width in zip(row, widths)
                 )
             )
 

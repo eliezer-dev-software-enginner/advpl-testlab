@@ -19,6 +19,7 @@ O projeto e separado do `livrePL`. Ele usa o interpretador como dependencia loca
 - Compilacao real opcional no RPO via `advpl-testlab -compile arquivo.prw`, usando o TDS-CLI oficial, conexao fornecida pelo usuario e descoberta recursiva de `//usePrw`.
 - Validacao semantica rejeita variaveis nao declaradas e funcoes inexistentes antes da execucao.
 - Primeiro fonte real executado pelo parser e interpretador completos: `TRNSOL02.prw`, incluindo diálogo headless, statement, alias, browse e exportação virtual.
+- `FWMBrowse:SetFields` acrescenta colunas calculadas por code blocks a exibicao textual, avaliadas por registro; mascaras e visibilidade SX3 nao sao simuladas.
 
 ## Estrutura
 

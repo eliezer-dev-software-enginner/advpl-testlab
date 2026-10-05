@@ -338,4 +338,12 @@
 - **Decisao:** Registrar `ConOut` na camada do TestLab. A funcao exige um argumento, converte seu valor para texto, escreve uma linha no `stdout` e retorna `NIL`.
 - **Consequencias:** Fontes que usam o log simples validam e executam sem AppServer. A simulacao nao reproduz console remoto, arquivo de log ou niveis de rastreamento do Protheus.
 
-*Ultima atualizacao: 28/09/2026*
+## ADR-043 — Colunas calculadas de SetFields no browse headless
+
+- **Data:** 05/10/2026
+- **Contexto:** Depois de corrigir no LivrePL a continuacao `; // comentario`, TRNSOL01 validava, mas sua entrada falhava em `FWMBrowse:SetFields`.
+- **Decisao:** Aceitar arrays de colunas com titulo e code block; avaliar os blocos para cada registro e acrescentar as colunas calculadas a exibicao textual existente. Restaurar alias corrente e posicao mesmo quando o bloco falha.
+- **Limites:** Metadados de tipo, mascara e dimensoes sao recebidos, mas nao reproduzem a formatacao da interface ou as regras de visibilidade SX3. Banco e envio SMTP continuam simulados.
+- **Validacao:** Testes proprios verificam valores por registro, preservacao das colunas originais, restauracao de area e erro em definicoes invalidas. Passaram 107 testes do TestLab e 33 da suite de integracao (25 do desafio1), alem da entrada TRNSOL01 pela CLI. Os 60 testes e os tres exemplos de regressao do LivrePL tambem passaram.
+
+*Ultima atualizacao: 05/10/2026*
