@@ -346,4 +346,13 @@
 - **Limites:** Metadados de tipo, mascara e dimensoes sao recebidos, mas nao reproduzem a formatacao da interface ou as regras de visibilidade SX3. Banco e envio SMTP continuam simulados.
 - **Validacao:** Testes proprios verificam valores por registro, preservacao das colunas originais, restauracao de area e erro em definicoes invalidas. Passaram 107 testes do TestLab e 33 da suite de integracao (25 do desafio1), alem da entrada TRNSOL01 pela CLI. Os 60 testes e os tres exemplos de regressao do LivrePL tambem passaram.
 
+## ADR-044 — Herdar utilitarios da linguagem e usar datas tipadas
+
+- **Data:** 05/10/2026
+- **Contexto:** Utilitarios como Date, Chr e AClone estavam definidos somente no TestLab; datas eram strings, sem ValType D nem aritmetica de datas.
+- **Decisao:** Centralizar 21 utilitarios no LivrePL e remover as implementacoes puras duplicadas do TestLab. Conservar overrides do relogio e dos arquivos para os fixtures e da saida de Alert. Converter DDATABASE e campos D para AdvPLDate; persistir ISO/null em state.json e hidratar o tipo na reabertura.
+- **Consequencias:** A simulacao usa os mesmos utilitarios do interpretador. Framework Protheus, RDD, MVC, SMTP, dialogos e dicionario continuam na camada do TestLab. Registros inspecionados diretamente em memoria agora contem valores de data; o fixture no disco permanece imutavel. Objetos de browse/statement usam a base AdvPLObject para ValType/FreeObj.
+- **Validacao:** Testes novos verificam heranca sem sobrescritas, relogio determinista, tipo dos campos e persistencia de datas. A suite existente do desafio1 permanece coberta.
+- **Resultado:** Passaram 110 testes do TestLab, 88 do LivrePL e 33 de integracao. TRNSOL01 validou 24 funcoes e executou o browse pela CLI.
+
 *Ultima atualizacao: 05/10/2026*

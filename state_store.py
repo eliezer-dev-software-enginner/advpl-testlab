@@ -2,6 +2,7 @@ import json
 import os
 import tempfile
 from pathlib import Path
+from advpl_date import AdvPLDate
 
 
 class StateError(ValueError):
@@ -38,7 +39,8 @@ def save_state(path, tables):
     path = Path(path)
     try:
         encoded = json.dumps(
-            {"versao": 1, "tabelas": tables}, ensure_ascii=False, indent=2
+            {"versao": 1, "tabelas": tables}, ensure_ascii=False, indent=2,
+            default=_serialize_date,
         ) + "\n"
     except (TypeError, ValueError) as exc:
         raise StateError(f"state.json nao pode serializar registros: {exc}") from exc
@@ -61,3 +63,9 @@ def save_state(path, tables):
                 temporary.unlink()
             except OSError:
                 pass
+
+
+def _serialize_date(value):
+    if isinstance(value, AdvPLDate):
+        return str(value) or None
+    raise TypeError(f"Tipo nao serializavel: {type(value).__name__}")

@@ -7,6 +7,8 @@
 
 ## Foco atual
 
+- [x] Centralizar utilitarios gerais no LivrePL, preservar overrides de ambiente e persistir datas tipadas (05/10/2026).
+
 ### desafio0-Fat006
 
 - [x] Validar os quatro fontes reais na ordem das dependencias.

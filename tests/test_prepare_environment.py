@@ -5,6 +5,7 @@ import unittest
 from fixture_runtime import Fixture, build_interpreter, compile_source
 from interpreter import AdvPLRuntimeError
 from parser import ParseError
+from advpl_date import AdvPLDate
 
 
 SOURCE = """User Function Ex1()
@@ -43,7 +44,7 @@ class PrepareEnvironmentTests(unittest.TestCase):
             runtime.run("Ex1")
         self.assertEqual("[ALERTA] Inseriu!", output.getvalue().strip())
         self.assertEqual([{"ZA2_FILIAL": "02", "ZA2_NOME": "Paulo",
-                           "ZA2_DTCRIA": "2026-09-24"}], runtime._aliases["ZA2"].records)
+                           "ZA2_DTCRIA": AdvPLDate.from_iso("2026-09-24")}], runtime._aliases["ZA2"].records)
         self.assertEqual([], data.tabelas["ZA2"]["registros"])
         self.assertIsNone(runtime._prepared_company)
         self.assertIsNone(runtime._prepared_branch)

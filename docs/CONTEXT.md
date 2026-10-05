@@ -59,6 +59,8 @@ parser + FixtureInterpreter do LivrePL
 
 O browse headless aceita `SetFields` com colunas calculadas por code blocks. A exibicao textual avalia cada bloco no registro correspondente, conserva as colunas existentes e restaura alias/posicao. Mascara e visibilidade SX3 nao sao simuladas (ADR-043).
 
+Os utilitarios gerais sao herdados do LivrePL (ADR-044). Date/Time e arquivos possuem overrides deterministas. DDATABASE e campos D usam AdvPLDate em memoria; o estado persistido serializa datas como ISO/null e restaura o tipo na leitura.
+
 O adaptador de comandos suporta `PREPARE ENVIRONMENT EMPRESA ... FILIAL ...` e `RESET ENVIRONMENT` com estado local ao runtime. No EX1 de banco, `Date()` consulta `DDATABASE` deterministico e `xFilial()` pode usar a area corrente. `--persist` carrega e salva os registros em `state.json`, separado do fixture imutavel `testlab.jsonc`; inclui escritas por `RecLock` e MVC1. Sem a opcao, tudo continua somente em memoria (ADR-032).
 
 Na validacao semantica, nomes `PRIVATE` declarados nos fontes carregados sao considerados potencialmente visiveis entre funcoes; `LOCAL` continua restrito a sua funcao. A disponibilidade efetiva de `PRIVATE` e resolvida no runtime pela pilha dinamica. Erros de identificador usam a linha da AST para apontar a leitura que falhou.

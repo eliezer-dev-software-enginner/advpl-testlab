@@ -4,6 +4,8 @@ Ambiente de simulacao e testes para executar arquivos AdvPL reais com dados de f
 
 O projeto e separado do `livrePL`. Ele usa o interpretador como dependencia local e acrescenta builtins do framework Protheus por heranca, sem alterar o lexer, o parser ou o interpretador original.
 
+Os utilitarios gerais de texto, arrays, datas e erros agora pertencem ao LivrePL. O TestLab conserva overrides do relogio e dos arquivos para os fixtures: `Date()` e campos `D` sao datas tipadas em memoria, enquanto JSON/JSONC e `state.json` usam `AAAA-MM-DD` ou vazio/null. Consulte a ADR-044.
+
 ## Estado atual
 
 - Fase 0: levantamento e arquitetura documentados.

@@ -104,6 +104,7 @@ def _load_livrepl():
 _load_livrepl()
 
 from interpreter import AdvPLBlock, AdvPLObject, AdvPLRuntimeError, Interpreter
+from advpl_date import AdvPLDate
 from lexer import LexError
 from naming import NameCollisionError
 from parser import Call, ParseError, Program, parse_source
@@ -534,9 +535,13 @@ class Fixture:
 
 
 class _AliasRuntime:
-    def __init__(self, records, indices=None, nicknames=None):
+    def __init__(self, records, indices=None, nicknames=None, fields=None):
+        self.date_fields = {
+            field['nome'].upper() for field in (fields or [])
+            if field.get('tipo', '').upper() == 'D'
+        }
         self.records = [
-            {str(field).upper(): value for field, value in record.items()}
+            self.hydrate_record(record)
             for record in records
         ]
         self.indices = {
@@ -551,6 +556,15 @@ class _AliasRuntime:
         self.position = 0
         self.closed = False
         self.filter_block = None
+
+    def hydrate_record(self, record):
+        result = {str(field).upper(): value for field, value in record.items()}
+        for field in self.date_fields & result.keys():
+            try:
+                result[field] = AdvPLDate.from_iso(result[field])
+            except (TypeError, ValueError) as exc:
+                raise FixtureError(f"Campo data '{field}' exige AAAA-MM-DD ou vazio") from exc
+        return result
 
     def set_order(self, order):
         number = int(order)
@@ -616,14 +630,16 @@ class _AliasRuntime:
         return self.records[self.position].get(str(name).upper())
 
 
-class _StatementRuntime:
+class _StatementRuntime(AdvPLObject):
     def __init__(self):
+        super().__init__("FWEXECSTATEMENT")
         self.query = ""
         self.parameters = {}
 
 
-class _BrowseRuntime:
+class _BrowseRuntime(AdvPLObject):
     def __init__(self):
+        super().__init__("FWBROWSE")
         self.alias = ""
         self.description = "Resultado AdvPL"
         self.columns = []
@@ -670,6 +686,7 @@ class FixtureInterpreter(Interpreter):
                 table.get("registros", []) if isinstance(table, dict) else table,
                 table.get("indices", {}) if isinstance(table, dict) else None,
                 table.get("apelidosIndices", {}) if isinstance(table, dict) else None,
+                table.get("campos", []) if isinstance(table, dict) else None,
             )
             for alias, table in self.fixture.tabelas.items()
         }
@@ -681,7 +698,6 @@ class FixtureInterpreter(Interpreter):
         self._statements = []
         self._sent_emails = []
         self._transaction_snapshot = None
-        self._error_block = None
         self._current_alias = next(iter(self._aliases), None)
         self._locked_alias = None
         self._record_locks = {}
@@ -704,14 +720,15 @@ class FixtureInterpreter(Interpreter):
         self.globals["CUSERLOCAL"] = self.fixture.get_environment(
             "CUSERLOCAL", default="."
         )
-        self.globals["DDATABASE"] = self.fixture.get_environment(
+        self.globals["DDATABASE"] = AdvPLDate.from_iso(self.fixture.get_environment(
             "DDATABASE", default="2026-09-22"
-        )
+        ))
         self.globals[self.name_policy.key("MODEL_OPERATION_INSERT")] = 3
         self.globals.update({
             self.name_policy.key(name): value
             for name, value in self.fixture.ambiente.items()
         })
+        self.globals["DDATABASE"] = AdvPLDate.from_iso(self.globals["DDATABASE"])
 
     def _field_alias(self, name):
         key = name.upper()
@@ -1175,100 +1192,14 @@ class FixtureInterpreter(Interpreter):
             default = args[2] if len(args) == 3 else _MISSING
             return self.fixture.get_parameter(args[0], default=default)
 
-        def b_strtran(args):
-            if len(args) != 3 or not all(isinstance(value, str) for value in args):
-                raise AdvPLRuntimeError("StrTran espera 3 argumentos de texto")
-            return args[0].replace(args[1], args[2])
-
-        def b_chr(args):
-            if len(args) != 1 or not isinstance(args[0], (int, float)):
-                raise AdvPLRuntimeError("Chr espera 1 argumento numerico")
-            try:
-                return chr(int(args[0]))
-            except ValueError as exc:
-                raise AdvPLRuntimeError("Chr recebeu um codigo invalido") from exc
-
-        def b_at(args):
-            if len(args) != 2 or not all(isinstance(value, str) for value in args):
-                raise AdvPLRuntimeError("At espera 2 argumentos de texto")
-            position = args[1].find(args[0])
-            return position + 1 if position >= 0 else 0
-
-        def b_type(args):
-            require_count("Type", args, 1)
-            if not isinstance(args[0], str):
-                raise AdvPLRuntimeError("Type espera nome de variavel como texto")
-            return builtins["VALTYPE"]([self.globals.get(args[0].upper())])
-
-        def b_aclone(args):
-            require_count("AClone", args, 1)
-            if not isinstance(args[0], list):
-                raise AdvPLRuntimeError("AClone espera array")
-            return list(args[0])
-
         def b_chkfile(args):
             require_count("ChkFile", args, 1)
             return str(args[0]).upper() in self._aliases
 
-        def b_errorblock(args):
-            require_count("ErrorBlock", args, 1)
-            previous = self._error_block
-            self._error_block = args[0]
-            return previous
-
-        def b_break(args):
-            if len(args) > 1:
-                raise AdvPLRuntimeError("Break espera no maximo 1 argumento")
-            return builtins["THROW"](args)
-
-        def b_left(args):
-            if (
-                len(args) != 2
-                or not isinstance(args[0], str)
-                or isinstance(args[1], bool)
-                or not isinstance(args[1], (int, float))
-            ):
-                raise AdvPLRuntimeError("Left espera texto e tamanho numerico")
-            return args[0][: max(0, int(args[1]))]
-
-        def b_encode_utf8(args):
-            if not 1 <= len(args) <= 2 or not isinstance(args[0], str):
-                raise AdvPLRuntimeError(
-                    "EncodeUTF8 espera texto e encoding de origem opcional"
-                )
-            if len(args) == 2 and not isinstance(args[1], str):
-                raise AdvPLRuntimeError("EncodeUTF8 espera encoding como texto")
-            return args[0]
-
-        def b_free_obj(args):
-            if len(args) != 1:
-                raise AdvPLRuntimeError("FreeObj espera 1 argumento")
-            return None
-
-        def b_transform(args):
-            if len(args) != 2 or not isinstance(args[1], str):
-                raise AdvPLRuntimeError("Transform espera valor e mascara")
-            value = args[0]
-            if isinstance(value, bool) or not isinstance(value, (int, float)):
-                return str(value)
-            decimals = len(args[1].rsplit(".", 1)[1]) if "." in args[1] else 0
-            return f"{value:,.{decimals}f}"
-
-        def b_dtoc(args):
-            if len(args) != 1:
-                raise AdvPLRuntimeError("DToC espera 1 argumento")
-            value = args[0]
-            if value is None:
-                return ""
-            if isinstance(value, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
-                year, month, day = value.split("-")
-                return f"{day}/{month}/{year}"
-            return str(value)
-
         def b_contains(args):
             if len(args) != 2 or not all(isinstance(value, str) for value in args):
                 raise AdvPLRuntimeError("Operador $ espera dois textos")
-            return args[0] in args[1]
+            return self.apply_binop("$", args[0], args[1])
 
         def b_tmail_manager(args):
             if args:
@@ -1649,12 +1580,6 @@ class FixtureInterpreter(Interpreter):
             self._current_alias = name
             return None
 
-        def b_ctod(args):
-            require_count("CToD", args, 1)
-            if not isinstance(args[0], str):
-                raise AdvPLRuntimeError("CToD espera texto")
-            return None if args[0].strip() == "" else args[0]
-
         def b_retsqlname(args):
             require_count("RetSQLName", args, 1)
             return str(args[0])
@@ -1690,16 +1615,10 @@ class FixtureInterpreter(Interpreter):
             print(f"[ALERTA] {args[0]}")
             return None
 
-        def b_conout(args):
-            if len(args) != 1:
-                raise AdvPLRuntimeError("ConOut espera uma mensagem")
-            print(str(args[0]))
-            return None
-
         def b_date(args):
             require_count("Date", args, 0)
             value = self.globals["DDATABASE"]
-            if not isinstance(value, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
+            if not isinstance(value, AdvPLDate):
                 raise AdvPLRuntimeError("DDATABASE deve estar em formato AAAA-MM-DD")
             return value
 
@@ -1739,19 +1658,6 @@ class FixtureInterpreter(Interpreter):
                 raise AdvPLRuntimeError("FWMsgRun espera componente, bloco, titulo e mensagem")
             print(f"[PROGRESSO] {args[2]}: {args[3]}")
             return self.invoke_block(args[1], [])
-
-        def b_ascan(args):
-            if len(args) != 2 or not isinstance(args[0], list):
-                raise AdvPLRuntimeError("AScan espera array e valor")
-            if isinstance(args[1], AdvPLBlock):
-                for index, value in enumerate(args[0], start=1):
-                    if self.invoke_block(args[1], [value]):
-                        return index
-                return 0
-            try:
-                return args[0].index(args[1]) + 1
-            except ValueError:
-                return 0
 
         def b_indexkey(args):
             require_count("IndexKey", args, 1)
@@ -1905,19 +1811,7 @@ class FixtureInterpreter(Interpreter):
             return 0
 
         builtins["GETMV"] = b_getmv
-        builtins["STRTRAN"] = b_strtran
-        builtins["CHR"] = b_chr
-        builtins["AT"] = b_at
-        builtins["TYPE"] = b_type
-        builtins["ACLONE"] = b_aclone
         builtins["CHKFILE"] = b_chkfile
-        builtins["ERRORBLOCK"] = b_errorblock
-        builtins["BREAK"] = b_break
-        builtins["LEFT"] = b_left
-        builtins["ENCODEUTF8"] = b_encode_utf8
-        builtins["FREEOBJ"] = b_free_obj
-        builtins["TRANSFORM"] = b_transform
-        builtins["DTOC"] = b_dtoc
         builtins["TESTLABCONTAINS"] = b_contains
         builtins["TMAILMANAGER"] = b_tmail_manager
         builtins["TMAILMESSAGE"] = b_tmail_message
@@ -1958,13 +1852,11 @@ class FixtureInterpreter(Interpreter):
         builtins["RECLOCK"] = b_reclock
         builtins["GETSXENUM"] = b_getsxenum
         builtins["MSUNLOCK"] = b_msunlock
-        builtins["CTOD"] = b_ctod
         builtins["RETSQLNAME"] = b_retsqlname
         builtins["XFILIAL"] = b_xfilial
         builtins["TESTLABPREPAREENVIRONMENT"] = b_prepare_environment
         builtins["TESTLABRESETENVIRONMENT"] = b_reset_environment
         builtins["ALERT"] = b_alert
-        builtins["CONOUT"] = b_conout
         builtins["DATE"] = b_date
         builtins["CHANGEQUERY"] = b_changequery
         builtins["GETNEXTALIAS"] = b_getnextalias
@@ -1976,7 +1868,6 @@ class FixtureInterpreter(Interpreter):
         builtins["FWFORMVIEW"] = lambda args: b_mvc_object("FWFORMVIEW", args)
         builtins["FWLOADMODEL"] = b_fwloadmodel
         builtins["FWMSGRUN"] = b_fwmsgrun
-        builtins["ASCAN"] = b_ascan
         builtins["INDEXKEY"] = b_indexkey
         builtins["BRWLEGENDA"] = b_brwlegenda
         builtins["TESTLABALIASCALL"] = b_alias_call
@@ -2362,7 +2253,9 @@ def run_sources(
     )
     if state_path is not None:
         for alias, records in load_state(state_path, interpreter.fixture.tabelas).items():
-            interpreter._aliases[alias].records = copy.deepcopy(records)
+            interpreter._aliases[alias].records = [
+                interpreter._aliases[alias].hydrate_record(record) for record in records
+            ]
             interpreter._aliases[alias].position = 0
         initial_records = {
             alias: copy.deepcopy(interpreter._aliases[alias].records)
