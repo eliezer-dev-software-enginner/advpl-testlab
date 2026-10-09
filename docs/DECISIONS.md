@@ -356,3 +356,10 @@
 - **Resultado:** Passaram 110 testes do TestLab, 88 do LivrePL e 33 de integracao. TRNSOL01 validou 24 funcoes e executou o browse pela CLI.
 
 *Ultima atualizacao: 05/10/2026*
+
+## ADR-045 — AdvPLab e inicializacao de projetos
+
+- **Data:** 09/10/2026
+- **Contexto:** Simplificar o nome da ferramenta e iniciar a configuracao diretamente na pasta de um projeto AdvPL.
+- **Decisao:** Renomear o pacote e a CLI principal para advplab; preservar advpl-testlab como alias. --init cria testlab.jsonc UTF-8 comentado, com as sete secoes canonicas vazias, por abertura exclusiva, sem sobrescrever arquivos existentes. Nomes de fixtures e pasta do checkout permanecem compativeis com os projetos irmaos.
+- **Validacao:** 113 testes passaram, incluindo criacao no diretorio atual, leitura pelo Fixture, execucao de um PRW, preservacao de arquivo existente e rejeicao de opcoes incompativeis. Exemplo getmv executado pela CLI.

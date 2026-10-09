@@ -1,6 +1,7 @@
 import argparse
 import json
 import sys
+from pathlib import Path
 
 from diagnostics import SourceValidationError, print_diagnostic
 from executor import (
@@ -14,12 +15,33 @@ from parser import ParseError
 from state_store import StateError
 
 
+INIT_FIXTURE = """{
+  // Valores consultados por GetMV().
+  "parametros": [],
+  // Tabelas, campos e registros simulados.
+  "tabelas": [],
+  // Retornos simulados de funcoes.
+  "funcoes": [],
+  // Variaveis do ambiente, como DDATABASE e TIME.
+  "ambiente": [],
+  // Respostas de dialogos simulados.
+  "dialogos": [],
+  // Configuracoes especificas por fonte PRW.
+  "especificidadesPrw": [],
+  // Resultados simulados de consultas.
+  "consultas": []
+}
+"""
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(
-        prog="advpl-testlab",
+        prog="advplab",
         description="Executa fontes AdvPL com fixtures JSON, sem Protheus.",
     )
     action = parser.add_mutually_exclusive_group(required=True)
+    action.add_argument("--init", action="store_true",
+                        help="cria testlab.jsonc no diretorio atual sem sobrescrever")
     action.add_argument("-run", "--run", dest="source", metavar="ARQUIVO.PRW")
     action.add_argument(
         "-validate",
@@ -52,7 +74,19 @@ def main(argv=None):
     )
     args = parser.parse_args(argv)
     try:
-        if args.compile_source:
+        if args.init:
+            if (args.fixture or args.entry or args.mvc_case or args.persist or
+                    args.args_json is not None or args.tds_config or args.tds_cli or
+                    args.include or args.compile_order or args.dry_run):
+                raise FixtureError("--init nao aceita opcoes de execucao ou compilacao")
+            path = Path.cwd() / "testlab.jsonc"
+            try:
+                with path.open("x", encoding="utf-8") as config:
+                    config.write(INIT_FIXTURE)
+            except FileExistsError as exc:
+                raise FixtureError(f"Arquivo ja existe: '{path}'") from exc
+            print(f"[OK] Configuracao criada: {path}")
+        elif args.compile_source:
             if args.fixture or args.entry or args.mvc_case or args.persist or args.args_json:
                 raise CompileError("-compile nao aceita opcoes de fixture ou execucao")
             paths = ordered_sources(args.compile_source, args.compile_order)

@@ -25,7 +25,7 @@
 
 ## O que e o projeto
 
-O AdvPL TestLab executa codigo AdvPL com um ambiente Protheus simulado por fixtures JSON. Ele permite testar logica de negocio isolada sem AppServer, licenca, banco de dados ou interface do Protheus.
+O AdvPLab executa codigo AdvPL com um ambiente Protheus simulado por fixtures JSON. Ele permite testar logica de negocio isolada sem AppServer, licenca, banco de dados ou interface do Protheus.
 
 O projeto nao e um fork do LivrePL. Ele vive em repositorio proprio e usa o LivrePL como dependencia local, mantendo os dois diretorios como irmaos:
 
@@ -78,7 +78,7 @@ IDs literais de `GetValue('SUBMODELO', 'CAMPO')` tambem sao comparados aos IDs d
 | `fixture_runtime.py` | Carrega/valida fixtures, integra o LivrePL e registra builtins simulados |
 | `semantic.py` | Valida identificadores e chamadas contra simbolos e funcoes conhecidas |
 | `executor.py` | Descobre entrada/fixture, valida e executa pelo interpretador |
-| `main.py` | CLI `advpl-testlab -run` e `-validate` |
+| `main.py` | CLI `advplab --init`, `advplab -run` e `-validate` |
 | `pyproject.toml` | Empacotamento e comando instalavel |
 | `examples/getmv.prw` | Exemplo de codigo AdvPL real usando `GetMV` |
 | `examples/ui-headless.prw` | Exemplo executavel de dialogo e mensagens sem UI |
@@ -144,7 +144,7 @@ IDs literais de `GetValue('SUBMODELO', 'CAMPO')` tambem sao comparados aos IDs d
 
 ### Executor integral do TRNSOL02
 
-- CLI instalavel com `advpl-testlab -run arquivo.prw`.
+- CLI instalavel com `advplab -run arquivo.prw`.
 - Descoberta automatica da primeira `User Function` e de `testlab.jsonc`/`testlab.json` nos diretorios pais, com fallback para o nome antigo.
 - `--name-profile modern|legacy10` seleciona a politica de nomes do LivrePL tanto em `-validate` quanto em `-run`; `modern` e o padrao.
 - Validacao das tres funcoes do fonte por `-validate`.
@@ -244,3 +244,7 @@ python -m unittest discover -s tests -v
 ---
 
 *Ultima atualizacao: 28/09/2026*
+
+## Nome e inicializacao (09/10/2026)
+
+O pacote e o comando principal se chamam `advplab`. `advpl-testlab` permanece como alias de compatibilidade; a pasta local do checkout conserva o nome antigo para preservar os caminhos dos projetos irmaos. `advplab --init` cria testlab.jsonc comentado na pasta atual, com as sete secoes vazias, e recusa sobrescrever um arquivo existente.

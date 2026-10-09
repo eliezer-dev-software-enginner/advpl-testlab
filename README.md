@@ -1,4 +1,4 @@
-# AdvPL TestLab
+# AdvPLab
 
 Ambiente de simulacao e testes para executar arquivos AdvPL reais com dados de fixtures JSON ou JSONC, sem AppServer, licenca ou banco de dados.
 
@@ -17,8 +17,8 @@ Os utilitarios gerais de texto, arrays, datas e erros agora pertencem ao LivrePL
 - Builtins adicionais usados pelos casos reais: `StrTran` e `Chr`.
 - `parametros` e `tabelas` usam listas de objetos no formato canonico.
 - Cada tabela possui `campos` opcionais e `registros`.
-- CLI instalavel `advpl-testlab -run arquivo.prw` com descoberta automatica da primeira `User Function` e do fixture.
-- Compilacao real opcional no RPO via `advpl-testlab -compile arquivo.prw`, usando o TDS-CLI oficial, conexao fornecida pelo usuario e descoberta recursiva de `//usePrw`.
+- CLI instalavel `advplab -run arquivo.prw` com descoberta automatica da primeira `User Function` e do fixture.
+- Compilacao real opcional no RPO via `advplab -compile arquivo.prw`, usando o TDS-CLI oficial, conexao fornecida pelo usuario e descoberta recursiva de `//usePrw`.
 - Validacao semantica rejeita variaveis nao declaradas e funcoes inexistentes antes da execucao.
 - Primeiro fonte real executado pelo parser e interpretador completos: `TRNSOL02.prw`, incluindo diálogo headless, statement, alias, browse e exportação virtual.
 - `FWMBrowse:SetFields` acrescenta colunas calculadas por code blocks a exibicao textual, avaliadas por registro; mascaras e visibilidade SX3 nao sao simuladas.
@@ -90,12 +90,28 @@ Normalmente o executável fica em uma subpasta como `Python314\Scripts` dentro d
 Depois, a partir do diretorio de qualquer fonte:
 
 ```powershell
-advpl-testlab -run TRNSOL02.prw
+advplab -run TRNSOL02.prw
 ```
 
 O executor procura `testlab.jsonc` ou `testlab.json` no diretorio do `.prw` e nos diretorios pais. O fixture do diretorio mais proximo prevalece; no mesmo diretorio, `testlab.jsonc` tem prioridade, depois `testlab.json`. Os nomes antigos `advpl-testlab.jsonc` e `advpl-testlab.json` continuam aceitos como fallback. Tambem e possivel usar `--fixture caminho.jsonc`, `--entry NomeDaFuncao` e `--args-json '[...]'`.
 
 `PREPARE ENVIRONMENT EMPRESA ... FILIAL ...` e `RESET ENVIRONMENT` sao simulados sem abrir AppServer. O corte atual aceita valores literais ou variaveis para empresa/filial; `Date()` usa `DDATABASE` de `ambiente` (formato `AAAA-MM-DD`), `xFilial()` sem argumento usa o alias corrente, `Alert()` escreve `[ALERTA]` no terminal e `ConOut()` escreve sua mensagem sem UI. Sem `--persist`, a escrita via `RecLock` continua apenas em memoria; veja [fase-ex1-ambiente](docs/fase-ex1-ambiente.md).
+
+### Iniciar a configuracao de um projeto
+
+Abra o terminal na pasta do seu projeto AdvPL e execute:
+
+```powershell
+advplab --init
+```
+
+O comando cria `testlab.jsonc` na pasta atual com comentarios e as sete secoes basicas vazias. Preencha os dados simulados usados pelos seus fontes e execute:
+
+```powershell
+advplab -run rotina.prw
+```
+
+Se `testlab.jsonc` ja existir, `--init` informa o erro e preserva seu conteudo. O comando antigo `advpl-testlab` continua disponivel como alias. Para obter o novo comando em uma instalacao existente, reinstale com `python -m pip install -e .` na pasta deste repositorio.
 
 ### `ambiente`: bloco pronto para `testlab.jsonc`
 
@@ -138,13 +154,13 @@ Ha ainda entradas que dependem do fonte, sem valor universal para copiar: `RECLO
 ### Persistencia opcional em `state.json`
 
 ```powershell
-advpl-testlab -run EX1.prw --persist
-advpl-testlab -run EX1.prw --persist
+advplab -run EX1.prw --persist
+advplab -run EX1.prw --persist
 ```
 
 O primeiro comando parte dos `registros` de `testlab.jsonc` se ainda nao houver `state.json`. Cada execucao seguinte com `--persist` carrega o estado anterior; apos uma execucao bem-sucedida que alterou registros, o TestLab substitui `state.json` por um snapshot JSON. O arquivo fica no mesmo diretorio da fixture descoberta (ou informada por `--fixture`) e e ignorado pelo Git nos projetos deste workspace. O JSONC nunca e reescrito. Sem `--persist`, a execucao ignora `state.json` e usa apenas a fixture. Estado invalido ou alias nao declarado causa erro sem sobrescrita; erro de execucao ou divergencia de expectativa MVC tambem nao grava. Nao execute duas gravacoes simultaneas no mesmo `state.json`: bloqueio de concorrencia ainda nao esta implementado.
 
-Para MVC1, use `advpl-testlab -run ZA1MVC.prw --mvc-case incluir-livro-valido --persist`. Uma inclusao aprovada fica disponivel para o proximo `-run ... --persist`; uma inclusao rejeitada nao cria nem altera o estado. Expectativas absolutas como `totalRegistros: 2` continuam sendo verificadas contra o estado carregado, portanto repetir o mesmo caso de inclusao pode falhar por ja existir um registro anterior. Para voltar ao ponto inicial, guarde ou remova conscientemente o `state.json`; isso nao altera o JSONC.
+Para MVC1, use `advplab -run ZA1MVC.prw --mvc-case incluir-livro-valido --persist`. Uma inclusao aprovada fica disponivel para o proximo `-run ... --persist`; uma inclusao rejeitada nao cria nem altera o estado. Expectativas absolutas como `totalRegistros: 2` continuam sendo verificadas contra o estado carregado, portanto repetir o mesmo caso de inclusao pode falhar por ja existir um registro anterior. Para voltar ao ponto inicial, guarde ou remova conscientemente o `state.json`; isso nao altera o JSONC.
 
 Para `GetSXENum(cAlias, cCampo)`, declare a regra na tabela do fixture: `"numeracao": {"ZA2_COD": {"digitos": 6, "inicio": 1}}`. O runtime verifica que o campo existe, calcula o maior codigo numerico dos registros carregados e reserva o proximo valor preenchido com zeros. Chamadas repetidas na mesma execucao nao repetem numero; com `--persist`, os registros de `state.json` entram no calculo da execucao seguinte. Registros sem codigo sao ignorados; valores nao numericos, estouro de largura e ausencia da regra geram erro explicito. Isto simula o caso de dois argumentos, nao o servico SXE/SXF/License Server nem a semantica completa de `ConfirmSX8`/`RollbackSX8`.
 
@@ -164,12 +180,12 @@ Defina `cenariosMvc` no `testlab.jsonc` e selecione um cenario por nome:
 ```
 
 ```powershell
-advpl-testlab -run ZA1MVC.prw --mvc-case incluir-preco-negativo
+advplab -run ZA1MVC.prw --mvc-case incluir-preco-negativo
 ```
 
 O `Activate()` do browse chama `ModelDef` no escopo ativo da entrada, preenche o modelo com `dados`, executa o bloco de pos-validacao (`bPost`) e compara `salvou` e, se declarados, `totalRegistros` e `registro` (ultimo registro completo). Uma inclusao aprovada acrescenta o registro ao runtime e, com `--persist`, ao `state.json`; o JSONC nao e alterado. Erro de expectativa retorna codigo `1`. A primeira versao aceita um unico `AddFields`/alias no `MPFormModel`, com campos `C` e `N` declarados na fixture; nao simula a UI, `ViewDef`, persistencia Protheus ou outras operacoes MVC. Sem `--mvc-case`, `-run` conserva o browse headless anterior.
 
-O perfil de nomes e passado ao LivrePL na validacao e na execucao. Use, por exemplo, `advpl-testlab -validate rotina.prw --name-profile legacy10` para detectar colisoes de nomes historicos; o padrao `modern` mantem nomes completos. O perfil legado tambem considera `U_` mais oito caracteres para `User Function`.
+O perfil de nomes e passado ao LivrePL na validacao e na execucao. Use, por exemplo, `advplab -validate rotina.prw --name-profile legacy10` para detectar colisoes de nomes historicos; o padrao `modern` mantem nomes completos. O perfil legado tambem considera `U_` mais oito caracteres para `User Function`.
 
 ### Dependencias locais com `usePrw`
 
@@ -191,7 +207,7 @@ As funcoes dos arquivos carregados participam da validacao semantica e da execuc
 Primeiro confira o plano, sem conexao nem escrita no RPO:
 
 ```powershell
-advpl-testlab -compile TRNSOL01.prw --dry-run
+advplab -compile TRNSOL01.prw --dry-run
 ```
 
 Para compilar, crie **fora do repositorio** um arquivo privado `tds-auth.ini` em CP1252 com sua conexao real (nao compartilhe nem versione usuario, senha ou token):
@@ -211,7 +227,7 @@ psw=SUA_SENHA
 Se sua instalacao exigir token de compilacao, acrescente uma secao `[authorization]` com `action=authorization` e o token conforme a [documentacao TOTVS](https://github.com/totvs/tds-ls/blob/master/TDS-cli-script.md). O TestLab aceita nesse arquivo somente `[user]`, `[authentication]` e `[authorization]`, criando sozinho a acao de compilacao. Informe ao menos uma pasta de includes existente:
 
 ```powershell
-advpl-testlab -compile TRNSOL01.prw --tds-config 'C:\caminho-privado\tds-auth.ini' --include 'C:\caminho\includes'
+advplab -compile TRNSOL01.prw --tds-config 'C:\caminho-privado\tds-auth.ini' --include 'C:\caminho\includes'
 ```
 
 O TestLab gera uma lista temporaria em CP1252 com cada `.prw` do grafo `//usePrw` uma vez, por padrao com dependencias antes dos chamadores, e manda o TDS-CLI recompilar os cinco fontes de `TRNSOL01.prw` em uma invocacao. A lista e o script temporarios sao removidos ao final; o arquivo privado original nao e modificado. Isso exige acesso ao AppServer, autenticacao, includes corretos e permissao de compilacao/acesso exclusivo ao RPO, conforme a [documentacao TDS-VSCode](https://github.com/totvs/tds-vscode/blob/master/docs/compilation.md). Nao reutiliza automaticamente a sessao autenticada do VS Code.
@@ -219,7 +235,7 @@ O TestLab gera uma lista temporaria em CP1252 com cada `.prw` do grafo `//usePrw
 Quando funcoes foram movidas entre fontes e o RPO ainda guarda os simbolos antigos, informe a ordem completa explicitamente. Por exemplo, para liberar as antigas `U_Z04*` de `TRNSOL01.prw` antes de compilar `OUACOES.prw`:
 
 ```powershell
-advpl-testlab -compile TRNSOL01.prw --dry-run --compile-order 'ENVEMAIL.prw,NOTIFSOL.prw,UTILS.prw,TRNSOL01.prw,OUACOES.prw'
+advplab -compile TRNSOL01.prw --dry-run --compile-order 'ENVEMAIL.prw,NOTIFSOL.prw,UTILS.prw,TRNSOL01.prw,OUACOES.prw'
 ```
 
 Repita com `--tds-config` e `--include` sem `--dry-run` para compilar nessa ordem. A ordem deve listar todos os fontes descobertos exatamente uma vez. Erros do TDS-CLI retornam codigo de saida nao zero; o TestLab nao exclui objetos do RPO automaticamente. A integracao real com o seu AppServer ainda nao foi testada aqui, apenas o plano e a chamada simulada ao TDS-CLI.
@@ -227,7 +243,7 @@ Repita com `--tds-config` e `--include` sem `--dry-run` para compilar nessa orde
 Para validar todas as funções do arquivo sem executar nenhuma delas:
 
 ```powershell
-advpl-testlab -validate TRNSOL02.prw
+advplab -validate TRNSOL02.prw
 ```
 
 O comando falha com erro de lexer, parser ou semântica quando encontra sintaxe inválida, construção sem suporte, variável não declarada ou função inexistente. O diagnóstico preserva a numeração do `.prw` original, inclusive quando existem diretivas `#include`, mostra a linha e aponta a coluna aproximada:
@@ -260,7 +276,7 @@ python main.py -run examples/getmv.prw --fixture fixtures/getmv.json --entry ex
 Funcoes de entrada com parametros podem ser chamadas assim:
 
 ```powershell
-advpl-testlab -run NOTIFSOL.prw --entry NotificarSolicitacao --args-json '["ENVIO"]'
+advplab -run NOTIFSOL.prw --entry NotificarSolicitacao --args-json '["ENVIO"]'
 ```
 
 Saida:
@@ -272,7 +288,7 @@ Saida:
 Exemplo de diálogo e mensagens sem UI:
 
 ```powershell
-advpl-testlab -run examples/ui-headless.prw --fixture fixtures/ui-headless.json
+advplab -run examples/ui-headless.prw --fixture fixtures/ui-headless.json
 ```
 
 Saída:
@@ -418,7 +434,7 @@ No `TRNSOL02`, `LRET: true` representa o botão Consultar e `false` representa C
    JSONC aceita comentarios `//` e `/* ... */` e virgulas finais; dentro de strings, esses caracteres sao preservados. Arquivos `.json` continuam aceitos, mas seguem JSON estrito, sem comentarios nem virgulas finais.
 2. Cadastre parâmetros, tabelas, funções externas e consultas usadas pelo fonte.
 3. Abra um terminal no diretório do `.prw`.
-4. Execute `advpl-testlab -run NomeDoFonte.prw`.
+4. Execute `advplab -run NomeDoFonte.prw`.
 5. Para validar o TestLab, execute `python -m unittest discover -s tests -v` neste repositório.
 
 A suite propria do TestLab usa apenas fontes e fixtures deste repositorio; nao depende dos `.prw` de `desafios-aprendizado`. Os testes de integracao dos casos reais ficam em `desafios-aprendizado/tests` e podem ser executados separadamente naquele repositorio.
@@ -468,9 +484,9 @@ O fonte real e sua dependencia `ENVEMAIL.prw` passam juntos por lexer, parser, v
 O fonte real e as dependencias declaradas com `//usePrw` passam por lexer, parser e validacao semantica. Depois da refatoracao em `OUACOES.prw`/`UTILS.prw`, a validacao do projeto alvo pode apontar funcoes `Static` chamadas de outro `.prw`; por exemplo, `fMostraErros()` em `TRNSOL01.prw`. Corrija o escopo dos auxiliares antes de executar o fluxo. Os testes de integracao no projeto alvo cobrem entrada, menu, modelo/view e fluxos de status, mas nao substituem essa validacao.
 
 ```powershell
-advpl-testlab -validate TRNSOL01.prw
-advpl-testlab -run TRNSOL01.prw
-advpl-testlab -run TRNSOL01.prw --entry Z04PROC
+advplab -validate TRNSOL01.prw
+advplab -run TRNSOL01.prw
+advplab -run TRNSOL01.prw --entry Z04PROC
 ```
 
 - `Z04`, `Z05` e `Z06` sao registros em memoria; `DbSetOrder` usa `indices` do fixture, quando declarados, para ordenar e buscar pela chave configurada;
