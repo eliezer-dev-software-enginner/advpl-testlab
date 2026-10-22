@@ -48,7 +48,7 @@ def create_mvc1(table='ZA1'):
     if not re.fullmatch(r'[A-Z][A-Z0-9]{2}', table, flags=re.ASCII):
         raise FixtureError('--table deve ser um alias de tres caracteres, como ZA4')
     source_path = Path.cwd() / f'{table}MVC.prw'
-    fixture_path = Path.cwd() / 'testlab.jsonc'
+    fixture_path = Path.cwd() / 'mock.json'
     for path in (source_path, fixture_path):
         if path.exists() or path.is_symlink():
             raise FixtureError(f'Arquivo ja existe: {path}; nenhum arquivo foi criado')
@@ -72,9 +72,7 @@ def create_mvc1(table='ZA1'):
     try:
         for path, content in (
             (source_path, MVC1_SOURCE.replace('@TABLE@', table)),
-            (fixture_path, '// Campos de exemplo: ajuste ao SX3 da tabela real.\n'
-             '// Cenario de inclusao simulado; nao cria tabela no Protheus.\n'
-             + json.dumps(fixture, indent=2, ensure_ascii=False) + '\n'),
+            (fixture_path, json.dumps(fixture, indent=2, ensure_ascii=False) + '\n'),
         ):
             with path.open('x', encoding='utf-8') as output:
                 created.append(path)

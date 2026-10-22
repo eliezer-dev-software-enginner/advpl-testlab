@@ -1,3 +1,4 @@
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -17,14 +18,28 @@ class JsoncFixtureTests(unittest.TestCase):
         with self.assertRaisesRegex(FixtureError, "JSON invalido"):
             Fixture.from_file(self.FIXTURES / "comentarios-invalidos.json")
 
-    def test_discovers_jsonc_before_json_in_same_directory(self):
+    def test_discovers_mock_before_legacy_names_in_same_directory(self):
         source = self.FIXTURES / "rotina.prw"
-        jsonc = self.FIXTURES / "testlab.jsonc"
+        jsonc = self.FIXTURES / "mock.json"
         self.assertEqual(jsonc, discover_fixture(source))
 
     def test_legacy_name_remains_discoverable(self):
         source = self.FIXTURES / "legacy" / "rotina.prw"
         self.assertEqual(source.parent / "advpl-testlab.jsonc", discover_fixture(source))
+
+    def test_nearest_fixture_wins_and_mock_has_local_priority(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            child = root / 'fontes'
+            child.mkdir()
+            (root / 'mock.json').write_text('{}')
+            legacy = child / 'testlab.jsonc'
+            legacy.write_text('{}')
+            source = child / 'rotina.prw'
+            self.assertEqual(legacy, discover_fixture(source))
+            mock = child / 'mock.json'
+            mock.write_text('{}')
+            self.assertEqual(mock, discover_fixture(source))
 
     def test_unterminated_block_comment_is_reported(self):
         with self.assertRaisesRegex(FixtureError, "Comentario de bloco nao terminado"):

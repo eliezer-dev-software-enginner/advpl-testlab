@@ -369,3 +369,9 @@
 - **Data:** 22/10/2026
 - **Decisao:** --mvc1 gera ALIASMVC.prw e testlab.jsonc na pasta atual; --table define um alias de tres caracteres (padrao ZA1). Fonte com browse, menu, modelo e view baseado no exemplo MVC1 existente; fixture com campos de exemplo e cenario incluir-registro. Nao inferir o dicionario SX3 real. Preservar arquivos existentes e remover apenas arquivos novos em caso de erro de escrita.
 - **Validacao:** 118 testes aprovados, incluindo geracao customizada/padrao, validacao e inclusao com persistencia, fixture imutavel, conflitos, alias invalido e falha de gravacao. Sem alteracoes no interpretador LivrePL.
+
+## ADR-047 — mock.json como arquivo padrao
+
+- **Data:** 22/10/2026
+- **Decisao:** Substituir o nome padrao por mock.json em --init, --mvc1, descoberta, mensagens, testes e documentacao atual. Gerar JSON estrito sem comentarios. Manter a leitura dos nomes antigos como fallback para projetos existentes e preservar o historico das ADRs anteriores. O fixture mais proximo prevalece; mock.json tem prioridade dentro da mesma pasta.
+- **Validacao:** Geracao inicial e MVC1 lidas por json.loads; execucao e inclusao com persistencia verificadas; testes de prioridade local, diretorio mais proximo e fallback legado.

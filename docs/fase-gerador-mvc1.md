@@ -1,6 +1,6 @@
 # Gerador MVC tipo 1
 
-`advplab --mvc1 --table ZA4` cria ZA4MVC.prw e testlab.jsonc na pasta atual. Sem --table, usa ZA1. A geracao fica em scaffold.py; main.py valida as opcoes e apresenta os comandos seguintes.
+`advplab --mvc1 --table ZA4` cria ZA4MVC.prw e mock.json na pasta atual. Sem --table, usa ZA1. A geracao fica em scaffold.py; main.py valida as opcoes e apresenta os comandos seguintes.
 
 O fonte usa FWMBrowse, MenuDef, MPFormModel/AddFields e FWFormView. O fixture fornece campos C de exemplo (FILIAL, COD e DESC), tabela vazia e um cenario de inclusao. A pos-validacao inicial aceita o registro; acrescente as regras de negocio do projeto. --mvc-case incluir-registro verifica salvou=true e um registro. --persist permite salvar esse registro em state.json.
 

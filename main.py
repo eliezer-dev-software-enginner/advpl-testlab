@@ -17,19 +17,12 @@ from scaffold import create_mvc1
 
 
 INIT_FIXTURE = """{
-  // Valores consultados por GetMV().
   "parametros": [],
-  // Tabelas, campos e registros simulados.
   "tabelas": [],
-  // Retornos simulados de funcoes.
   "funcoes": [],
-  // Variaveis do ambiente, como DDATABASE e TIME.
   "ambiente": [],
-  // Respostas de dialogos simulados.
   "dialogos": [],
-  // Configuracoes especificas por fonte PRW.
   "especificidadesPrw": [],
-  // Resultados simulados de consultas.
   "consultas": []
 }
 """
@@ -42,11 +35,11 @@ def main(argv=None):
     )
     action = parser.add_mutually_exclusive_group(required=True)
     action.add_argument("--mvc1", action="store_true",
-                        help="gera fonte MVC tipo 1 e testlab.jsonc na pasta atual")
+                        help="gera fonte MVC tipo 1 e mock.json na pasta atual")
     parser.add_argument("--table", metavar="ALIAS",
                         help="tabela alvo de --mvc1 (padrao: ZA1)")
     action.add_argument("--init", action="store_true",
-                        help="cria testlab.jsonc no diretorio atual sem sobrescrever")
+                        help="cria mock.json no diretorio atual sem sobrescrever")
     action.add_argument("-run", "--run", dest="source", metavar="ARQUIVO.PRW")
     action.add_argument(
         "-validate",
@@ -59,7 +52,7 @@ def main(argv=None):
         "-compile", "--compile", dest="compile_source", metavar="ARQUIVO.PRW",
         help="recompila recursivamente no RPO via TDS-CLI oficial",
     )
-    parser.add_argument("--fixture", help="fixture JSON/JSONC (padrao: testlab.jsonc ou .json)")
+    parser.add_argument("--fixture", help="fixture JSON/JSONC (padrao: mock.json)")
     parser.add_argument("--tds-config", help="INI privado com autenticacao do TDS-CLI (somente -compile)")
     parser.add_argument("--tds-cli", help="caminho do advpls.exe (deteccao automatica por padrao)")
     parser.add_argument("--include", action="append", default=[], help="diretorio de includes; pode repetir")
@@ -96,7 +89,7 @@ def main(argv=None):
                     args.args_json is not None or args.tds_config or args.tds_cli or
                     args.include or args.compile_order or args.dry_run):
                 raise FixtureError("--init nao aceita opcoes de execucao ou compilacao")
-            path = Path.cwd() / "testlab.jsonc"
+            path = Path.cwd() / "mock.json"
             try:
                 with path.open("x", encoding="utf-8") as config:
                     config.write(INIT_FIXTURE)

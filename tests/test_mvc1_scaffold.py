@@ -1,5 +1,6 @@
 import contextlib
 import io
+import json
 import os
 import sys
 import tempfile
@@ -30,8 +31,9 @@ class Mvc1ScaffoldTests(unittest.TestCase):
     def test_custom_table_validates_and_includes_with_persistence(self):
         self.assertEqual(0, self.invoke('--mvc1', '--table', 'za4'))
         source = Path('ZA4MVC.prw')
-        config = Path('testlab.jsonc')
+        config = Path('mock.json')
         original = config.read_bytes()
+        self.assertIn("cenariosMvc", json.loads(original))
         fixture = Fixture.from_file(config)
         self.assertIn('ZA4', fixture.tabelas)
         self.assertEqual(4, validate_file(source))
@@ -49,8 +51,8 @@ class Mvc1ScaffoldTests(unittest.TestCase):
         self.assertTrue(Path('ZA1MVC.prw').exists())
 
     def test_existing_files_are_preserved_without_partial_output(self):
-        for name, other in [('ZA4MVC.prw', 'testlab.jsonc'),
-                            ('testlab.jsonc', 'ZA4MVC.prw')]:
+        for name, other in [('ZA4MVC.prw', 'mock.json'),
+                            ('mock.json', 'ZA4MVC.prw')]:
             with self.subTest(name=name):
                 path = Path(name)
                 path.write_text('conteudo existente')
@@ -70,7 +72,7 @@ class Mvc1ScaffoldTests(unittest.TestCase):
     def test_write_failure_removes_only_new_files(self):
         original = Path.open
         def fail_fixture(path, *args, **kwargs):
-            if path.name == 'testlab.jsonc':
+            if path.name == 'mock.json':
                 raise PermissionError('falha simulada')
             return original(path, *args, **kwargs)
         with patch.object(Path, 'open', fail_fixture):

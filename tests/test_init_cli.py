@@ -1,5 +1,6 @@
 import contextlib
 import io
+import json
 import os
 import tempfile
 import sys
@@ -20,8 +21,8 @@ class InitCliTests(unittest.TestCase):
                 os.chdir(directory)
                 with contextlib.redirect_stdout(io.StringIO()):
                     self.assertEqual(0, main(['--init']))
-                path = Path('testlab.jsonc')
-                self.assertIn('//', path.read_text())
+                path = Path('mock.json')
+                self.assertIsInstance(json.loads(path.read_text()), dict)
                 self.assertEqual({
                     'parametros', 'tabelas', 'funcoes', 'ambiente',
                     'dialogos', 'especificidadesPrw', 'consultas',
@@ -37,8 +38,8 @@ class InitCliTests(unittest.TestCase):
             previous = Path.cwd()
             try:
                 os.chdir(directory)
-                path = Path('testlab.jsonc')
-                path.write_text('// configuracao existente\n{}')
+                path = Path('mock.json')
+                path.write_text('{"parametros": []}')
                 original = path.read_bytes()
                 with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
                     self.assertEqual(1, main(['--init']))
@@ -53,6 +54,6 @@ class InitCliTests(unittest.TestCase):
                 os.chdir(directory)
                 with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
                     self.assertEqual(1, main(['--init', '--persist']))
-                self.assertFalse(Path('testlab.jsonc').exists())
+                self.assertFalse(Path('mock.json').exists())
             finally:
                 os.chdir(previous)

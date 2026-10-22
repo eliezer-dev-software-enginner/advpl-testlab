@@ -55,7 +55,7 @@ protheus/
 
 - Python 3.10 ou mais recente disponível no terminal.
 - O repositório `livrePL` em um diretório irmão deste projeto.
-- Um arquivo `testlab.jsonc` (recomendado) ou `testlab.json` no projeto testado, ou seu caminho informado por `--fixture`.
+- Um arquivo `mock.json` no projeto testado, ou seu caminho informado por `--fixture`.
 
 Estrutura esperada:
 
@@ -64,7 +64,7 @@ protheus/
 |-- livrePL/
 |-- advpl-testlab/
 `-- meu-projeto-advpl/
-    |-- testlab.jsonc
+    |-- mock.json
     `-- rotina.prw
 ```
 
@@ -93,7 +93,7 @@ Depois, a partir do diretorio de qualquer fonte:
 advplab -run TRNSOL02.prw
 ```
 
-O executor procura `testlab.jsonc` ou `testlab.json` no diretorio do `.prw` e nos diretorios pais. O fixture do diretorio mais proximo prevalece; no mesmo diretorio, `testlab.jsonc` tem prioridade, depois `testlab.json`. Os nomes antigos `advpl-testlab.jsonc` e `advpl-testlab.json` continuam aceitos como fallback. Tambem e possivel usar `--fixture caminho.jsonc`, `--entry NomeDaFuncao` e `--args-json '[...]'`.
+O executor procura `mock.json` no diretorio do `.prw` e nos diretorios pais. O fixture do diretorio mais proximo prevalece; no mesmo diretorio, `mock.json` tem prioridade. Os nomes antigos `testlab.jsonc`, `testlab.json`, `advpl-testlab.jsonc` e `advpl-testlab.json` continuam aceitos como fallback para projetos existentes. Tambem e possivel usar `--fixture caminho.jsonc`, `--entry NomeDaFuncao` e `--args-json '[...]'`.
 
 `PREPARE ENVIRONMENT EMPRESA ... FILIAL ...` e `RESET ENVIRONMENT` sao simulados sem abrir AppServer. O corte atual aceita valores literais ou variaveis para empresa/filial; `Date()` usa `DDATABASE` de `ambiente` (formato `AAAA-MM-DD`), `xFilial()` sem argumento usa o alias corrente, `Alert()` escreve `[ALERTA]` no terminal e `ConOut()` escreve sua mensagem sem UI. Sem `--persist`, a escrita via `RecLock` continua apenas em memoria; veja [fase-ex1-ambiente](docs/fase-ex1-ambiente.md).
 
@@ -105,13 +105,13 @@ Abra o terminal na pasta do seu projeto AdvPL e execute:
 advplab --init
 ```
 
-O comando cria `testlab.jsonc` na pasta atual com comentarios e as sete secoes basicas vazias. Preencha os dados simulados usados pelos seus fontes e execute:
+O comando cria `mock.json` na pasta atual em JSON estrito com as sete secoes basicas vazias. Preencha os dados simulados usados pelos seus fontes e execute:
 
 ```powershell
 advplab -run rotina.prw
 ```
 
-Se `testlab.jsonc` ja existir, `--init` informa o erro e preserva seu conteudo. O comando antigo `advpl-testlab` continua disponivel como alias. Para obter o novo comando em uma instalacao existente, reinstale com `python -m pip install -e .` na pasta deste repositorio.
+Se `mock.json` ja existir, `--init` informa o erro e preserva seu conteudo. O comando antigo `advpl-testlab` continua disponivel como alias. Para obter o novo comando em uma instalacao existente, reinstale com `python -m pip install -e .` na pasta deste repositorio.
 
 ### Criar um projeto MVC tipo 1
 
@@ -121,7 +121,7 @@ Na pasta em que deseja criar os arquivos, execute:
 advplab --mvc1 --table ZA4
 ```
 
-Gera `ZA4MVC.prw` com browse, MenuDef, ModelDef e ViewDef, alem de `testlab.jsonc` com a tabela simulada e o cenario `incluir-registro`. `--table` e opcional: `advplab --mvc1` usa ZA1. Aliases devem ter tres caracteres alfanumericos e comecar com letra; minusculas sao convertidas para maiusculas.
+Gera `ZA4MVC.prw` com browse, MenuDef, ModelDef e ViewDef, alem de `mock.json` com a tabela simulada e o cenario `incluir-registro`. `--table` e opcional: `advplab --mvc1` usa ZA1. Aliases devem ter tres caracteres alfanumericos e comecar com letra; minusculas sao convertidas para maiusculas.
 
 ```bash
 advplab -validate ZA4MVC.prw
@@ -131,9 +131,9 @@ advplab -run ZA4MVC.prw --mvc-case incluir-registro
 
 Os campos `ZA4_FILIAL`, `ZA4_COD` e `ZA4_DESC` sao exemplos. Ajuste os campos do fixture e a chave primaria do fonte ao dicionario real. O gerador nao consulta SX3 nem cria tabelas no Protheus. O menu gerado inclui visualizar, incluir, alterar e excluir; o teste local automatizado cobre inclusao, sem reproduzir a interface MVC.
 
-Se o fonte ou `testlab.jsonc` ja existir na pasta atual, o comando recusa a geracao e preserva os arquivos. Use uma pasta vazia; nao combine `--mvc1` com `--init` ou opcoes de execucao.
+Se o fonte ou `mock.json` ja existir na pasta atual, o comando recusa a geracao e preserva os arquivos. Use uma pasta vazia; nao combine `--mvc1` com `--init` ou opcoes de execucao.
 
-### `ambiente`: bloco pronto para `testlab.jsonc`
+### `ambiente`: bloco pronto para `mock.json`
 
 Copie a propriedade abaixo para a raiz do seu fixture e ajuste os valores. Este bloco reune todas as chaves de ambiente com significado proprio no runtime atual; as de e-mail so afetam fontes que usam `TMailManager`/`TMailMessage`. `0` significa sucesso simulado nesses resultados.
 
@@ -148,11 +148,6 @@ Copie a propriedade abaixo para a raiz do seu fixture e ajuste os valores. Este 
   {"MAIL_CONNECT_RESULT": 0},
   {"MAIL_AUTH_RESULT": 0},
   {"MAIL_SEND_RESULT": 0},
-  // Opcionais por fonte: descomente e ajuste antes de usar.
-  // {"RECLOCK_ZA2": false},
-  // {"PARAMIXB": []},
-  // {"AHEADER": []},
-  // {"ACOLS": []},
   {"MAIL_ERROR_MESSAGE": "Falha SMTP simulada"}
 ]
 ```
@@ -178,7 +173,7 @@ advplab -run EX1.prw --persist
 advplab -run EX1.prw --persist
 ```
 
-O primeiro comando parte dos `registros` de `testlab.jsonc` se ainda nao houver `state.json`. Cada execucao seguinte com `--persist` carrega o estado anterior; apos uma execucao bem-sucedida que alterou registros, o TestLab substitui `state.json` por um snapshot JSON. O arquivo fica no mesmo diretorio da fixture descoberta (ou informada por `--fixture`) e e ignorado pelo Git nos projetos deste workspace. O JSONC nunca e reescrito. Sem `--persist`, a execucao ignora `state.json` e usa apenas a fixture. Estado invalido ou alias nao declarado causa erro sem sobrescrita; erro de execucao ou divergencia de expectativa MVC tambem nao grava. Nao execute duas gravacoes simultaneas no mesmo `state.json`: bloqueio de concorrencia ainda nao esta implementado.
+O primeiro comando parte dos `registros` de `mock.json` se ainda nao houver `state.json`. Cada execucao seguinte com `--persist` carrega o estado anterior; apos uma execucao bem-sucedida que alterou registros, o TestLab substitui `state.json` por um snapshot JSON. O arquivo fica no mesmo diretorio da fixture descoberta (ou informada por `--fixture`) e e ignorado pelo Git nos projetos deste workspace. O arquivo de mock nunca e reescrito. Sem `--persist`, a execucao ignora `state.json` e usa apenas a fixture. Estado invalido ou alias nao declarado causa erro sem sobrescrita; erro de execucao ou divergencia de expectativa MVC tambem nao grava. Nao execute duas gravacoes simultaneas no mesmo `state.json`: bloqueio de concorrencia ainda nao esta implementado.
 
 Para MVC1, use `advplab -run ZA1MVC.prw --mvc-case incluir-livro-valido --persist`. Uma inclusao aprovada fica disponivel para o proximo `-run ... --persist`; uma inclusao rejeitada nao cria nem altera o estado. Expectativas absolutas como `totalRegistros: 2` continuam sendo verificadas contra o estado carregado, portanto repetir o mesmo caso de inclusao pode falhar por ja existir um registro anterior. Para voltar ao ponto inicial, guarde ou remova conscientemente o `state.json`; isso nao altera o JSONC.
 
@@ -186,7 +181,7 @@ Para `GetSXENum(cAlias, cCampo)`, declare a regra na tabela do fixture: `"numera
 
 ### Cenarios de inclusao MVC
 
-Defina `cenariosMvc` no `testlab.jsonc` e selecione um cenario por nome:
+Defina `cenariosMvc` no `mock.json` e selecione um cenario por nome:
 
 ```jsonc
 "cenariosMvc": [
@@ -449,9 +444,9 @@ No `TRNSOL02`, `LRET: true` representa o botão Consultar e `false` representa C
 
 ## Testar um novo projeto
 
-1. Crie `testlab.jsonc` na pasta dos fontes do caso de teste. Para projetos com varios desafios, use um fixture por pasta; a CLI prefere o fixture mais proximo do `.prw`.
+1. Crie `mock.json` na pasta dos fontes do caso de teste. Para projetos com varios desafios, use um fixture por pasta; a CLI prefere o fixture mais proximo do `.prw`.
    Nos fixtures versionados, mantenha sempre `parametros`, `tabelas`, `funcoes`, `ambiente`, `dialogos`, `especificidadesPrw` e `consultas`, usando `[]` para secoes vazias.
-   JSONC aceita comentarios `//` e `/* ... */` e virgulas finais; dentro de strings, esses caracteres sao preservados. Arquivos `.json` continuam aceitos, mas seguem JSON estrito, sem comentarios nem virgulas finais.
+   `mock.json` usa JSON estrito, sem comentarios nem virgulas finais. Para fixtures legados ou caminhos explicitos em `.jsonc`, JSONC aceita comentarios `//` e `/* ... */` e virgulas finais; dentro de strings, esses caracteres sao preservados. Arquivos `.json` continuam aceitos, mas seguem JSON estrito, sem comentarios nem virgulas finais.
 2. Cadastre parâmetros, tabelas, funções externas e consultas usadas pelo fonte.
 3. Abra um terminal no diretório do `.prw`.
 4. Execute `advplab -run NomeDoFonte.prw`.
@@ -466,7 +461,7 @@ A suite propria do TestLab usa apenas fontes e fixtures deste repositorio; nao d
 Estes recursos passam pelo parser e pelo interpretador, portanto sua lógica é executada:
 
 - descoberta automática da primeira `User Function` ou seleção explícita por `--entry`;
-- descoberta de `testlab.jsonc` ou `testlab.json` no diretório do fonte ou nos diretórios pais, com fallback para os nomes antigos;
+- descoberta de `mock.json` no diretório do fonte ou nos diretórios pais, com fallback para os nomes antigos;
 - funções `Function`, `User Function` e `Static Function` dentro da cobertura do LivrePL;
 - variáveis `Local`, `Private`, `Public` e `Static`;
 - atribuições simples, `+=` e `-=`;
