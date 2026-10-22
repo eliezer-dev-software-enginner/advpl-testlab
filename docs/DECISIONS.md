@@ -375,3 +375,9 @@
 - **Data:** 22/10/2026
 - **Decisao:** Substituir o nome padrao por mock.json em --init, --mvc1, descoberta, mensagens, testes e documentacao atual. Gerar JSON estrito sem comentarios. Manter a leitura dos nomes antigos como fallback para projetos existentes e preservar o historico das ADRs anteriores. O fixture mais proximo prevalece; mock.json tem prioridade dentro da mesma pasta.
 - **Validacao:** Geracao inicial e MVC1 lidas por json.loads; execucao e inclusao com persistencia verificadas; testes de prioridade local, diretorio mais proximo e fallback legado.
+
+## ADR-048 — Fontes MVC1 em subdiretorio
+
+- **Data:** 22/10/2026
+- **Decisao:** --mvc1 cria Fontes/ALIASMVC.prw e mantem mock.json na raiz. Criar Fontes quando necessario e preservar seu conteudo existente. Mostrar caminhos relativos completos nas instrucoes da CLI. Em falha de escrita, remover apenas arquivos e diretorio criados pela geracao.
+- **Validacao:** 121 testes aprovados, incluindo descoberta do mock na raiz, inclusao com persistencia, Fontes preexistente e conflito com arquivo chamado Fontes. CLI instalada gerou, validou e executou Fontes/ZA4MVC.prw com o cenario incluir-registro.

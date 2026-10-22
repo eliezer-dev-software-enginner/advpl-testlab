@@ -47,7 +47,8 @@ def create_mvc1(table='ZA1'):
     table = table.upper()
     if not re.fullmatch(r'[A-Z][A-Z0-9]{2}', table, flags=re.ASCII):
         raise FixtureError('--table deve ser um alias de tres caracteres, como ZA4')
-    source_path = Path.cwd() / f'{table}MVC.prw'
+    source_directory = Path.cwd() / 'Fontes'
+    source_path = source_directory / f'{table}MVC.prw'
     fixture_path = Path.cwd() / 'mock.json'
     for path in (source_path, fixture_path):
         if path.exists() or path.is_symlink():
@@ -69,7 +70,11 @@ def create_mvc1(table='ZA1'):
         }],
     }
     created = []
+    created_directory = False
     try:
+        if not source_directory.exists():
+            source_directory.mkdir()
+            created_directory = True
         for path, content in (
             (source_path, MVC1_SOURCE.replace('@TABLE@', table)),
             (fixture_path, json.dumps(fixture, indent=2, ensure_ascii=False) + '\n'),
@@ -80,5 +85,7 @@ def create_mvc1(table='ZA1'):
     except OSError:
         for path in created:
             path.unlink()
+        if created_directory:
+            source_directory.rmdir()
         raise
     return source_path, fixture_path

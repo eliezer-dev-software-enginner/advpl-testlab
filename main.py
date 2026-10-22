@@ -35,7 +35,7 @@ def main(argv=None):
     )
     action = parser.add_mutually_exclusive_group(required=True)
     action.add_argument("--mvc1", action="store_true",
-                        help="gera fonte MVC tipo 1 e mock.json na pasta atual")
+                        help="gera MVC tipo 1 em Fontes/ e mock.json na pasta atual")
     parser.add_argument("--table", metavar="ALIAS",
                         help="tabela alvo de --mvc1 (padrao: ZA1)")
     action.add_argument("--init", action="store_true",
@@ -81,9 +81,10 @@ def main(argv=None):
                     args.name_profile != 'modern'):
                 raise FixtureError("--mvc1 nao aceita opcoes de execucao ou compilacao")
             source, fixture = create_mvc1(args.table if args.table is not None else 'ZA1')
-            print(f"[OK] Criados: {source.name} e {fixture.name}")
-            print(f"Validar: advplab -validate {source.name}")
-            print(f"Testar inclusao: advplab -run {source.name} --mvc-case incluir-registro")
+            source_name = source.relative_to(Path.cwd()).as_posix()
+            print(f"[OK] Criados: {source_name} e {fixture.name}")
+            print(f"Validar: advplab -validate {source_name}")
+            print(f"Testar inclusao: advplab -run {source_name} --mvc-case incluir-registro")
         elif args.init:
             if (args.fixture or args.entry or args.mvc_case or args.persist or
                     args.args_json is not None or args.tds_config or args.tds_cli or

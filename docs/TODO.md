@@ -7,6 +7,8 @@
 
 ## Foco atual
 
+- [x] Gerar fontes MVC1 no subdiretorio Fontes e manter mock.json na raiz (22/10/2026).
+
 - [x] Padronizar geracao e descoberta em mock.json com JSON estrito (22/10/2026).
 
 - [x] Gerar MVC1 com --mvc1 e --table opcional, fonte e fixture testaveis (22/10/2026).
