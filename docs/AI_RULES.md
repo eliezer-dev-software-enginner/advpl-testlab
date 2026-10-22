@@ -35,7 +35,7 @@ Depois da leitura, informar em poucas linhas o estado atual e a proxima acao.
 - Ausencia de dado obrigatorio deve produzir erro claro, evitando falso positivo em testes.
 - A simulacao nao persiste alteracoes no fixture original, salvo decisao futura registrada em ADR.
 - Ao criar ou editar um fixture versionado de um projeto AdvPL, nao omitir nenhuma secao de primeiro nivel: `parametros`, `tabelas`, `funcoes`, `ambiente`, `dialogos`, `especificidadesPrw` e `consultas`. Usar `[]` para secoes vazias. A leitura de fixtures minimos legados permanece aceita para compatibilidade.
-- Usar `mock.json` com comentarios explicativos nos novos cenarios. O nome mock.json aceita sintaxe JSONC. Preservar leitura dos nomes antigos e de `.json` estrito para compatibilidade.
+- Usar `mock.jsonc` com comentarios explicativos nos novos cenarios. A extensao .jsonc indica suporte a comentarios. Preservar leitura dos nomes antigos e de `.json` estrito para compatibilidade.
 - Os testes em `advpl-testlab/tests` devem usar apenas fontes e fixtures proprios deste repositorio. Testes que leem fontes de `desafios-aprendizado` pertencem a suite de integracao daquele projeto.
 
 ## 4. Padroes de codigo

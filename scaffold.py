@@ -49,7 +49,7 @@ def create_mvc1(table='ZA1'):
         raise FixtureError('--table deve ser um alias de tres caracteres, como ZA4')
     source_directory = Path.cwd() / 'Fontes'
     source_path = source_directory / f'{table}MVC.prw'
-    fixture_path = Path.cwd() / 'mock.json'
+    fixture_path = Path.cwd() / 'mock.jsonc'
     for path in (source_path, fixture_path):
         if path.exists() or path.is_symlink():
             raise FixtureError(f'Arquivo ja existe: {path}; nenhum arquivo foi criado')

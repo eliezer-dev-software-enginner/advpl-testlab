@@ -20,7 +20,7 @@ class JsoncFixtureTests(unittest.TestCase):
 
     def test_discovers_mock_before_legacy_names_in_same_directory(self):
         source = self.FIXTURES / "rotina.prw"
-        jsonc = self.FIXTURES / "mock.json"
+        jsonc = self.FIXTURES / "mock.jsonc"
         self.assertEqual(jsonc, discover_fixture(source))
 
     def test_legacy_name_remains_discoverable(self):
@@ -40,6 +40,9 @@ class JsoncFixtureTests(unittest.TestCase):
             mock = child / 'mock.json'
             mock.write_text('{}')
             self.assertEqual(mock, discover_fixture(source))
+            jsonc = child / 'mock.jsonc'
+            jsonc.write_text('{}')
+            self.assertEqual(jsonc, discover_fixture(source))
 
     def test_unterminated_block_comment_is_reported(self):
         with self.assertRaisesRegex(FixtureError, "Comentario de bloco nao terminado"):

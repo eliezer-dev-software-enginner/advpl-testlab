@@ -30,7 +30,7 @@ class Mvc1ScaffoldTests(unittest.TestCase):
     def test_custom_table_validates_and_includes_with_persistence(self):
         self.assertEqual(0, self.invoke('--mvc1', '--table', 'za4'))
         source = Path('Fontes/ZA4MVC.prw')
-        config = Path('mock.json')
+        config = Path('mock.jsonc')
         original = config.read_bytes()
         self.assertIn("cenariosMvc", Fixture.read_data(config))
         self.assertIn("// Campos de exemplo", config.read_text())
@@ -51,8 +51,8 @@ class Mvc1ScaffoldTests(unittest.TestCase):
         self.assertTrue(Path('Fontes/ZA1MVC.prw').exists())
 
     def test_existing_files_are_preserved_without_partial_output(self):
-        for name, other in [('Fontes/ZA4MVC.prw', 'mock.json'),
-                            ('mock.json', 'Fontes/ZA4MVC.prw')]:
+        for name, other in [('Fontes/ZA4MVC.prw', 'mock.jsonc'),
+                            ('mock.jsonc', 'Fontes/ZA4MVC.prw')]:
             with self.subTest(name=name):
                 path = Path(name)
                 path.parent.mkdir(parents=True, exist_ok=True)
@@ -73,7 +73,7 @@ class Mvc1ScaffoldTests(unittest.TestCase):
     def test_write_failure_removes_only_new_files(self):
         original = Path.open
         def fail_fixture(path, *args, **kwargs):
-            if path.name == 'mock.json':
+            if path.name == 'mock.jsonc':
                 raise PermissionError('falha simulada')
             return original(path, *args, **kwargs)
         with patch.object(Path, 'open', fail_fixture):
@@ -92,5 +92,5 @@ class Mvc1ScaffoldTests(unittest.TestCase):
     def test_fontes_as_file_fails_without_creating_mock(self):
         Path('Fontes').write_text('arquivo existente')
         self.assertEqual(1, self.invoke('--mvc1'))
-        self.assertFalse(Path('mock.json').exists())
+        self.assertFalse(Path('mock.jsonc').exists())
         self.assertEqual('arquivo existente', Path('Fontes').read_text())

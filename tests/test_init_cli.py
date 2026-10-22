@@ -20,7 +20,7 @@ class InitCliTests(unittest.TestCase):
                 os.chdir(directory)
                 with contextlib.redirect_stdout(io.StringIO()):
                     self.assertEqual(0, main(['--init']))
-                path = Path('mock.json')
+                path = Path('mock.jsonc')
                 self.assertIn('// Valores consultados por GetMV().', path.read_text())
                 self.assertEqual({
                     'parametros', 'tabelas', 'funcoes', 'ambiente',
@@ -37,7 +37,7 @@ class InitCliTests(unittest.TestCase):
             previous = Path.cwd()
             try:
                 os.chdir(directory)
-                path = Path('mock.json')
+                path = Path('mock.jsonc')
                 path.write_text('{"parametros": []}')
                 original = path.read_bytes()
                 with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
@@ -53,6 +53,6 @@ class InitCliTests(unittest.TestCase):
                 os.chdir(directory)
                 with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
                     self.assertEqual(1, main(['--init', '--persist']))
-                self.assertFalse(Path('mock.json').exists())
+                self.assertFalse(Path('mock.jsonc').exists())
             finally:
                 os.chdir(previous)

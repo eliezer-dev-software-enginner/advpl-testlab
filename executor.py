@@ -90,7 +90,7 @@ def discover_fixture(source_path):
     source_path = Path(source_path).resolve()
     for directory in (source_path.parent, *source_path.parents):
         for name in (
-            "mock.json",
+            "mock.jsonc", "mock.json",
             "testlab.jsonc", "testlab.json",
             "advpl-testlab.jsonc", "advpl-testlab.json",
         ):
@@ -98,7 +98,7 @@ def discover_fixture(source_path):
             if candidate.is_file():
                 return candidate
     raise FixtureError(
-        "Fixture nao encontrado. Crie 'mock.json' no diretorio do fonte "
+        "Fixture nao encontrado. Crie 'mock.jsonc' no diretorio do fonte "
         "ou em um diretorio pai, ou informe --fixture."
     )
 

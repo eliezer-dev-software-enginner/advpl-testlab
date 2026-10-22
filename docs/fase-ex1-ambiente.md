@@ -22,7 +22,7 @@ A suite propria passou com 72 testes, incluindo recarga do estado, inclusao MVC1
 
 ## Persistencia implementada
 
-`--persist` usa `state.json` no diretorio de `mock.json`. Ao iniciar, o executor carrega os registros salvos quando presentes, ou os da fixture quando ausentes. Apos sucesso com mudanca de registros, grava um arquivo temporario e o substitui atomicamente. Falha de execucao, expectativa MVC divergente ou inclusao MVC rejeitada nao escreve estado. O formato versionado guarda apenas registros por alias, nao metadados, parametros ou cenarios de teste. `state.json` invalido e rejeitado sem sobrescrita.
+`--persist` usa `state.json` no diretorio de `mock.jsonc`. Ao iniciar, o executor carrega os registros salvos quando presentes, ou os da fixture quando ausentes. Apos sucesso com mudanca de registros, grava um arquivo temporario e o substitui atomicamente. Falha de execucao, expectativa MVC divergente ou inclusao MVC rejeitada nao escreve estado. O formato versionado guarda apenas registros por alias, nao metadados, parametros ou cenarios de teste. `state.json` invalido e rejeitado sem sobrescrita.
 
 Salvar diretamente em `registros` do JSONC e tecnicamente possivel, mas mistura dados de teste versionados com estado mutavel, dificulta preservar comentarios e torna os testes dependentes da ordem de execucao. Por isso, nao foi ativado nem recomendado como padrao.
 

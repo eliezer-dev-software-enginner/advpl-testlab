@@ -61,7 +61,7 @@ O browse headless aceita `SetFields` com colunas calculadas por code blocks. A e
 
 Os utilitarios gerais sao herdados do LivrePL (ADR-044). Date/Time e arquivos possuem overrides deterministas. DDATABASE e campos D usam AdvPLDate em memoria; o estado persistido serializa datas como ISO/null e restaura o tipo na leitura.
 
-O adaptador de comandos suporta `PREPARE ENVIRONMENT EMPRESA ... FILIAL ...` e `RESET ENVIRONMENT` com estado local ao runtime. No EX1 de banco, `Date()` consulta `DDATABASE` deterministico e `xFilial()` pode usar a area corrente. `--persist` carrega e salva os registros em `state.json`, separado do fixture imutavel `mock.json`; inclui escritas por `RecLock` e MVC1. Sem a opcao, tudo continua somente em memoria (ADR-032).
+O adaptador de comandos suporta `PREPARE ENVIRONMENT EMPRESA ... FILIAL ...` e `RESET ENVIRONMENT` com estado local ao runtime. No EX1 de banco, `Date()` consulta `DDATABASE` deterministico e `xFilial()` pode usar a area corrente. `--persist` carrega e salva os registros em `state.json`, separado do fixture imutavel `mock.jsonc`; inclui escritas por `RecLock` e MVC1. Sem a opcao, tudo continua somente em memoria (ADR-032).
 
 Na validacao semantica, nomes `PRIVATE` declarados nos fontes carregados sao considerados potencialmente visiveis entre funcoes; `LOCAL` continua restrito a sua funcao. A disponibilidade efetiva de `PRIVATE` e resolvida no runtime pela pilha dinamica. Erros de identificador usam a linha da AST para apontar a leitura que falhou.
 
@@ -145,7 +145,7 @@ IDs literais de `GetValue('SUBMODELO', 'CAMPO')` tambem sao comparados aos IDs d
 ### Executor integral do TRNSOL02
 
 - CLI instalavel com `advplab -run arquivo.prw`.
-- Descoberta automatica da primeira `User Function` e de `mock.json` nos diretorios pais, com fallback para o nome antigo.
+- Descoberta automatica da primeira `User Function` e de `mock.jsonc` nos diretorios pais, com fallback para o nome antigo.
 - `--name-profile modern|legacy10` seleciona a politica de nomes do LivrePL tanto em `-validate` quanto em `-run`; `modern` e o padrao.
 - Validacao das tres funcoes do fonte por `-validate`.
 - Execucao de `Z04CON`, `fAskFiltros` e `fGerarExcel` pelo interpretador.
@@ -247,8 +247,8 @@ python -m unittest discover -s tests -v
 
 ## Nome e inicializacao (09/10/2026)
 
-O pacote e o comando principal se chamam `advplab`. `advpl-testlab` permanece como alias de compatibilidade; a pasta local do checkout conserva o nome antigo para preservar os caminhos dos projetos irmaos. `advplab --init` cria mock.json com comentarios na pasta atual, com as sete secoes vazias, e recusa sobrescrever um arquivo existente.
+O pacote e o comando principal se chamam `advplab`. `advpl-testlab` permanece como alias de compatibilidade; a pasta local do checkout conserva o nome antigo para preservar os caminhos dos projetos irmaos. `advplab --init` cria mock.jsonc com comentarios na pasta atual, com as sete secoes vazias, e recusa sobrescrever um arquivo existente.
 
 ## Gerador MVC1 (22/10/2026)
 
-`scaffold.py` gera um fonte MVC tipo 1 em Fontes/ e mock.json na pasta atual com `advplab --mvc1 [--table ZA4]` (padrao ZA1). Usa campos de exemplo, sete secoes canonicas e cenario de inclusao. Recusa conflitos antes de escrever; escrita exclusiva e limpeza de arquivos novos em caso de falha. Nao consulta SX3 ou cria tabelas no Protheus.
+`scaffold.py` gera um fonte MVC tipo 1 em Fontes/ e mock.jsonc na pasta atual com `advplab --mvc1 [--table ZA4]` (padrao ZA1). Usa campos de exemplo, sete secoes canonicas e cenario de inclusao. Recusa conflitos antes de escrever; escrita exclusiva e limpeza de arquivos novos em caso de falha. Nao consulta SX3 ou cria tabelas no Protheus.

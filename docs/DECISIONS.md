@@ -387,3 +387,9 @@
 - **Data:** 22/10/2026
 - **Decisao:** Manter o nome mock.json e restaurar comentarios explicativos em --init e --mvc1. O carregador aceita JSONC para esse nome especifico e para .jsonc; os demais arquivos .json permanecem estritos. Esta decisao substitui a exigencia de JSON estrito da ADR-047 para mock.json.
 - **Validacao:** 122 testes aprovados; comandos instalados geraram comentarios nos dois modos e executaram o cenario MVC1. Testes verificam comentarios, virgulas finais e rejeicao de comentarios nos demais .json.
+
+## ADR-050 — Extensao mock.jsonc
+
+- **Data:** 22/10/2026
+- **Decisao:** O nome solicitado e mock.jsonc. Atualizar geracao, mensagens, testes e documentacao para essa extensao, preservando comentarios. Descoberta prioriza mock.jsonc e mantem mock.json e nomes anteriores como fallback. Substitui o nome definido nas ADRs 047 e 049.
+- **Validacao:** Suite completa e comandos instalados de geracao e inclusao MVC1; prioridade de mock.jsonc sobre mock.json na mesma pasta.
