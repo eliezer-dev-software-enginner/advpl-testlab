@@ -247,7 +247,7 @@ python -m unittest discover -s tests -v
 
 ## Nome e inicializacao (09/10/2026)
 
-O pacote e o comando principal se chamam `advplab`. `advpl-testlab` permanece como alias de compatibilidade; a pasta local do checkout conserva o nome antigo para preservar os caminhos dos projetos irmaos. `advplab --init` cria mock.json em JSON estrito na pasta atual, com as sete secoes vazias, e recusa sobrescrever um arquivo existente.
+O pacote e o comando principal se chamam `advplab`. `advpl-testlab` permanece como alias de compatibilidade; a pasta local do checkout conserva o nome antigo para preservar os caminhos dos projetos irmaos. `advplab --init` cria mock.json com comentarios na pasta atual, com as sete secoes vazias, e recusa sobrescrever um arquivo existente.
 
 ## Gerador MVC1 (22/10/2026)
 

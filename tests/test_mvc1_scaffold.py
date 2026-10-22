@@ -1,6 +1,5 @@
 import contextlib
 import io
-import json
 import os
 import sys
 import tempfile
@@ -33,7 +32,8 @@ class Mvc1ScaffoldTests(unittest.TestCase):
         source = Path('Fontes/ZA4MVC.prw')
         config = Path('mock.json')
         original = config.read_bytes()
-        self.assertIn("cenariosMvc", json.loads(original))
+        self.assertIn("cenariosMvc", Fixture.read_data(config))
+        self.assertIn("// Campos de exemplo", config.read_text())
         fixture = Fixture.from_file(config)
         self.assertIn('ZA4', fixture.tabelas)
         self.assertEqual(4, validate_file(source))

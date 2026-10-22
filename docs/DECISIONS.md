@@ -381,3 +381,9 @@
 - **Data:** 22/10/2026
 - **Decisao:** --mvc1 cria Fontes/ALIASMVC.prw e mantem mock.json na raiz. Criar Fontes quando necessario e preservar seu conteudo existente. Mostrar caminhos relativos completos nas instrucoes da CLI. Em falha de escrita, remover apenas arquivos e diretorio criados pela geracao.
 - **Validacao:** 121 testes aprovados, incluindo descoberta do mock na raiz, inclusao com persistencia, Fontes preexistente e conflito com arquivo chamado Fontes. CLI instalada gerou, validou e executou Fontes/ZA4MVC.prw com o cenario incluir-registro.
+
+## ADR-049 — Comentarios no mock.json
+
+- **Data:** 22/10/2026
+- **Decisao:** Manter o nome mock.json e restaurar comentarios explicativos em --init e --mvc1. O carregador aceita JSONC para esse nome especifico e para .jsonc; os demais arquivos .json permanecem estritos. Esta decisao substitui a exigencia de JSON estrito da ADR-047 para mock.json.
+- **Validacao:** 122 testes aprovados; comandos instalados geraram comentarios nos dois modos e executaram o cenario MVC1. Testes verificam comentarios, virgulas finais e rejeicao de comentarios nos demais .json.

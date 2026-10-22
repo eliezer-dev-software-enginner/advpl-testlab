@@ -105,7 +105,7 @@ Abra o terminal na pasta do seu projeto AdvPL e execute:
 advplab --init
 ```
 
-O comando cria `mock.json` na pasta atual em JSON estrito com as sete secoes basicas vazias. Preencha os dados simulados usados pelos seus fontes e execute:
+O comando cria `mock.json` na pasta atual com comentarios com as sete secoes basicas vazias. Preencha os dados simulados usados pelos seus fontes e execute:
 
 ```powershell
 advplab -run rotina.prw
@@ -446,7 +446,7 @@ No `TRNSOL02`, `LRET: true` representa o botão Consultar e `false` representa C
 
 1. Crie `mock.json` na pasta dos fontes do caso de teste. Para projetos com varios desafios, use um fixture por pasta; a CLI prefere o fixture mais proximo do `.prw`.
    Nos fixtures versionados, mantenha sempre `parametros`, `tabelas`, `funcoes`, `ambiente`, `dialogos`, `especificidadesPrw` e `consultas`, usando `[]` para secoes vazias.
-   `mock.json` usa JSON estrito, sem comentarios nem virgulas finais. Para fixtures legados ou caminhos explicitos em `.jsonc`, JSONC aceita comentarios `//` e `/* ... */` e virgulas finais; dentro de strings, esses caracteres sao preservados. Arquivos `.json` continuam aceitos, mas seguem JSON estrito, sem comentarios nem virgulas finais.
+   `mock.json` aceita comentarios e virgulas finais (sintaxe JSONC, apesar da extensao .json). Para fixtures legados ou caminhos explicitos em `.jsonc`, JSONC aceita comentarios `//` e `/* ... */` e virgulas finais; dentro de strings, esses caracteres sao preservados. Outros arquivos `.json` continuam aceitos, mas seguem JSON estrito, sem comentarios nem virgulas finais.
 2. Cadastre parâmetros, tabelas, funções externas e consultas usadas pelo fonte.
 3. Abra um terminal no diretório do `.prw`.
 4. Execute `advplab -run NomeDoFonte.prw`.

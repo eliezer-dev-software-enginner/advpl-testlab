@@ -69,6 +69,19 @@ def create_mvc1(table='ZA1'):
             'esperado': {'salvou': True, 'totalRegistros': 1, 'registro': record},
         }],
     }
+    comments = {
+        'parametros': 'Valores consultados por GetMV().',
+        'tabelas': 'Campos de exemplo: ajuste ao SX3 da tabela real.',
+        'funcoes': 'Retornos simulados de funcoes.',
+        'ambiente': 'Variaveis do ambiente, como DDATABASE e TIME.',
+        'dialogos': 'Respostas de dialogos simulados.',
+        'especificidadesPrw': 'Configuracoes especificas por fonte PRW.',
+        'consultas': 'Resultados simulados de consultas.',
+        'cenariosMvc': 'Inclusao simulada; nao cria tabela no Protheus.',
+    }
+    fixture_text = json.dumps(fixture, indent=2, ensure_ascii=False) + '\n'
+    for key, comment in comments.items():
+        fixture_text = fixture_text.replace(f'  "{key}":', f'  // {comment}\n  "{key}":', 1)
     created = []
     created_directory = False
     try:
@@ -77,7 +90,7 @@ def create_mvc1(table='ZA1'):
             created_directory = True
         for path, content in (
             (source_path, MVC1_SOURCE.replace('@TABLE@', table)),
-            (fixture_path, json.dumps(fixture, indent=2, ensure_ascii=False) + '\n'),
+            (fixture_path, fixture_text),
         ):
             with path.open('x', encoding='utf-8') as output:
                 created.append(path)

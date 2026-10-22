@@ -17,12 +17,19 @@ from scaffold import create_mvc1
 
 
 INIT_FIXTURE = """{
+  // Valores consultados por GetMV().
   "parametros": [],
+  // Tabelas, campos e registros simulados.
   "tabelas": [],
+  // Retornos simulados de funcoes.
   "funcoes": [],
+  // Variaveis do ambiente, como DDATABASE e TIME.
   "ambiente": [],
+  // Respostas de dialogos simulados.
   "dialogos": [],
+  // Configuracoes especificas por fonte PRW.
   "especificidadesPrw": [],
+  // Resultados simulados de consultas.
   "consultas": []
 }
 """

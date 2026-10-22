@@ -44,3 +44,9 @@ class JsoncFixtureTests(unittest.TestCase):
     def test_unterminated_block_comment_is_reported(self):
         with self.assertRaisesRegex(FixtureError, "Comentario de bloco nao terminado"):
             Fixture.from_file(self.FIXTURES / "bloco-incompleto.jsonc")
+
+    def test_mock_json_accepts_comments_and_trailing_commas(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'mock.json'
+            path.write_text('{/* ambiente simulado */ "parametros": [], // valores\n}')
+            self.assertEqual({'parametros': []}, Fixture.read_data(path))

@@ -7,6 +7,8 @@
 
 ## Foco atual
 
+- [x] Restaurar comentarios explicativos no mock.json gerado e aceitar sua leitura como JSONC (22/10/2026).
+
 - [x] Gerar fontes MVC1 no subdiretorio Fontes e manter mock.json na raiz (22/10/2026).
 
 - [x] Padronizar geracao e descoberta em mock.json com JSON estrito (22/10/2026).

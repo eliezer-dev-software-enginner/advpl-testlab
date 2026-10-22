@@ -213,7 +213,8 @@ class Fixture:
         try:
             with fixture_path.open(encoding="utf-8") as fixture_file:
                 source = fixture_file.read()
-            if fixture_path.suffix.lower() == ".jsonc":
+            if (fixture_path.suffix.lower() == ".jsonc" or
+                    fixture_path.name.lower() == "mock.json"):
                 source = _jsonc_to_json(source)
             return json.loads(source)
         except FileNotFoundError as exc:

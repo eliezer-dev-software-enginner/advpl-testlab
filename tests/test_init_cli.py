@@ -1,6 +1,5 @@
 import contextlib
 import io
-import json
 import os
 import tempfile
 import sys
@@ -22,7 +21,7 @@ class InitCliTests(unittest.TestCase):
                 with contextlib.redirect_stdout(io.StringIO()):
                     self.assertEqual(0, main(['--init']))
                 path = Path('mock.json')
-                self.assertIsInstance(json.loads(path.read_text()), dict)
+                self.assertIn('// Valores consultados por GetMV().', path.read_text())
                 self.assertEqual({
                     'parametros', 'tabelas', 'funcoes', 'ambiente',
                     'dialogos', 'especificidadesPrw', 'consultas',
