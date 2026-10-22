@@ -7,6 +7,8 @@
 
 ## Foco atual
 
+- [x] Gerar README.md contextualizado no projeto MVC1 (22/10/2026).
+
 - [x] Restaurar comentarios explicativos no mock.jsonc gerado e aceitar sua leitura como JSONC (22/10/2026).
 
 - [x] Gerar fontes MVC1 no subdiretorio Fontes e manter mock.jsonc na raiz (22/10/2026).

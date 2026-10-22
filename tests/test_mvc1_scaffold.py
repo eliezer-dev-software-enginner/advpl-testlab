@@ -45,6 +45,14 @@ class Mvc1ScaffoldTests(unittest.TestCase):
         self.assertTrue(Path('state.json').is_file())
         self.assertEqual(original, config.read_bytes())
         self.assertIn("Static Function ViewDef()", source.read_text())
+        readme = Path('README.md').read_text()
+        self.assertIn('Cadastro ZA4', readme)
+        self.assertIn('mock.jsonc', readme)
+        self.assertNotIn('@TABLE@', readme)
+        for command in readme.splitlines():
+            if command.startswith('advplab ') and '--persist' not in command:
+                with contextlib.redirect_stdout(io.StringIO()):
+                    self.assertEqual(0, main(command.split()[1:]))
 
     def test_default_table(self):
         self.assertEqual(0, self.invoke('--mvc1'))
@@ -94,3 +102,21 @@ class Mvc1ScaffoldTests(unittest.TestCase):
         self.assertEqual(1, self.invoke('--mvc1'))
         self.assertFalse(Path('mock.jsonc').exists())
         self.assertEqual('arquivo existente', Path('Fontes').read_text())
+
+    def test_existing_readme_prevents_generation_and_is_preserved(self):
+        Path('README.md').write_text('Documentacao existente')
+        self.assertEqual(1, self.invoke('--mvc1', '--table', 'ZA4'))
+        self.assertEqual('Documentacao existente', Path('README.md').read_text())
+        self.assertFalse(Path('Fontes').exists())
+        self.assertFalse(Path('mock.jsonc').exists())
+
+    def test_readme_write_failure_rolls_back_generated_files(self):
+        original = Path.open
+        def fail_readme(path, *args, **kwargs):
+            if path.name == 'README.md':
+                raise PermissionError('falha simulada')
+            return original(path, *args, **kwargs)
+        with patch.object(Path, 'open', fail_readme):
+            with self.assertRaises(PermissionError):
+                create_mvc1('ZA4')
+        self.assertEqual([], list(Path.cwd().iterdir()))

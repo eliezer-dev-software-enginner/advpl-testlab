@@ -252,3 +252,5 @@ O pacote e o comando principal se chamam `advplab`. `advpl-testlab` permanece co
 ## Gerador MVC1 (22/10/2026)
 
 `scaffold.py` gera um fonte MVC tipo 1 em Fontes/ e mock.jsonc na pasta atual com `advplab --mvc1 [--table ZA4]` (padrao ZA1). Usa campos de exemplo, sete secoes canonicas e cenario de inclusao. Recusa conflitos antes de escrever; escrita exclusiva e limpeza de arquivos novos em caso de falha. Nao consulta SX3 ou cria tabelas no Protheus.
+
+O gerador MVC1 tambem cria README.md na raiz com estrutura, comandos, ajustes de campos, persistencia e limites da simulacao. README existente bloqueia a geracao sem sobrescrever conteudo.

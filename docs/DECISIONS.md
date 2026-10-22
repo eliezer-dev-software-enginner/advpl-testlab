@@ -393,3 +393,9 @@
 - **Data:** 22/10/2026
 - **Decisao:** O nome solicitado e mock.jsonc. Atualizar geracao, mensagens, testes e documentacao para essa extensao, preservando comentarios. Descoberta prioriza mock.jsonc e mantem mock.json e nomes anteriores como fallback. Substitui o nome definido nas ADRs 047 e 049.
 - **Validacao:** Suite completa e comandos instalados de geracao e inclusao MVC1; prioridade de mock.jsonc sobre mock.json na mesma pasta.
+
+## ADR-051 — README do projeto MVC1 gerado
+
+- **Data:** 22/10/2026
+- **Decisao:** Gerar README.md junto de mock.jsonc e Fontes/ALIASMVC.prw. Documentar tabela, estrutura, validacao, execucao, inclusao, persistencia, ajuste de campos e limites. Incluir README na verificacao de conflitos e na limpeza de arquivos novos em falhas de gravacao.
+- **Validacao:** 124 testes aprovados, incluindo execucao dos comandos sem persistencia documentados no README, preservacao de README existente e rollback em falha de escrita do README. CLI instalada verificada com tabela ZA4.

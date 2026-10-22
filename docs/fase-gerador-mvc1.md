@@ -7,3 +7,5 @@ O fonte usa FWMBrowse, MenuDef, MPFormModel/AddFields e FWFormView. O mock.jsonc
 Validacao local: 118 testes aprovados. O fonte gerado valida quatro funcoes; o cenario retorna salvou=true, totalRegistros=1. Testes verificam preservacao de arquivos e limpeza em falha de escrita.
 
 Fora do escopo: descoberta de SX3, criacao de tabelas no Protheus, interface grafica MVC e validacao contra AppServer/RPO real. Ajustar campos e chave primaria ao dicionario do ambiente antes da compilacao real.
+
+O README.md gerado na raiz identifica a tabela, mostra a estrutura e comandos de validacao, browse, inclusao e persistencia. Explica ajustes ao SX3 e limites da simulacao. README existente bloqueia a geracao; falha na escrita desfaz apenas os arquivos e diretorio novos.

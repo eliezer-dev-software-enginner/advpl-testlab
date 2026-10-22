@@ -87,9 +87,9 @@ def main(argv=None):
                     args.include or args.compile_order or args.dry_run or
                     args.name_profile != 'modern'):
                 raise FixtureError("--mvc1 nao aceita opcoes de execucao ou compilacao")
-            source, fixture = create_mvc1(args.table if args.table is not None else 'ZA1')
+            source, fixture, readme = create_mvc1(args.table if args.table is not None else 'ZA1')
             source_name = source.relative_to(Path.cwd()).as_posix()
-            print(f"[OK] Criados: {source_name} e {fixture.name}")
+            print(f"[OK] Criados: {source_name}, {fixture.name} e {readme.name}")
             print(f"Validar: advplab -validate {source_name}")
             print(f"Testar inclusao: advplab -run {source_name} --mvc-case incluir-registro")
         elif args.init:

@@ -43,6 +43,64 @@ Return oView
 '''
 
 
+MVC1_README = """# Cadastro @TABLE@ - MVC tipo 1
+
+Projeto gerado pelo AdvPLab para a tabela `@TABLE@`.
+
+## Estrutura
+
+```text
+Fontes/
+    @TABLE@MVC.prw
+mock.jsonc
+README.md
+```
+
+O fonte inclui browse, MenuDef, ModelDef e ViewDef para um cadastro de uma tabela.
+`mock.jsonc` define os dados simulados e aceita comentarios.
+
+## Executar localmente
+
+Com o comando `advplab` instalado, abra o terminal na raiz deste projeto:
+
+```bash
+advplab -validate Fontes/@TABLE@MVC.prw
+advplab -run Fontes/@TABLE@MVC.prw
+advplab -run Fontes/@TABLE@MVC.prw --mvc-case incluir-registro
+```
+
+A validacao deve indicar quatro funcoes. O browse inicial mostra a tabela vazia.
+O cenario `incluir-registro` espera `salvou=true, totalRegistros=1`.
+Sem `--persist`, os registros ficam apenas em memoria e o mock nao e alterado.
+
+## Ajustar a tabela
+
+Os campos `@TABLE@_FILIAL`, `@TABLE@_COD` e `@TABLE@_DESC` sao exemplos.
+Ajuste `tabelas`, `campos` e `cenariosMvc` no mock e a chave primaria em
+`ModelDef` conforme o SX3 da tabela real. Acrescente as regras de negocio
+na pos-validacao do modelo, que inicialmente aceita qualquer registro.
+
+## Persistencia opcional
+
+```bash
+advplab -run Fontes/@TABLE@MVC.prw --mvc-case incluir-registro --persist
+advplab -run Fontes/@TABLE@MVC.prw --persist
+```
+
+A inclusao grava `state.json` na raiz. O segundo comando exibe o estado salvo.
+Repetir a inclusao com `--persist` pode falhar na expectativa de um registro.
+Para reiniciar, guarde ou remova conscientemente `state.json`; o mock e preservado.
+
+## Limites
+
+Os testes locais simulam o ambiente sem AppServer e sem banco real.
+O menu inclui visualizar, incluir, alterar e excluir; o cenario automatizado
+cobre inclusao e nao reproduz a interface grafica MVC.
+O gerador nao consulta SX3 nem cria tabelas no Protheus. A compilacao no RPO
+exige um ambiente Protheus configurado e os campos reais da tabela.
+"""
+
+
 def create_mvc1(table='ZA1'):
     table = table.upper()
     if not re.fullmatch(r'[A-Z][A-Z0-9]{2}', table, flags=re.ASCII):
@@ -50,7 +108,8 @@ def create_mvc1(table='ZA1'):
     source_directory = Path.cwd() / 'Fontes'
     source_path = source_directory / f'{table}MVC.prw'
     fixture_path = Path.cwd() / 'mock.jsonc'
-    for path in (source_path, fixture_path):
+    readme_path = Path.cwd() / 'README.md'
+    for path in (source_path, fixture_path, readme_path):
         if path.exists() or path.is_symlink():
             raise FixtureError(f'Arquivo ja existe: {path}; nenhum arquivo foi criado')
     record = {f'{table}_FILIAL': '01', f'{table}_COD': '000001',
@@ -91,6 +150,7 @@ def create_mvc1(table='ZA1'):
         for path, content in (
             (source_path, MVC1_SOURCE.replace('@TABLE@', table)),
             (fixture_path, fixture_text),
+            (readme_path, MVC1_README.replace('@TABLE@', table)),
         ):
             with path.open('x', encoding='utf-8') as output:
                 created.append(path)
@@ -101,4 +161,4 @@ def create_mvc1(table='ZA1'):
         if created_directory:
             source_directory.rmdir()
         raise
-    return source_path, fixture_path
+    return source_path, fixture_path, readme_path

@@ -121,7 +121,7 @@ Na pasta em que deseja criar os arquivos, execute:
 advplab --mvc1 --table ZA4
 ```
 
-Cria o subdiretorio `Fontes` automaticamente, se necessario. Gera `Fontes/ZA4MVC.prw` com browse, MenuDef, ModelDef e ViewDef, alem de `mock.jsonc` com a tabela simulada e o cenario `incluir-registro`. `--table` e opcional: `advplab --mvc1` usa ZA1. Aliases devem ter tres caracteres alfanumericos e comecar com letra; minusculas sao convertidas para maiusculas.
+Cria o subdiretorio `Fontes` automaticamente, se necessario. Gera `Fontes/ZA4MVC.prw` com browse, MenuDef, ModelDef e ViewDef, alem de `mock.jsonc` com a tabela simulada e o cenario `incluir-registro`, e `README.md` com a estrutura, comandos de teste, persistencia e orientacoes para ajustar a tabela. `--table` e opcional: `advplab --mvc1` usa ZA1. Aliases devem ter tres caracteres alfanumericos e comecar com letra; minusculas sao convertidas para maiusculas.
 
 ```bash
 advplab -validate Fontes/ZA4MVC.prw
@@ -131,7 +131,7 @@ advplab -run Fontes/ZA4MVC.prw --mvc-case incluir-registro
 
 Os campos `ZA4_FILIAL`, `ZA4_COD` e `ZA4_DESC` sao exemplos. Ajuste os campos do fixture e a chave primaria do fonte ao dicionario real. O gerador nao consulta SX3 nem cria tabelas no Protheus. O menu gerado inclui visualizar, incluir, alterar e excluir; o teste local automatizado cobre inclusao, sem reproduzir a interface MVC.
 
-Se o fonte ou `mock.jsonc` ja existir na pasta atual, o comando recusa a geracao e preserva os arquivos. Use uma pasta vazia; nao combine `--mvc1` com `--init` ou opcoes de execucao.
+Se o fonte, `mock.jsonc` ou `README.md` ja existir no destino, o comando recusa a geracao e preserva os arquivos. Use uma pasta vazia; nao combine `--mvc1` com `--init` ou opcoes de execucao.
 
 ### `ambiente`: bloco pronto para `mock.jsonc`
 
