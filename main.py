@@ -13,6 +13,7 @@ from lexer import LexError
 from naming import NameCollisionError
 from parser import ParseError
 from state_store import StateError
+from scaffold import create_mvc1
 
 
 INIT_FIXTURE = """{
@@ -40,6 +41,10 @@ def main(argv=None):
         description="Executa fontes AdvPL com fixtures JSON, sem Protheus.",
     )
     action = parser.add_mutually_exclusive_group(required=True)
+    action.add_argument("--mvc1", action="store_true",
+                        help="gera fonte MVC tipo 1 e testlab.jsonc na pasta atual")
+    parser.add_argument("--table", metavar="ALIAS",
+                        help="tabela alvo de --mvc1 (padrao: ZA1)")
     action.add_argument("--init", action="store_true",
                         help="cria testlab.jsonc no diretorio atual sem sobrescrever")
     action.add_argument("-run", "--run", dest="source", metavar="ARQUIVO.PRW")
@@ -74,7 +79,19 @@ def main(argv=None):
     )
     args = parser.parse_args(argv)
     try:
-        if args.init:
+        if args.table is not None and not args.mvc1:
+            raise FixtureError("--table requer --mvc1")
+        if args.mvc1:
+            if (args.fixture or args.entry or args.mvc_case or args.persist or
+                    args.args_json is not None or args.tds_config or args.tds_cli or
+                    args.include or args.compile_order or args.dry_run or
+                    args.name_profile != 'modern'):
+                raise FixtureError("--mvc1 nao aceita opcoes de execucao ou compilacao")
+            source, fixture = create_mvc1(args.table if args.table is not None else 'ZA1')
+            print(f"[OK] Criados: {source.name} e {fixture.name}")
+            print(f"Validar: advplab -validate {source.name}")
+            print(f"Testar inclusao: advplab -run {source.name} --mvc-case incluir-registro")
+        elif args.init:
             if (args.fixture or args.entry or args.mvc_case or args.persist or
                     args.args_json is not None or args.tds_config or args.tds_cli or
                     args.include or args.compile_order or args.dry_run):

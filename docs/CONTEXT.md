@@ -248,3 +248,7 @@ python -m unittest discover -s tests -v
 ## Nome e inicializacao (09/10/2026)
 
 O pacote e o comando principal se chamam `advplab`. `advpl-testlab` permanece como alias de compatibilidade; a pasta local do checkout conserva o nome antigo para preservar os caminhos dos projetos irmaos. `advplab --init` cria testlab.jsonc comentado na pasta atual, com as sete secoes vazias, e recusa sobrescrever um arquivo existente.
+
+## Gerador MVC1 (22/10/2026)
+
+`scaffold.py` gera um fonte MVC tipo 1 e testlab.jsonc na pasta atual com `advplab --mvc1 [--table ZA4]` (padrao ZA1). Usa campos de exemplo, sete secoes canonicas e cenario de inclusao. Recusa conflitos antes de escrever; escrita exclusiva e limpeza de arquivos novos em caso de falha. Nao consulta SX3 ou cria tabelas no Protheus.

@@ -7,6 +7,8 @@
 
 ## Foco atual
 
+- [x] Gerar MVC1 com --mvc1 e --table opcional, fonte e fixture testaveis (22/10/2026).
+
 - [x] Renomear pacote/CLI para advplab e criar testlab.jsonc com --init (09/10/2026).
 
 - [x] Centralizar utilitarios gerais no LivrePL, preservar overrides de ambiente e persistir datas tipadas (05/10/2026).

@@ -363,3 +363,9 @@
 - **Contexto:** Simplificar o nome da ferramenta e iniciar a configuracao diretamente na pasta de um projeto AdvPL.
 - **Decisao:** Renomear o pacote e a CLI principal para advplab; preservar advpl-testlab como alias. --init cria testlab.jsonc UTF-8 comentado, com as sete secoes canonicas vazias, por abertura exclusiva, sem sobrescrever arquivos existentes. Nomes de fixtures e pasta do checkout permanecem compativeis com os projetos irmaos.
 - **Validacao:** 113 testes passaram, incluindo criacao no diretorio atual, leitura pelo Fixture, execucao de um PRW, preservacao de arquivo existente e rejeicao de opcoes incompativeis. Exemplo getmv executado pela CLI.
+
+## ADR-046 — Gerar projeto MVC tipo 1
+
+- **Data:** 22/10/2026
+- **Decisao:** --mvc1 gera ALIASMVC.prw e testlab.jsonc na pasta atual; --table define um alias de tres caracteres (padrao ZA1). Fonte com browse, menu, modelo e view baseado no exemplo MVC1 existente; fixture com campos de exemplo e cenario incluir-registro. Nao inferir o dicionario SX3 real. Preservar arquivos existentes e remover apenas arquivos novos em caso de erro de escrita.
+- **Validacao:** 118 testes aprovados, incluindo geracao customizada/padrao, validacao e inclusao com persistencia, fixture imutavel, conflitos, alias invalido e falha de gravacao. Sem alteracoes no interpretador LivrePL.

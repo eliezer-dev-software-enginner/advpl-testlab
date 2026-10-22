@@ -113,6 +113,26 @@ advplab -run rotina.prw
 
 Se `testlab.jsonc` ja existir, `--init` informa o erro e preserva seu conteudo. O comando antigo `advpl-testlab` continua disponivel como alias. Para obter o novo comando em uma instalacao existente, reinstale com `python -m pip install -e .` na pasta deste repositorio.
 
+### Criar um projeto MVC tipo 1
+
+Na pasta em que deseja criar os arquivos, execute:
+
+```bash
+advplab --mvc1 --table ZA4
+```
+
+Gera `ZA4MVC.prw` com browse, MenuDef, ModelDef e ViewDef, alem de `testlab.jsonc` com a tabela simulada e o cenario `incluir-registro`. `--table` e opcional: `advplab --mvc1` usa ZA1. Aliases devem ter tres caracteres alfanumericos e comecar com letra; minusculas sao convertidas para maiusculas.
+
+```bash
+advplab -validate ZA4MVC.prw
+advplab -run ZA4MVC.prw
+advplab -run ZA4MVC.prw --mvc-case incluir-registro
+```
+
+Os campos `ZA4_FILIAL`, `ZA4_COD` e `ZA4_DESC` sao exemplos. Ajuste os campos do fixture e a chave primaria do fonte ao dicionario real. O gerador nao consulta SX3 nem cria tabelas no Protheus. O menu gerado inclui visualizar, incluir, alterar e excluir; o teste local automatizado cobre inclusao, sem reproduzir a interface MVC.
+
+Se o fonte ou `testlab.jsonc` ja existir na pasta atual, o comando recusa a geracao e preserva os arquivos. Use uma pasta vazia; nao combine `--mvc1` com `--init` ou opcoes de execucao.
+
 ### `ambiente`: bloco pronto para `testlab.jsonc`
 
 Copie a propriedade abaixo para a raiz do seu fixture e ajuste os valores. Este bloco reune todas as chaves de ambiente com significado proprio no runtime atual; as de e-mail so afetam fontes que usam `TMailManager`/`TMailMessage`. `0` significa sucesso simulado nesses resultados.

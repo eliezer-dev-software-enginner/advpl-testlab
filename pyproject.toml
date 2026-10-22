@@ -13,4 +13,4 @@ advplab = "main:main"
 advpl-testlab = "main:main"
 
 [tool.setuptools]
-py-modules = ["diagnostics", "executor", "fixture_runtime", "main", "semantic", "state_store"]
+py-modules = ["diagnostics", "executor", "fixture_runtime", "main", "semantic", "state_store", "scaffold"]
