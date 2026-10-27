@@ -399,3 +399,9 @@
 - **Data:** 22/10/2026
 - **Decisao:** Gerar README.md junto de mock.jsonc e Fontes/ALIASMVC.prw. Documentar tabela, estrutura, validacao, execucao, inclusao, persistencia, ajuste de campos e limites. Incluir README na verificacao de conflitos e na limpeza de arquivos novos em falhas de gravacao.
 - **Validacao:** 124 testes aprovados, incluindo execucao dos comandos sem persistencia documentados no README, preservacao de README existente e rollback em falha de escrita do README. CLI instalada verificada com tabela ZA4.
+
+## ADR-052 — Reutilizar sessao autenticada do VS Code
+
+- **Data:** 27/10/2026
+- **Decisao:** Tornar --tds-config opcional. Leitura de ~/.totvsls/servers.json, servidor conectado e token por ambiente; inicializar processo LSP e usar reconnect antes de compilation, conforme extensao oficial. Includes salvos por padrao. Separar token de sessao da autorizacao de compilacao e verificar ambiente devolvido. Nao gravar tokens/JSON nem desconectar a sessao do usuario. Preservar a alternativa INI. Corrigir descoberta do binario por plataforma.
+- **Validacao:** 136 testes proprios aprovados, incluindo subprocesso LSP simulado e dry-run. Nenhuma compilacao real. Inicializacao LSP do advpls instalado validada com espera de 60s, sem AppServer; esperas menores de 10/15s expiravam. Reconexao e compilacao real permanecem pendentes e documentadas.

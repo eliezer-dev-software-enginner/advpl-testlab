@@ -254,3 +254,7 @@ O pacote e o comando principal se chamam `advplab`. `advpl-testlab` permanece co
 `scaffold.py` gera um fonte MVC tipo 1 em Fontes/ e mock.jsonc na pasta atual com `advplab --mvc1 [--table ZA4]` (padrao ZA1). Usa campos de exemplo, sete secoes canonicas e cenario de inclusao. Recusa conflitos antes de escrever; escrita exclusiva e limpeza de arquivos novos em caso de falha. Nao consulta SX3 ou cria tabelas no Protheus.
 
 O gerador MVC1 tambem cria README.md na raiz com estrutura, comandos, ajustes de campos, persistencia e limites da simulacao. README existente bloqueia a geracao sem sobrescrever conteudo.
+
+## Compilacao pela sessao salva (27/10/2026)
+
+Sem --tds-config, -compile le ~/.totvsls/servers.json e usa tds_session.py para iniciar o LS, reconectar com token e compilar. Includes do servidor/globais por padrao; --include substitui. Alternativa INI preservada. Descoberta de binario agora usa linux/mac/windows. Sem gravacao do JSON nem senha. Handshake LSP local validado com timeout de 60s; reconexao e compilacao real pendentes. Ver fase-compilacao-rpo.md.

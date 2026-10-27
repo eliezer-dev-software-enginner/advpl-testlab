@@ -57,12 +57,12 @@ def main(argv=None):
     )
     action.add_argument(
         "-compile", "--compile", dest="compile_source", metavar="ARQUIVO.PRW",
-        help="recompila recursivamente no RPO via TDS-CLI oficial",
+        help="recompila no RPO com sessao do VS Code ou INI opcional",
     )
     parser.add_argument("--fixture", help="fixture JSON/JSONC (padrao: mock.jsonc)")
-    parser.add_argument("--tds-config", help="INI privado com autenticacao do TDS-CLI (somente -compile)")
-    parser.add_argument("--tds-cli", help="caminho do advpls.exe (deteccao automatica por padrao)")
-    parser.add_argument("--include", action="append", default=[], help="diretorio de includes; pode repetir")
+    parser.add_argument("--tds-config", help="alternativa: INI privado do TDS-CLI; padrao usa sessao do VS Code")
+    parser.add_argument("--tds-cli", help="caminho do advpls/advpls.exe (deteccao automatica por padrao)")
+    parser.add_argument("--include", action="append", default=[], help="includes; pode repetir (padrao: servidor conectado no VS Code)")
     parser.add_argument("--compile-order", help="ordem explicita, separada por virgulas, de todos os PRW do grafo")
     parser.add_argument("--dry-run", action="store_true", help="mostra a ordem de compilacao sem acessar o RPO")
     parser.add_argument("--entry", help="User Function de entrada")
@@ -111,8 +111,6 @@ def main(argv=None):
             for index, path in enumerate(paths, start=1):
                 print(f"{index}. {path}")
             if not args.dry_run:
-                if not args.tds_config:
-                    raise CompileError("-compile requer --tds-config; use --dry-run para ver o plano")
                 compile_source_tree(
                     args.compile_source,
                     config_path=args.tds_config,

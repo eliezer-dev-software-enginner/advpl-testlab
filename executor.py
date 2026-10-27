@@ -2,6 +2,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -221,15 +222,16 @@ def find_tds_cli(explicit_path=None):
         Path.home() / ".vscode-insiders" / "extensions",
     )
     candidates = []
+    platform_directory = "windows" if os.name == "nt" else ("mac" if sys.platform == "darwin" else "linux")
     for extension_root in extension_roots:
         if extension_root.is_dir():
             candidates.extend(extension_root.glob(
-                f"totvs.tds-vscode-*/node_modules/@totvs/tds-ls/bin/windows/{executable}"
+                f"totvs.tds-vscode-*/node_modules/@totvs/tds-ls/bin/{platform_directory}/{executable}"
             ))
     if candidates:
         return sorted(candidates)[-1].resolve()
     raise CompileError(
-        "TDS-CLI nao encontrado. Informe --tds-cli com o caminho do advpls.exe."
+        "TDS-CLI nao encontrado. Informe --tds-cli com o caminho do advpls (ou advpls.exe no Windows)."
     )
 
 
@@ -256,10 +258,19 @@ def _read_authentication(config_path):
     return content.rstrip() + "\r\n"
 
 
-def compile_source_tree(source_path, *, config_path, includes, cli_path=None,
+def compile_source_tree(source_path, *, config_path=None, includes=(), cli_path=None,
                         compile_order=None):
     paths = ordered_sources(source_path, compile_order)
-    include_paths = [Path(item).resolve() for item in includes]
+    session = None
+    if config_path is None:
+        from tds_session import read_connected_server, TdsSessionError
+        try:
+            session = read_connected_server()
+        except TdsSessionError as exc:
+            raise CompileError(str(exc)) from None
+        includes = includes or session[2]
+    include_paths = [Path(os.path.expandvars(str(item).replace("${workspaceFolder}", str(Path.cwd())))).expanduser().resolve()
+                     for item in includes]
     if not include_paths:
         raise CompileError("Informe ao menos um diretorio com --include")
     for include_path in include_paths:
@@ -269,6 +280,13 @@ def compile_source_tree(source_path, *, config_path, includes, cli_path=None,
             raise CompileError(f"Caminho de include invalido: '{include_path}'")
 
     cli = find_tds_cli(cli_path)
+    if session is not None:
+        from tds_session import compile_connected, TdsSessionError
+        try:
+            compile_connected(paths, include_paths, cli, session[0], session[1], session[3])
+        except TdsSessionError as exc:
+            raise CompileError(str(exc)) from None
+        return paths
     authentication = _read_authentication(config_path)
     with tempfile.TemporaryDirectory(prefix="advpl-testlab-compile-") as temp_dir:
         directory = Path(temp_dir)

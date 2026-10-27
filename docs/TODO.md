@@ -7,6 +7,10 @@
 
 ## Foco atual
 
+- [x] Implementar compilacao usando sessao salva do VS Code com testes de protocolo e configuracao (27/10/2026).
+- [x] Validar inicializacao LSP local com a espera padrao de 60s.
+- [ ] Validar reconexao/compilacao real com token.
+
 - [x] Gerar README.md contextualizado no projeto MVC1 (22/10/2026).
 
 - [x] Restaurar comentarios explicativos no mock.jsonc gerado e aceitar sua leitura como JSONC (22/10/2026).

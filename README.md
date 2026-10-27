@@ -18,7 +18,7 @@ Os utilitarios gerais de texto, arrays, datas e erros agora pertencem ao LivrePL
 - `parametros` e `tabelas` usam listas de objetos no formato canonico.
 - Cada tabela possui `campos` opcionais e `registros`.
 - CLI instalavel `advplab -run arquivo.prw` com descoberta automatica da primeira `User Function` e do fixture.
-- Compilacao real opcional no RPO via `advplab -compile arquivo.prw`, usando o TDS-CLI oficial, conexao fornecida pelo usuario e descoberta recursiva de `//usePrw`.
+- Compilacao real opcional no RPO via `advplab -compile arquivo.prw`, usando o Language Server oficial e a sessao salva pelo VS Code (ou TDS-CLI com INI opcional) e descoberta recursiva de `//usePrw`.
 - Validacao semantica rejeita variaveis nao declaradas e funcoes inexistentes antes da execucao.
 - Primeiro fonte real executado pelo parser e interpretador completos: `TRNSOL02.prw`, incluindo diálogo headless, statement, alias, browse e exportação virtual.
 - `FWMBrowse:SetFields` acrescenta colunas calculadas por code blocks a exibicao textual, avaliadas por registro; mascaras e visibilidade SX3 nao sao simuladas.
@@ -217,7 +217,7 @@ As funcoes dos arquivos carregados participam da validacao semantica e da execuc
 
 ### Compilacao real recursiva no RPO (opcional)
 
-`-validate` e `-run` continuam **locais e headless**. Para recompilar no RPO conectado ao AppServer, use `-compile`. Essa opcao chama o `advpls.exe` do [TDS-CLI oficial](https://github.com/totvs/tds-ls/blob/master/TDS-CLi.md); ela nao simula a tecla Ctrl+F9 e nunca roda implicitamente. O TestLab procura o executavel no `PATH` ou na extensao TOTVS do VS Code; se necessario, informe `--tds-cli`.
+`-validate` e `-run` continuam **locais e headless**. Para recompilar no RPO conectado ao AppServer, use `-compile`. Essa opcao chama o `advpls`/`advpls.exe` do [TDS-CLI oficial](https://github.com/totvs/tds-ls/blob/master/TDS-CLi.md); ela nao simula a tecla Ctrl+F9 e nunca roda implicitamente. O TestLab procura o executavel no `PATH` ou na extensao TOTVS do VS Code; se necessario, informe `--tds-cli`.
 
 Primeiro confira o plano, sem conexao nem escrita no RPO:
 
@@ -225,7 +225,17 @@ Primeiro confira o plano, sem conexao nem escrita no RPO:
 advplab -compile TRNSOL01.prw --dry-run
 ```
 
-Para compilar, crie **fora do repositorio** um arquivo privado `tds-auth.ini` em CP1252 com sua conexao real (nao compartilhe nem versione usuario, senha ou token):
+Por padrao, conecte e autentique o servidor no VS Code e execute:
+
+```bash
+advplab -compile Fontes/ZA4MVC.prw
+```
+
+O comando le `~/.totvsls/servers.json` usando a pasta pessoal do usuario atual, seleciona `connectedServer`, reutiliza o token da sessao/ambiente e os includes desse servidor (ou os includes globais). Nao precisa informar usuario, senha ou `--tds-config`. `--include` substitui os includes salvos; caminhos relativos e `${workspaceFolder}` sao resolvidos pela pasta atual do terminal.
+
+O binario `advpls` e localizado conforme Linux, Windows ou macOS. O modo padrao usa LSP: inicializa o processo local, solicita reconexao com o token e envia a compilacao. Token ausente/recusado exige reconectar pelo VS Code; ambiente retornado diferente bloqueia o envio. O arquivo servers.json nao e alterado e os tokens nao sao gravados em arquivos temporarios nem argumentos de processo. A verificacao no RPO real ainda esta pendente; veja [evidencias e limites](docs/fase-compilacao-rpo.md).
+
+Como alternativa, para compilar com autenticacao explicita, crie **fora do repositorio** um arquivo privado `tds-auth.ini` em CP1252 com sua conexao real (nao compartilhe nem versione usuario, senha ou token):
 
 ```ini
 [authentication]

@@ -80,9 +80,11 @@ class RpoCompilerTests(unittest.TestCase):
             [Path(line).name for line in observed["programs.txt"].splitlines()],
         )
 
-    def test_requires_explicit_authentication_config_for_real_compile(self):
+    def test_missing_connected_session_returns_error_without_compiling(self):
         output = io.StringIO()
-        with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
+        from tds_session import TdsSessionError
+        with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output), \
+                patch('tds_session.read_connected_server', side_effect=TdsSessionError('Conecte pelo VS Code')):
             self.assertEqual(1, main(["-compile", str(USE_PRW_ROOT)]))
 
     def test_rejects_unrelated_rpo_actions_in_private_config(self):
