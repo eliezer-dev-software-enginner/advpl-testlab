@@ -55,7 +55,7 @@ protheus/
 
 - Python 3.10 ou mais recente disponível no terminal.
 - O repositório `livrePL` em um diretório irmão deste projeto.
-- Um arquivo `mock.jsonc` no projeto testado, ou seu caminho informado por `--fixture`.
+- Para executar um fonte, um arquivo `mock.jsonc` no projeto testado, ou seu caminho informado por `--fixture`. `--init` cria um fixture inicial; os exemplos deste repositório usam os arquivos em `fixtures/`.
 
 Estrutura esperada:
 
@@ -79,6 +79,8 @@ python -m pip install -e .
 
 Se a CLI ja estava instalada antes da adicao de `--persist`, rode esse comando novamente no mesmo ambiente Python para incluir o modulo de estado.
 
+O runtime localiza os módulos do LivrePL diretamente no diretório irmão `../livrePL`; a instalação editável deste pacote não instala nem obtém o LivrePL. Mantenha os dois repositórios nessa estrutura ao usar a CLI, inclusive depois da instalação.
+
 A instalação editável precisa ser feita apenas uma vez por ambiente Python. No Windows, se o `pip` avisar que a pasta `Scripts` do usuário não está no `PATH`, adicione a pasta indicada e abra um terminal novo. Para descobrir a base do usuário:
 
 ```powershell
@@ -92,6 +94,14 @@ Depois, a partir do diretorio de qualquer fonte:
 ```powershell
 advplab -run TRNSOL02.prw
 ```
+
+Para conferir a instalação com os arquivos distribuídos neste repositório, execute na raiz do AdvPLab:
+
+```powershell
+advplab -run examples/getmv.prw --fixture fixtures/getmv.json
+```
+
+Esse exemplo lê `MV_ADMIN` e imprime `000007`. Os fontes `TRNSOL02.prw`, `TRNSOL01.prw`, `EX1.prw` e `ZA1MVC.prw` usados em outras seções são exemplos de projetos AdvPL externos; não estão incluídos neste repositório e exigem os respectivos fontes e fixtures.
 
 O executor procura `mock.jsonc` no diretorio do `.prw` e nos diretorios pais. O fixture do diretorio mais proximo prevalece; no mesmo diretorio, `mock.jsonc` tem prioridade. Os nomes antigos `mock.json`, `testlab.jsonc`, `testlab.json`, `advpl-testlab.jsonc` e `advpl-testlab.json` continuam aceitos como fallback para projetos existentes. Tambem e possivel usar `--fixture caminho.jsonc`, `--entry NomeDaFuncao` e `--args-json '[...]'`.
 
