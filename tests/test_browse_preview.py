@@ -34,6 +34,19 @@ class BrowsePreviewTests(unittest.TestCase):
         for value in ['Codigo', 'PROD1', '28/10/2026', '20,00', '600,00', 'Disponivel', 'Em uso']:
             self.assertIn(value, output)
 
+    def test_headers_are_truncated_without_changing_data_or_metadata(self):
+        columns = ['Situação do patrimônio']
+        rows = [['Descrição completa do bem']]
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            render_browse('Cadastro de patrimônio', 'ZA4', columns, rows, [], width=120)
+        self.assertIn('| Situação do ', output.getvalue())
+        self.assertNotIn('Situação do patrimônio', output.getvalue())
+        self.assertIn('Descrição completa do bem', output.getvalue())
+        self.assertIn('Cadastro de patrimônio', output.getvalue())
+        self.assertEqual(['Situação do patrimônio'], columns)
+        self.assertEqual([['Descrição completa do bem']], rows)
+
     def test_empty_table_still_renders_metadata(self):
         fixture = Fixture.from_file(ROOT / 'fixtures/preview-browse.jsonc')
         fixture.tabelas['T01']['registros'] = []

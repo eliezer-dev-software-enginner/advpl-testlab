@@ -213,3 +213,5 @@ Status: `[x]` — concluido em 21/09/2026.
 ---
 
 *Ultima atualizacao: 22/09/2026*
+
+- [x] Limitar cabecalhos do preview a 12 caracteres sem alterar mock ou dados; 11 testes de preview e comando instalado validados (28/10/2026).

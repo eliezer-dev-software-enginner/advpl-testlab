@@ -40,6 +40,7 @@ def render_browse(title, alias, columns, rows, actions, legends=(), width=None, 
     print('Acoes: ' + (' '.join(f'[{text(action)}]' for action in actions) or '(nenhuma definida)'))
     print('Simulacao local; acoes nao sao executadas. Nao representa a interface grafica exata.')
     print('-' * width)
+    columns = [text(column)[:12] for column in columns]
     widths = [min(28, max(3, len(text(column)), *(len(text(row[i])) for row in rows)))
               for i, column in enumerate(columns)]
     groups = []

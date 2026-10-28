@@ -11,6 +11,7 @@ O fonte e validado e executado no runtime simulado ate o primeiro browse ativado
 - Titulo de SetDescription e alias de SetAlias.
 - Acoes declaradas no array aRotina, em SetMenuDef com array ou no MenuDef acessivel no fonte, nessa prioridade. Sao exibidas, sem invocar suas actions.
 - Colunas explicitas de AddColumn e colunas calculadas de SetFields. Sem AddColumn, campos do mock usam titulo, descricao ou nome; visivel false omite um campo automatico.
+- Cabecalhos das colunas truncados nos primeiros 12 caracteres, sem reticencias; descricoes completas permanecem no mock. O titulo do browse e os dados nao recebem esse limite.
 - Ate 20 registros do mock, sem inventar dados. Datas D em DD/MM/AAAA e numeros N usando decimais do campo, separador decimal virgula e milhar ponto. Codigos de status permanecem como declarados no mock: nao se infere o significado do SX3.
 - Tabela vazia continua exibindo as colunas declaradas. Sem metadados e sem registros, informa a falta de colunas.
 - Largura obtida do terminal, colunas divididas em grupos com os mesmos registros e celulas limitadas a 28 caracteres. Valores completos permanecem no mock. Caracteres de controle sao substituidos por espacos. Legendas exibem suas descricoes, sem cores ou avaliacao de condicoes.
