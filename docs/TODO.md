@@ -11,7 +11,7 @@
 
 - [x] Implementar compilacao usando sessao salva do VS Code com testes de protocolo e configuracao (27/10/2026).
 - [x] Validar inicializacao LSP local com a espera padrao de 60s.
-- [ ] Validar reconexao/compilacao real com token.
+- [x] Validar reconexao/compilacao real com token no Linux: usuario confirmou ZA4MVC.prw recompilado no RPO sem --tds-config (28/10/2026).
 
 - [x] Gerar README.md contextualizado no projeto MVC1 (22/10/2026).
 
@@ -185,7 +185,7 @@ Status: `[x]` — concluido em 21/09/2026.
 ## Pendencias tecnicas continuas
 
 - [x] Integrar compilacao real opt-in via TDS-CLI com plano recursivo `//usePrw`, `--dry-run`, ordem explicita e credenciais fora do repositorio (27/09/2026).
-- [ ] Testar `-compile` contra AppServer/RPO de desenvolvimento com configuracao privada fornecida pelo usuario; testes locais apenas simularam o processo externo.
+- [x] Testar `-compile` contra AppServer/RPO: usuario confirmou compilacao real de ZA4MVC.prw via sessao do VS Code no Linux (28/10/2026). A alternativa INI permanece coberta apenas por testes locais.
 - [x] Validar a convencao estrita de ordem de declaracoes (`LOCAL`/`STATIC`, `PRIVATE`, `PUBLIC`) no inicio de cada rotina, com erro localizado.
 - [x] Expor perfil de nomes moderno ou legado na validacao e execucao, usando a politica do LivrePL.
 - [x] Separar a suite propria dos testes de integracao que leem `desafios-aprendizado`.

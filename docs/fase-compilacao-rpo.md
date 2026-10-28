@@ -31,4 +31,14 @@ Referencias primarias: codigo protocolMessages.js, serversView.js, utils.js e To
 
 Testes locais cobrem leitura do servidor, tokens por ambiente, autorizacao separada, includes, descoberta Linux, sequencia LSP, token renovado, rejeicao/ambiente divergente e erros de compilacao. Um subprocesso Python simulado valida o enquadramento JSON-RPC, Unicode, notificacoes, solicitacoes do servidor e timeout/limpeza.
 
-Nao houve reconexao ao AppServer nem envio de fontes/RPO real nesta implementacao. A inicializacao local do advpls instalado respondeu em 30,3 segundos, dentro da espera padrao de 60 segundos; testes iniciais com 10/15 segundos expiravam cedo demais, inclusive pelo transporte vscode-jsonrpc. O handshake LSP local foi validado sem reconectar ao AppServer. Falhas de inicializacao sao propagadas sem falso sucesso. A reconexao via token e a compilacao real continuam pendentes de validacao.
+Compilacao real funcionando no Linux, confirmada pelo usuario em 28/10/2026 no projeto `desafios-aprendizado/controle-patrimonio`, usando a sessao autenticada no VS Code e sem `--tds-config`:
+
+```text
+$ advplab -compile Fontes/ZA4MVC.prw
+1. /home/eliezer/Desktop/dev/dev/totvs/protheus/desafios-aprendizado/controle-patrimonio/Fontes/ZA4MVC.prw
+[OK] 1 fonte(s) recompilado(s) no RPO
+```
+
+Essa evidencia confirma o fluxo de reconexao e compilacao real para esse fonte e ambiente. A execucao foi realizada pelo usuario; nao foi repetida pelo agente nesta atualizacao documental. O caminho acima registra o ambiente testado; a descoberta da configuracao continua usando a pasta pessoal do usuario atual.
+
+A inicializacao local do advpls instalado respondeu em 30,3 segundos, dentro da espera padrao de 60 segundos; testes iniciais com 10/15 segundos expiravam cedo demais. Falhas de inicializacao sao propagadas sem falso sucesso.
