@@ -20,7 +20,7 @@ def read_connected_server(path=None):
         raise TdsSessionError('Nao foi possivel ler ~/.totvsls/servers.json; conecte pelo VS Code.') from None
     server = data.get('connectedServer') if isinstance(data, dict) else None
     if not isinstance(server, dict) or server.get('type') != 'totvs_server_protheus':
-        raise TdsSessionError('Nenhum servidor Protheus conectado; conecte pelo VS Code.')
+        raise TdsSessionError('Nao foi encontrada uma conexao Protheus valida na sessao salva do VS Code. Se houver uma sessao ativa no Protheus impedindo a compilacao, encerre-a. Depois, conecte ou reconecte o servidor pelo VS Code e tente novamente.')
     environment = server.get('environment')
     if not isinstance(environment, str) or not environment:
         raise TdsSessionError('Ambiente conectado ausente; reconecte pelo VS Code.')

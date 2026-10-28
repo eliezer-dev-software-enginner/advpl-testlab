@@ -221,3 +221,5 @@ Status: `[x]` — concluido em 21/09/2026.
 - [x] Ajustar botoes do preview para Incluir, Alterar, Visualizar e Outras Ações; 13 testes e comando instalado validados (28/10/2026).
 
 - [x] Adicionar -legendas/--legendas ao gerador MVC1 com status no mock, AddLegend e BrwLegenda; suite completa com 151 testes aprovada (28/10/2026).
+
+- [x] Orientar sobre possivel sessao ativa no Protheus e reconexao pelo VS Code quando nao ha conexao salva valida; testes de sessao aprovados (28/10/2026).

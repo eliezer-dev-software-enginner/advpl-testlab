@@ -42,3 +42,7 @@ $ advplab -compile Fontes/ZA4MVC.prw
 Essa evidencia confirma o fluxo de reconexao e compilacao real para esse fonte e ambiente. A execucao foi realizada pelo usuario; nao foi repetida pelo agente nesta atualizacao documental. O caminho acima registra o ambiente testado; a descoberta da configuracao continua usando a pasta pessoal do usuario atual.
 
 A inicializacao local do advpls instalado respondeu em 30,3 segundos, dentro da espera padrao de 60 segundos; testes iniciais com 10/15 segundos expiravam cedo demais. Falhas de inicializacao sao propagadas sem falso sucesso.
+
+## Orientacao quando a conexao salva nao esta disponivel
+
+Se nao houver connectedServer Protheus valido em servers.json, a mensagem orienta conferir a sessao salva do VS Code e encerrar uma sessao ativa no Protheus caso esteja impedindo a compilacao. Depois, conectar ou reconectar o servidor pelo VS Code e tentar novamente. Essa mensagem nao detecta nem confirma sessoes ativas no Protheus; apresenta uma possibilidade para verificacao pelo usuario.
