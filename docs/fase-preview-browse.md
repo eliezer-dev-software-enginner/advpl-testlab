@@ -11,7 +11,7 @@ Informacoes de alias, quantidade, simulacao, divisao das colunas e limite de reg
 ## Conteudo
 
 - Titulo de SetDescription e alias de SetAlias.
-- Acoes declaradas no array aRotina, em SetMenuDef com array ou no MenuDef acessivel no fonte, nessa prioridade. Sao exibidas, sem invocar suas actions.
+- Botoes exibidos na ordem Incluir, Alterar, Visualizar e Outras Ações. As opcoes de aRotina, SetMenuDef ou MenuDef continuam preservadas no resultado da simulacao; Excluir e opcoes adicionais pertencem a Outras Ações, cujo menu nao e expandido no preview. Nenhuma acao e executada.
 - Colunas explicitas de AddColumn e colunas calculadas de SetFields. Sem AddColumn, campos do mock usam titulo, descricao ou nome; visivel false omite um campo automatico.
 - Cabecalhos das colunas truncados nos primeiros 12 caracteres, sem reticencias; descricoes completas permanecem no mock. O titulo do browse e os dados nao recebem esse limite.
 - Ate 20 registros do mock, sem inventar dados. Datas D em DD/MM/AAAA e numeros N usando decimais do campo, separador decimal virgula e milhar ponto. Codigos de status permanecem como declarados no mock: nao se infere o significado do SX3.
@@ -26,7 +26,7 @@ O modulo browse_preview.py formata a saida; FixtureInterpreter coleta os valores
 advplab --preview examples/preview-browse.prw --fixture fixtures/preview-browse.jsonc
 ```
 
-O exemplo mostra dois registros ficticios, datas 28/10/2026 e valores 20,00/600,00, com acoes Incluir, Alterar, Visualizar e Excluir.
+O exemplo mostra dois registros ficticios, datas 28/10/2026 e valores 20,00/600,00, com botoes Incluir, Alterar, Visualizar e Outras Ações.
 
 ## Limites
 

@@ -217,3 +217,5 @@ Status: `[x]` — concluido em 21/09/2026.
 - [x] Limitar cabecalhos do preview a 12 caracteres sem alterar mock ou dados; 11 testes de preview e comando instalado validados (28/10/2026).
 
 - [x] Mover informacoes tecnicas para cima do browse e remover avisos entre blocos; 12 testes de preview e comando instalado validados (28/10/2026).
+
+- [x] Ajustar botoes do preview para Incluir, Alterar, Visualizar e Outras Ações; 13 testes e comando instalado validados (28/10/2026).

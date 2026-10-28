@@ -55,7 +55,7 @@ def render_browse(title, alias, columns, rows, actions, legends=(), width=None, 
     print()
     print('=' * width)
     print(f'PREVIEW DO BROWSE | {text(title)}')
-    print('Acoes: ' + (' '.join(f'[{text(action)}]' for action in actions) or '(nenhuma definida)'))
+    print('Acoes: [Incluir] [Alterar] [Visualizar] [Outras Ações]')
     print('-' * width)
     for group in groups:
         def line(values):

@@ -34,6 +34,12 @@ class BrowsePreviewTests(unittest.TestCase):
         for value in ['Codigo', 'PROD1', '28/10/2026', '20,00', '600,00', 'Disponivel', 'Em uso']:
             self.assertIn(value, output)
 
+    def test_action_buttons_have_fixed_browse_order(self):
+        output, result = self.preview()
+        self.assertIn('Acoes: [Incluir] [Alterar] [Visualizar] [Outras Ações]', output)
+        self.assertNotIn('[Excluir]', output)
+        self.assertIn('Excluir', result['acoes'])
+
     def test_headers_are_truncated_without_changing_data_or_metadata(self):
         columns = ['Situação do patrimônio']
         rows = [['Descrição completa do bem']]
