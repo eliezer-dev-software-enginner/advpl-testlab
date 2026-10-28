@@ -47,6 +47,8 @@ def main(argv=None):
                         help="tabela alvo de --mvc1 (padrao: ZA1)")
     action.add_argument("--init", action="store_true",
                         help="cria mock.jsonc no diretorio atual sem sobrescrever")
+    action.add_argument("--preview", metavar="ARQUIVO.PRW",
+                        help="pre-visualiza o primeiro browse no terminal usando o mock")
     action.add_argument("-run", "--run", dest="source", metavar="ARQUIVO.PRW")
     action.add_argument(
         "-validate",
@@ -136,6 +138,8 @@ def main(argv=None):
                 f"({function_count} funcao(oes))"
             )
         else:
+            if args.preview and (args.mvc_case or args.persist):
+                raise FixtureError("--preview nao aceita --mvc-case ou --persist")
             if args.tds_config or args.tds_cli or args.include or args.compile_order or args.dry_run:
                 raise FixtureError("opcoes de compilacao requerem -compile")
             entry_args = []
@@ -149,13 +153,14 @@ def main(argv=None):
                 if not isinstance(entry_args, list):
                     raise FixtureError("--args-json deve ser um array JSON")
             execute_file(
-                args.source,
+                args.preview or args.source,
                 fixture_path=args.fixture,
                 entry=args.entry,
                 args=entry_args,
                 name_profile=args.name_profile,
                 mvc_case=args.mvc_case,
                 persist=args.persist,
+                preview=bool(args.preview),
             )
     except (
         FixtureError,

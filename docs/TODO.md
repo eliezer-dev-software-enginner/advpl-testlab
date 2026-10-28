@@ -7,6 +7,8 @@
 
 ## Foco atual
 
+- [x] Adicionar --preview do browse no terminal com titulo, acoes, colunas e dados do mock (28/10/2026).
+
 - [x] Implementar compilacao usando sessao salva do VS Code com testes de protocolo e configuracao (27/10/2026).
 - [x] Validar inicializacao LSP local com a espera padrao de 60s.
 - [ ] Validar reconexao/compilacao real com token.

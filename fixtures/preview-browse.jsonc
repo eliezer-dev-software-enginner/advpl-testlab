@@ -1,0 +1,24 @@
+{
+  "parametros": [],
+  "tabelas": [{"T01": {
+    // Dados ficticios apenas para demonstrar o preview local.
+    "campos": [
+      {"nome": "T01_COD", "tipo": "C", "titulo": "Codigo"},
+      {"nome": "T01_PROD", "tipo": "C", "titulo": "Produto"},
+      {"nome": "T01_RESP", "tipo": "C", "titulo": "Responsavel"},
+      {"nome": "T01_DATA", "tipo": "D", "titulo": "Dt Aquis."},
+      {"nome": "T01_VALOR", "tipo": "N", "decimais": 2, "titulo": "Valor"},
+      {"nome": "T01_ESTADO", "tipo": "C", "titulo": "Conservacao"},
+      {"nome": "T01_STATUS", "tipo": "C", "titulo": "Situacao"}
+    ],
+    "registros": [
+      {"T01_COD": "000001", "T01_PROD": "PROD1", "T01_RESP": "000000", "T01_DATA": "2026-10-28", "T01_VALOR": 20, "T01_ESTADO": "regular", "T01_STATUS": "Disponivel"},
+      {"T01_COD": "000002", "T01_PROD": "MON1", "T01_RESP": "000000", "T01_DATA": "2026-10-28", "T01_VALOR": 600, "T01_ESTADO": "novo", "T01_STATUS": "Em uso"}
+    ]
+  }}],
+  "funcoes": [],
+  "ambiente": [],
+  "dialogos": [],
+  "especificidadesPrw": [],
+  "consultas": []
+}

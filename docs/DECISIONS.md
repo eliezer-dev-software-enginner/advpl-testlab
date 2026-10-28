@@ -405,3 +405,9 @@
 - **Data:** 27/10/2026
 - **Decisao:** Tornar --tds-config opcional. Leitura de ~/.totvsls/servers.json, servidor conectado e token por ambiente; inicializar processo LSP e usar reconnect antes de compilation, conforme extensao oficial. Includes salvos por padrao. Separar token de sessao da autorizacao de compilacao e verificar ambiente devolvido. Nao gravar tokens/JSON nem desconectar a sessao do usuario. Preservar a alternativa INI. Corrigir descoberta do binario por plataforma.
 - **Validacao:** 136 testes proprios aprovados, incluindo subprocesso LSP simulado e dry-run. Nenhuma compilacao real. Inicializacao LSP do advpls instalado validada com espera de 60s, sem AppServer; esperas menores de 10/15s expiravam. Reconexao e compilacao real permanecem pendentes e documentadas.
+
+## ADR-053 — Preview textual do browse
+
+- **Data:** 28/10/2026
+- **Decisao:** --preview separado de -run renderiza o primeiro browse no terminal com os dados locais. Coletar titulo, acoes e colunas do runtime, completar metadados com o mock e parar a execucao apos Activate. Nao executar acoes ou comandos posteriores, nao persistir e nao conectar ao RPO. Manter o modo -run existente.
+- **Validacao:** Suite propria com casos de preview, exemplo ficticio completo, fonte de controle-patrimonio com mock vazio e regressao basica do LivrePL. Nenhuma alteracao no projeto AdvPL do usuario ou no banco real.

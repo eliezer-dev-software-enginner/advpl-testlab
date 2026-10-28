@@ -117,7 +117,7 @@ def execute_source(source, fixture, entry=None, source_name="<memoria>",
 
 
 def execute_file(source_path, fixture_path=None, entry=None, args=None,
-                 name_profile="modern", mvc_case=None, persist=False):
+                 name_profile="modern", mvc_case=None, persist=False, preview=False):
     source_path = Path(source_path).resolve()
     if not source_path.is_file():
         raise FixtureError(f"Fonte PRW nao encontrado: '{source_path}'")
@@ -135,6 +135,7 @@ def execute_file(source_path, fixture_path=None, entry=None, args=None,
             source_name=source_path,
             name_profile=name_profile,
             mvc_case=mvc_case,
+            preview=preview,
             state_path=fixture_path.parent / "state.json" if persist else None,
         )
     except SourceUnitError as exc:

@@ -225,6 +225,26 @@ Cada declaracao deve ocupar sua propria linha. O caminho e relativo ao arquivo q
 
 As funcoes dos arquivos carregados participam da validacao semantica e da execucao. Uma `User Function EnviarEmailSolicitacao()` pode ser chamada por outro fonte como `U_EnviarEmailSolicitacao()`, conforme a convencao do AdvPL. `Static Function` fica restrita ao proprio fonte, conforme a [documentacao da TOTVS](https://tdn.totvs.com/display/framework/FUNCTION). O TestLab ainda aceita `Function` publica entre fontes na simulacao, mas o compilador Protheus usado em `desafio1-solicitacao-compra` rejeitou `Function` simples no fonte customizado; para auxiliares compartilhados nesse ambiente, use `User Function` e chamadas `U_...`. O comentario `//usePrw` e inofensivo para o compilador Protheus e serve como mapa para pessoas, TestLab e compilacao recursiva.
 
+### Preview do browse no terminal
+
+Na pasta do projeto:
+
+```bash
+advplab --preview Fontes/ZA4MVC.prw
+```
+
+Mostra o titulo do browse, as acoes de `aRotina`/`MenuDef`, colunas e ate 20 registros do mock. Usa `--fixture caminho/mock.jsonc` para escolher os dados. Datas aparecem em DD/MM/AAAA e numeros seguem os decimais declarados. Colunas largas sao divididas em grupos para caber no terminal.
+
+O preview usa os dados locais; nao consulta a tabela do Protheus. Se o mock estiver vazio, exibe cabecalhos e a mensagem de tabela vazia. O comando executa a entrada no ambiente simulado ate o primeiro Activate do browse, sem executar as acoes do menu nem os comandos posteriores a esse browse. Nao aceita `--persist` ou `--mvc-case`.
+
+Exemplo completo, com dados ficticios incluidos neste repositorio:
+
+```bash
+advplab --preview examples/preview-browse.prw --fixture fixtures/preview-browse.jsonc
+```
+
+Titulos das colunas usam AddColumn/SetFields do fonte ou `titulo`, `descricao`, `nome` dos campos no mock, nessa prioridade. `visivel: false` oculta um campo automatico. O resultado e uma aproximacao textual; nao reproduz layout, cores, botoes interativos, permissao de acesso ou o dicionario SX3 real. Consulte [detalhes e limites](docs/fase-preview-browse.md).
+
 ### Compilacao real recursiva no RPO (opcional)
 
 `-validate` e `-run` continuam **locais e headless**. Para recompilar no RPO conectado ao AppServer, use `-compile`. Essa opcao chama o `advpls`/`advpls.exe` do [TDS-CLI oficial](https://github.com/totvs/tds-ls/blob/master/TDS-CLi.md); ela nao simula a tecla Ctrl+F9 e nunca roda implicitamente. O TestLab procura o executavel no `PATH` ou na extensao TOTVS do VS Code; se necessario, informe `--tds-cli`.

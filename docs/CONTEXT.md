@@ -258,3 +258,7 @@ O gerador MVC1 tambem cria README.md na raiz com estrutura, comandos, ajustes de
 ## Compilacao pela sessao salva (27/10/2026)
 
 Sem --tds-config, -compile le ~/.totvsls/servers.json e usa tds_session.py para iniciar o LS, reconectar com token e compilar. Includes do servidor/globais por padrao; --include substitui. Alternativa INI preservada. Descoberta de binario agora usa linux/mac/windows. Sem gravacao do JSON nem senha. Handshake LSP local validado com timeout de 60s; reconexao e compilacao real pendentes. Ver fase-compilacao-rpo.md.
+
+## Preview textual do browse (28/10/2026)
+
+--preview executa a entrada no simulador ate o primeiro browse e mostra titulo, acoes, colunas e ate 20 registros do mock no terminal. browse_preview.py renderiza; FixtureInterpreter captura e interrompe a execucao apos Activate. Sem persistencia ou cenario MVC. Nao reproduz ViewDef ou UI grafica; ver fase-preview-browse.md.

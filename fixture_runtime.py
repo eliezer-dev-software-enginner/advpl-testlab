@@ -4,6 +4,8 @@ import re
 import sys
 from pathlib import Path
 
+from browse_preview import PreviewComplete, format_cell, render_browse
+
 
 _MISSING = object()
 
@@ -705,6 +707,8 @@ class FixtureInterpreter(Interpreter):
         self._number_reservations = {}
         self._prepared_company = None
         self._prepared_branch = None
+        self.preview = False
+        self.preview_result = None
         self.mvc_case = None
         self.mvc_result = None
         super().__init__(program, name_profile=name_profile)
@@ -1069,7 +1073,50 @@ class FixtureInterpreter(Interpreter):
             raise AdvPLRuntimeError(f"Alias '{name}' nao esta aberto")
         return alias
 
+    def _preview_browse(self, browse):
+        alias = self._get_alias(browse.alias)
+        table = self.fixture.tabelas.get(browse.alias, {})
+        metadata = {field['nome'].upper(): field for field in table.get('campos', [])} if isinstance(table, dict) else {}
+        columns = browse.columns or [
+            (name, field.get('titulo') or field.get('descricao') or name)
+            for name, field in metadata.items() if field.get('visivel', True)
+        ]
+        if not columns and not metadata and alias.records:
+            columns = [(name, name) for name in alias.records[0]]
+        titles = [title for _, title in columns] + [field[0] for field in browse.calculated_fields]
+        rows = []
+        previous_alias, previous_position = self._current_alias, alias.position
+        try:
+            self._current_alias = browse.alias
+            for position, record in enumerate(alias.records[:20]):
+                alias.position = position
+                row = [format_cell(record.get(name), metadata.get(name, {})) for name, _ in columns]
+                row.extend(str(self.invoke_block(field[1], [])) for field in browse.calculated_fields)
+                rows.append(row)
+            try:
+                menu = self.lookup('aRotina')
+            except AdvPLRuntimeError:
+                menu = None
+            configured = getattr(browse, 'attrs', {}).get('SETMENUDEF')
+            if isinstance(configured, list):
+                menu = configured
+            if menu is None:
+                source = self.call_stack[-1].source_path
+                key = self.name_policy.key('MenuDef')
+                if (key in self.static_functions.get(source, {}) or key in self.functions or key in self.user_functions):
+                    menu = self.call_function('MenuDef', [])
+            actions = [option[0] for option in menu if isinstance(option, list) and option] if isinstance(menu, list) else []
+            render_browse(browse.description, browse.alias, titles, rows, actions,
+                          browse.legends, total=len(alias.records))
+            self.preview_result = {'titulo': browse.description, 'alias': browse.alias,
+                                   'colunas': titles, 'registros': rows, 'acoes': actions}
+        finally:
+            self._current_alias, alias.position = previous_alias, previous_position
+        raise PreviewComplete()
+
     def _activate_browse(self, browse):
+        if self.preview:
+            self._preview_browse(browse)
         if self.mvc_case is not None:
             self._run_mvc_case(browse)
             return
@@ -2244,7 +2291,10 @@ def run_sources(
     name_profile="modern",
     mvc_case=None,
     state_path=None,
+    preview=False,
 ):
+    if preview and (state_path is not None or mvc_case is not None):
+        raise FixtureError("Preview nao aceita persistencia ou cenario MVC")
     interpreter = build_interpreter_sources(
         source_units,
         fixture=fixture,
@@ -2266,7 +2316,15 @@ def run_sources(
         if mvc_case not in interpreter.fixture.cenarios_mvc:
             raise FixtureError(f"Cenario MVC '{mvc_case}' nao encontrado na fixture")
         interpreter.mvc_case = interpreter.fixture.cenarios_mvc[mvc_case]
-    result = interpreter.run(entry, args)
+    interpreter.preview = preview
+    try:
+        result = interpreter.run(entry, args)
+    except PreviewComplete:
+        if not preview:
+            raise
+        return interpreter.preview_result
+    if preview:
+        raise FixtureError('Preview: a entrada nao ativou um browse')
     if mvc_case is not None:
         if interpreter.mvc_result is None:
             raise FixtureError(f"Cenario MVC '{mvc_case}' nao foi executado: entrada nao ativou browse")

@@ -65,6 +65,7 @@ Com o comando `advplab` instalado, abra o terminal na raiz deste projeto:
 
 ```bash
 advplab -validate Fontes/@TABLE@MVC.prw
+advplab --preview Fontes/@TABLE@MVC.prw
 advplab -run Fontes/@TABLE@MVC.prw
 advplab -run Fontes/@TABLE@MVC.prw --mvc-case incluir-registro
 ```
