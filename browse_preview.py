@@ -34,12 +34,6 @@ def format_cell(value, metadata):
 def render_browse(title, alias, columns, rows, actions, legends=(), width=None, total=None):
     width = max(40, width or shutil.get_terminal_size((120, 24)).columns)
     total = len(rows) if total is None else total
-    print('=' * width)
-    print(f'PREVIEW DO BROWSE | {text(title)}')
-    print(f'Alias: {text(alias)} | {total} registro(s) no mock')
-    print('Acoes: ' + (' '.join(f'[{text(action)}]' for action in actions) or '(nenhuma definida)'))
-    print('Simulacao local; acoes nao sao executadas. Nao representa a interface grafica exata.')
-    print('-' * width)
     columns = [text(column)[:12] for column in columns]
     widths = [min(28, max(3, len(text(column)), *(len(text(row[i])) for row in rows)))
               for i, column in enumerate(columns)]
@@ -52,9 +46,18 @@ def render_browse(title, alias, columns, rows, actions, legends=(), width=None, 
         group.append(index)
     if group:
         groups.append(group)
-    for group_index, group in enumerate(groups, 1):
-        if len(groups) > 1:
-            print(f'Colunas {group_index}/{len(groups)} (mesmos registros)')
+    print(f'Alias: {text(alias)} | {total} registro(s) no mock')
+    print('Simulacao local; acoes nao sao executadas. Nao representa a interface grafica exata.')
+    if len(groups) > 1:
+        print(f'Colunas divididas em {len(groups)} blocos abaixo (mesmos registros).')
+    if total > len(rows):
+        print(f'Mostrando os primeiros {len(rows)} de {total} registros.')
+    print()
+    print('=' * width)
+    print(f'PREVIEW DO BROWSE | {text(title)}')
+    print('Acoes: ' + (' '.join(f'[{text(action)}]' for action in actions) or '(nenhuma definida)'))
+    print('-' * width)
+    for group in groups:
         def line(values):
             cells = []
             for i in group:
@@ -72,8 +75,6 @@ def render_browse(title, alias, columns, rows, actions, legends=(), width=None, 
         print('Sem colunas: declare campos no mock ou use AddColumn/SetFields no fonte.')
     if not rows:
         print('Nenhum registro encontrado no mock.')
-    if total > len(rows):
-        print(f'Mostrando os primeiros {len(rows)} de {total} registros.')
     labels = [text(legend[2]) for legend in legends if len(legend) >= 3]
     if labels:
         print('Legendas: ' + ' | '.join(labels))

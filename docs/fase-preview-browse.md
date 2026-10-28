@@ -6,6 +6,8 @@
 
 O fonte e validado e executado no runtime simulado ate o primeiro browse ativado. PreviewComplete interrompe a entrada depois da renderizacao, evitando os comandos posteriores ao Activate. Comandos anteriores ao browse ainda sao executados em memoria no simulador; o preview nao e analise estatica de codigo arbitrario. Nao inicia LS, nao conecta ao Protheus e nao salva state.json. O arquivo de mock nao e alterado. Sem browse ativado, retorna erro claro.
 
+Informacoes de alias, quantidade, simulacao, divisao das colunas e limite de registros aparecem acima do browse. Dentro dele ficam titulo, acoes, tabelas e legendas; os blocos de colunas nao recebem avisos intermediarios.
+
 ## Conteudo
 
 - Titulo de SetDescription e alias de SetAlias.

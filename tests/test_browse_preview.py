@@ -47,6 +47,22 @@ class BrowsePreviewTests(unittest.TestCase):
         self.assertEqual(['Situação do patrimônio'], columns)
         self.assertEqual([['Descrição completa do bem']], rows)
 
+    def test_diagnostics_appear_above_browse_without_interrupting_tables(self):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            render_browse('Cadastro', 'ZA4', ['Coluna A', 'Coluna B'],
+                          [['a' * 28, 'b' * 28]], [], width=40, total=30)
+        diagnostics, browse = output.getvalue().split('=' * 40, 1)
+        for label in ['Alias: ZA4', 'Simulacao local', 'Colunas divididas em 2 blocos',
+                      'Mostrando os primeiros 1 de 30 registros.']:
+            self.assertIn(label, diagnostics)
+            self.assertNotIn(label, browse)
+        self.assertIn('PREVIEW DO BROWSE | Cadastro', browse)
+        self.assertIn('Coluna A', browse)
+        self.assertIn('Coluna B', browse)
+        self.assertNotIn('Colunas 1/2', browse)
+        self.assertNotIn('Colunas 2/2', browse)
+
     def test_empty_table_still_renders_metadata(self):
         fixture = Fixture.from_file(ROOT / 'fixtures/preview-browse.jsonc')
         fixture.tabelas['T01']['registros'] = []
@@ -96,7 +112,7 @@ class BrowsePreviewTests(unittest.TestCase):
             render_browse('Titulo', 'T01', ['Coluna A', 'Coluna B'],
                           [['a' * 50, '\x1b[31m\nvalor']], [], width=40)
         value = output.getvalue()
-        self.assertIn('Colunas 1/2', value)
+        self.assertIn('Colunas divididas em 2 blocos', value)
         self.assertNotIn('\x1b', value)
         self.assertIn('...', value)
         self.assertTrue(all(len(line) <= 40 for line in value.splitlines() if line.startswith('| ')))
