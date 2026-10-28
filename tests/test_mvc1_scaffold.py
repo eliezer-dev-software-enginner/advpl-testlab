@@ -54,6 +54,23 @@ class Mvc1ScaffoldTests(unittest.TestCase):
                 with contextlib.redirect_stdout(io.StringIO()):
                     self.assertEqual(0, main(command.split()[1:]))
 
+    def test_legends_generate_status_menu_and_preview(self):
+        self.assertEqual(0, self.invoke('--mvc1', '--table', 'ZA4', '-legendas'))
+        source = Path('Fontes/ZA4MVC.prw')
+        self.assertEqual(5, validate_file(source))
+        self.assertIn("ACTION 'U_ZA4LEG'", source.read_text())
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            result = execute_file(source, preview=True)
+            saved = execute_file(source, mvc_case='incluir-registro')
+        self.assertIn('Legendas: Disponivel | Em uso | Baixado', output.getvalue())
+        self.assertTrue(saved['salvou'])
+        self.assertIn('Legenda', result['acoes'])
+
+    def test_legends_require_mvc1(self):
+        self.assertEqual(1, self.invoke('--init', '-legendas'))
+        self.assertEqual([], list(Path.cwd().iterdir()))
+
     def test_default_table(self):
         self.assertEqual(0, self.invoke('--mvc1'))
         self.assertTrue(Path('Fontes/ZA1MVC.prw').exists())

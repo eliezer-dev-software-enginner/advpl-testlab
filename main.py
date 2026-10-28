@@ -45,6 +45,8 @@ def main(argv=None):
                         help="gera MVC tipo 1 em Fontes/ e mock.jsonc na pasta atual")
     parser.add_argument("--table", metavar="ALIAS",
                         help="tabela alvo de --mvc1 (padrao: ZA1)")
+    parser.add_argument("-legendas", "--legendas", action="store_true",
+                        help="adiciona legendas padrao ao projeto --mvc1")
     action.add_argument("--init", action="store_true",
                         help="cria mock.jsonc no diretorio atual sem sobrescrever")
     action.add_argument("--preview", metavar="ARQUIVO.PRW",
@@ -81,6 +83,8 @@ def main(argv=None):
     )
     args = parser.parse_args(argv)
     try:
+        if args.legendas and not args.mvc1:
+            raise FixtureError("-legendas requer --mvc1")
         if args.table is not None and not args.mvc1:
             raise FixtureError("--table requer --mvc1")
         if args.mvc1:
@@ -89,7 +93,7 @@ def main(argv=None):
                     args.include or args.compile_order or args.dry_run or
                     args.name_profile != 'modern'):
                 raise FixtureError("--mvc1 nao aceita opcoes de execucao ou compilacao")
-            source, fixture, readme = create_mvc1(args.table if args.table is not None else 'ZA1')
+            source, fixture, readme = create_mvc1(args.table if args.table is not None else 'ZA1', legendas=args.legendas)
             source_name = source.relative_to(Path.cwd()).as_posix()
             print(f"[OK] Criados: {source_name}, {fixture.name} e {readme.name}")
             print(f"Validar: advplab -validate {source_name}")

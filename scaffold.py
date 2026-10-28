@@ -102,7 +102,36 @@ exige um ambiente Protheus configurado e os campos reais da tabela.
 """
 
 
-def create_mvc1(table='ZA1'):
+def legend_source(table):
+    return "\n".join(
+        f"    oBrowse:AddLegend(\"{table}_STATUS == '{code}'\", '{color}', '{label}')"
+        for code, color, label in [('1', 'GREEN', 'Disponivel'),
+                                   ('2', 'YELLOW', 'Em uso'), ('3', 'RED', 'Baixado')])
+
+
+def legend_function(table):
+    return f"""
+/*/{{Protheus.doc}} {table}LEG
+Exibe as legendas de situacao do cadastro.
+@type Function
+@param Nenhum
+@return Nil
+@author EliezerDev
+@since 28/10/2026
+@example U_{table}LEG()
+/*/
+User Function {table}LEG()
+    Local aLegenda := {{ ;
+        {{ 'BR_VERDE', 'Disponivel' }}, ;
+        {{ 'BR_AMARELO', 'Em uso' }}, ;
+        {{ 'BR_VERMELHO', 'Baixado' }} ;
+    }}
+    BrwLegenda('Cadastro {table}', 'Legenda', aLegenda)
+Return NIL
+"""
+
+
+def create_mvc1(table='ZA1', legendas=False):
     table = table.upper()
     if not re.fullmatch(r'[A-Z][A-Z0-9]{2}', table, flags=re.ASCII):
         raise FixtureError('--table deve ser um alias de tres caracteres, como ZA4')
@@ -115,6 +144,16 @@ def create_mvc1(table='ZA1'):
             raise FixtureError(f'Arquivo ja existe: {path}; nenhum arquivo foi criado')
     record = {f'{table}_FILIAL': '01', f'{table}_COD': '000001',
               f'{table}_DESC': 'Exemplo de cadastro'}
+    if legendas:
+        record[f'{table}_STATUS'] = '1'
+    source = MVC1_SOURCE.replace('@TABLE@', table)
+    readme = MVC1_README.replace('@TABLE@', table)
+    if legendas:
+        source = source.replace('    oBrowse:Activate()', legend_source(table) + '\n    oBrowse:Activate()')
+        source = source.replace('Return aRotina', f"    ADD OPTION aRotina TITLE 'Legenda' ACTION 'U_{table}LEG' OPERATION 2 ACCESS 0\nReturn aRotina")
+        source += legend_function(table)
+        readme = readme.replace('quatro funcoes', 'cinco funcoes')
+        readme += f'\n## Legendas\n\nGerado com -legendas. Campo {table}_STATUS: 1=Disponivel (verde), 2=Em uso (amarelo), 3=Baixado (vermelho). Ajuste os codigos ao SX3 do ambiente. O menu Legenda abre BrwLegenda; AddLegend define as cores do browse.\n'
     fixture = {
         'parametros': [],
         'tabelas': [{table: {
@@ -149,9 +188,9 @@ def create_mvc1(table='ZA1'):
             source_directory.mkdir()
             created_directory = True
         for path, content in (
-            (source_path, MVC1_SOURCE.replace('@TABLE@', table)),
+            (source_path, source),
             (fixture_path, fixture_text),
-            (readme_path, MVC1_README.replace('@TABLE@', table)),
+            (readme_path, readme),
         ):
             with path.open('x', encoding='utf-8') as output:
                 created.append(path)

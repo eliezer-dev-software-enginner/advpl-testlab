@@ -9,3 +9,7 @@ Validacao local: 118 testes aprovados. O fonte gerado valida quatro funcoes; o c
 Fora do escopo: descoberta de SX3, criacao de tabelas no Protheus, interface grafica MVC e validacao contra AppServer/RPO real. Ajustar campos e chave primaria ao dicionario do ambiente antes da compilacao real.
 
 O README.md gerado na raiz identifica a tabela, mostra a estrutura e comandos de validacao, browse, inclusao e persistencia. Explica ajustes ao SX3 e limites da simulacao. README existente bloqueia a geracao; falha na escrita desfaz apenas os arquivos e diretorio novos.
+
+## Legendas opcionais
+
+`advplab --mvc1 --table ZA4 -legendas` (ou `--legendas`) inclui AddLegend antes do Activate, opção Legenda no MenuDef e User Function ZA4LEG com BrwLegenda. O mock inclui ZA4_STATUS e usa 1=Disponivel (verde), 2=Em uso (amarelo), 3=Baixado (vermelho). São códigos de exemplo, para ajustar ao SX3 real. Sem a flag, o projeto conserva o modelo simples anterior. A flag requer --mvc1 e não sobrescreve projeto existente.

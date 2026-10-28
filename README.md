@@ -622,3 +622,11 @@ O SQL é montado e seus parâmetros são vinculados pela lógica original, mas n
 ## Decisao de erro do GetMV
 
 Quando o parametro nao existe, o harness gera `AdvPLRuntimeError`. Retornar `NIL` esconderia fixtures incompletos e poderia produzir falso positivo em testes de regra de negocio.
+
+Para gerar MVC tipo 1 com legendas padrao:
+
+```bash
+advplab --mvc1 --table ZA4 -legendas
+```
+
+Inclui campo de status no mock, cores no browse e opcao Legenda com BrwLegenda. Ajuste os codigos ao SX3 real.

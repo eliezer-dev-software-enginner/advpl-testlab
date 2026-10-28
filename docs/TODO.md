@@ -219,3 +219,5 @@ Status: `[x]` — concluido em 21/09/2026.
 - [x] Mover informacoes tecnicas para cima do browse e remover avisos entre blocos; 12 testes de preview e comando instalado validados (28/10/2026).
 
 - [x] Ajustar botoes do preview para Incluir, Alterar, Visualizar e Outras Ações; 13 testes e comando instalado validados (28/10/2026).
+
+- [x] Adicionar -legendas/--legendas ao gerador MVC1 com status no mock, AddLegend e BrwLegenda; suite completa com 151 testes aprovada (28/10/2026).
